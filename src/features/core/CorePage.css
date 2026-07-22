@@ -1,0 +1,50 @@
+.core-page {
+  padding: 1rem;
+}
+
+.core-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.core-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.core-table th,
+.core-table td {
+  text-align: left;
+  padding: 0.5rem;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+}
+
+.status-badge {
+  padding: 0.15rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.status-active {
+  background: #1d9a5b33;
+  color: #1d9a5b;
+}
+
+.status-trial {
+  background: #d4a71733;
+  color: #d4a717;
+}
+
+.status-suspended {
+  background: #d3333333;
+  color: #d33333;
+}
+
+.status-canceled {
+  background: #77777733;
+  color: #777777;
+}
