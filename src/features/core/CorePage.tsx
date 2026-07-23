@@ -1,64 +1,81 @@
-import { useQuery } from '@tanstack/react-query'
-import { fetchTenants, logoutPlatformStaff } from './api'
-import { getRefreshToken } from './session'
-import { useAuth } from './useAuth'
+import { Logo } from '../../shared/components/Logo'
+import { ThemeToggle } from '../../shared/components/ThemeToggle'
+import type { Tenant } from './api'
+import { useLogout } from './hooks/useLogout'
+import { useTenants } from './hooks/useTenants'
 import './CorePage.css'
 
-export function CorePage() {
-  const { logout } = useAuth()
-  const { data: tenants, isLoading, error } = useQuery({
-    queryKey: ['core', 'tenants'],
-    queryFn: fetchTenants,
-  })
+const STATUS_BADGE: Record<Tenant['status'], string> = {
+  active: 'badge-success',
+  trial: 'badge-warning',
+  suspended: 'badge-danger',
+  canceled: 'badge-neutral',
+}
 
-  const handleLogout = async () => {
-    const refresh = getRefreshToken()
-    if (refresh) {
-      await logoutPlatformStaff(refresh).catch(() => {
-        // si el token ya expiro o esta en blacklist, igual cerramos sesion localmente
-      })
-    }
-    logout()
-  }
+const STATUS_LABEL: Record<Tenant['status'], string> = {
+  active: 'Activo',
+  trial: 'Prueba',
+  suspended: 'Suspendido',
+  canceled: 'Cancelado',
+}
+
+export function CorePage() {
+  const { data: tenants, isLoading, error } = useTenants()
+  const handleLogout = useLogout()
 
   return (
     <div className="core-page">
-      <header className="core-header">
-        <h1>Tenants</h1>
-        <button type="button" onClick={handleLogout}>
-          Cerrar sesión
-        </button>
+      <header className="core-topbar">
+        <Logo height={22} />
+        <div className="core-topbar-actions">
+          <ThemeToggle />
+          <button type="button" className="btn btn-ghost" onClick={handleLogout}>
+            Cerrar sesión
+          </button>
+        </div>
       </header>
 
-      {isLoading && <p>Cargando...</p>}
-      {error && <p role="alert">No se pudieron cargar los tenants.</p>}
+      <main className="core-content">
+        <h1 className="core-page-title">Tenants</h1>
+        <p className="core-page-subtitle">Negocios registrados en la plataforma Fivuza</p>
 
-      {tenants && (
-        <table className="core-table">
-          <thead>
-            <tr>
-              <th>Negocio</th>
-              <th>Schema</th>
-              <th>Estado</th>
-              <th>Creado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {tenants.map((tenant) => (
-              <tr key={tenant.id}>
-                <td>{tenant.company_name}</td>
-                <td>{tenant.schema_name}</td>
-                <td>
-                  <span className={`status-badge status-${tenant.status}`}>
-                    {tenant.status}
-                  </span>
-                </td>
-                <td>{tenant.created_on}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+        <div className="card core-table-card">
+          {isLoading && <p className="core-state-message">Cargando...</p>}
+          {error && (
+            <p className="core-state-message" role="alert">
+              No se pudieron cargar los tenants.
+            </p>
+          )}
+
+          {tenants && (
+            <table className="core-table">
+              <thead>
+                <tr>
+                  <th>Negocio</th>
+                  <th>Schema</th>
+                  <th>Estado</th>
+                  <th>Creado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tenants.map((tenant) => (
+                  <tr key={tenant.id}>
+                    <td className="core-table-strong">{tenant.company_name}</td>
+                    <td>{tenant.schema_name}</td>
+                    <td>
+                      <span className={`badge ${STATUS_BADGE[tenant.status]}`}>
+                        <span className="dot" />
+                        {STATUS_LABEL[tenant.status] ?? tenant.status}
+                      </span>
+                    </td>
+                    <td>{tenant.created_on}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </main>
     </div>
   )
 }
