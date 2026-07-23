@@ -1,8 +1,8 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
-import { AuthProvider } from './features/core/AuthContext'
+import { ProtectedRoute } from './features/core/components/ProtectedRoute'
+import { AuthProvider } from './features/core/hooks/AuthContext'
 import { CorePage } from './features/core/CorePage'
 import { LoginPage } from './features/core/LoginPage'
-import { ProtectedRoute } from './features/core/ProtectedRoute'
 
 function App() {
   return (

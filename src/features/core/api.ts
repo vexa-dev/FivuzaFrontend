@@ -1,12 +1,12 @@
 import { apiFetch } from '../../shared/utils/apiClient'
-import { getAccessToken, type PlatformTokens } from './session'
+import { getAccessToken, type PlatformTokens } from './hooks/session'
 
 export interface Tenant {
   id: number
   schema_name: string
   company_name: string
   ruc: string | null
-  status: string
+  status: 'active' | 'trial' | 'suspended' | 'canceled'
   suspended_at: string | null
   created_on: string
 }

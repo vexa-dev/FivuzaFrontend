@@ -1,50 +1,31 @@
-import { useMutation } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { ApiError } from '../../shared/utils/apiClient'
-import { loginPlatformStaff } from './api'
-import { useAuth } from './useAuth'
+import { Logo } from '../../shared/components/Logo'
+import { PasswordInput } from '../../shared/components/PasswordInput'
+import { ThemeToggle } from '../../shared/components/ThemeToggle'
+import { useLogin } from './hooks/useLogin'
 import './LoginPage.css'
 
 export function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [formError, setFormError] = useState<string | null>(null)
-  const { login } = useAuth()
-  const navigate = useNavigate()
-
-  const mutation = useMutation({
-    mutationFn: () => loginPlatformStaff(email, password),
-    onSuccess: (tokens) => {
-      login(tokens)
-      navigate('/admin')
-    },
-    onError: (error: unknown) => {
-      if (error instanceof ApiError && error.status === 400) {
-        setFormError('Correo o contraseña incorrectos.')
-      } else {
-        setFormError('No se pudo conectar con el servidor. Intenta de nuevo.')
-      }
-    },
-  })
+  const { submit, isPending, formError } = useLogin()
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
-    setFormError(null)
-
-    if (!email || !password) {
-      setFormError('Correo y contraseña son requeridos.')
-      return
-    }
-
-    mutation.mutate()
+    submit(email, password)
   }
 
   return (
     <div className="login-page">
-      <form className="login-card" onSubmit={handleSubmit}>
-        <h1>Fivuza — Panel interno</h1>
-        <p className="login-subtitle">Acceso exclusivo para el equipo Fivuza</p>
+      <div className="login-theme-toggle">
+        <ThemeToggle />
+      </div>
+
+      <form className="login-card card" onSubmit={handleSubmit}>
+        <div className="login-logo">
+          <Logo height={128} layout="stacked" />
+        </div>
+        <p className="login-subtitle">Todo tu ecosistema Fivuza, en un solo lugar.</p>
 
         <label htmlFor="email">Correo</label>
         <input
@@ -53,15 +34,16 @@ export function LoginPage() {
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           autoComplete="username"
+          placeholder="admin@fivuza.com"
         />
 
         <label htmlFor="password">Contraseña</label>
-        <input
+        <PasswordInput
           id="password"
-          type="password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           autoComplete="current-password"
+          placeholder="••••••••"
         />
 
         {formError && (
@@ -70,8 +52,8 @@ export function LoginPage() {
           </p>
         )}
 
-        <button type="submit" disabled={mutation.isPending}>
-          {mutation.isPending ? 'Ingresando...' : 'Ingresar'}
+        <button type="submit" className="btn btn-primary" disabled={isPending}>
+          {isPending ? 'Ingresando...' : 'Ingresar'}
         </button>
       </form>
     </div>

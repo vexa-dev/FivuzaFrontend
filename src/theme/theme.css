@@ -1,0 +1,102 @@
+:root {
+  --color-neutral-50: #f5f6f5;
+  --color-neutral-100: #ccd0cf;
+  --color-neutral-200: #b8c1c2;
+  --color-neutral-300: #9ba8ab;
+  --color-neutral-400: #7c8d95;
+  --color-neutral-500: #4a5c6a;
+  --color-neutral-600: #3c4f5d;
+  --color-neutral-700: #253745;
+  --color-neutral-800: #11212d;
+  --color-neutral-900: #0e202b;
+  --color-neutral-950: #06141b;
+
+  --color-accent-100: #d2e5ef;
+  --color-accent-400: #5fa0cc;
+  --color-accent-500: #3585b3;
+  --color-accent-600: #256e97;
+  --color-accent-700: #1b5878;
+  --color-accent-900: #123047;
+
+  --color-success-100: #d7efdd;
+  --color-success-400: #6bc489;
+  --color-success-500: #35a160;
+  --color-success-600: #268549;
+  --color-success-900: #163b24;
+
+  --color-warning-100: #fbe6cb;
+  --color-warning-400: #efa75b;
+  --color-warning-500: #de8833;
+  --color-warning-600: #ba6d25;
+  --color-warning-900: #452b10;
+
+  --color-danger-100: #fadede;
+  --color-danger-400: #e27e7e;
+  --color-danger-500: #cf534d;
+  --color-danger-600: #ae3d3d;
+  --color-danger-900: #401818;
+
+  --text-on-primary: #ffffff;
+}
+
+[data-theme='light'] {
+  /* bg-app con tinte azulado a proposito: con neutral-50 puro (#F5F6F5) el
+     fondo quedaba casi identico a bg-surface (#FFFFFF) y la pantalla se
+     sentia "toda blanca", sin jerarquia visual entre superficies. */
+  --bg-app: #e9eef3;
+  --bg-surface: #ffffff;
+  --bg-surface-secondary: #dce6ec;
+  --border-subtle: #dce6ec;
+  --border-default: #c3d2db;
+  --text-primary: var(--color-neutral-900);
+  --text-secondary: var(--color-neutral-600);
+  --text-muted: var(--color-neutral-400);
+  --primary: var(--color-accent-600);
+  --primary-hover: var(--color-accent-700);
+  --primary-subtle-bg: var(--color-accent-100);
+  --focus-ring: var(--color-accent-500);
+  --success: var(--color-success-600);
+  --success-subtle-bg: var(--color-success-100);
+  --warning: var(--color-warning-600);
+  --warning-subtle-bg: var(--color-warning-100);
+  --danger: var(--color-danger-600);
+  --danger-subtle-bg: var(--color-danger-100);
+}
+
+[data-theme='dark'] {
+  /* Superficies desacopladas de la escala --color-neutral-9/800 original:
+     esos tonos se leian verdosos/teal contra un bg-app casi negro. Esta
+     familia comparte el mismo azul frio en todos los pasos (fondo, borde,
+     texto) en vez de ir cada uno con un tinte distinto. */
+  --bg-app: #04090c;
+  --bg-surface: #0a1420;
+  --bg-surface-secondary: #102132;
+  --border-subtle: #102132;
+  --border-default: #1b3247;
+  --text-primary: #edf2f6;
+  --text-secondary: #a3b6c2;
+  --text-muted: #5e7686;
+  --primary: var(--color-accent-500);
+  --primary-hover: var(--color-accent-400);
+  --primary-subtle-bg: var(--color-accent-900);
+  --focus-ring: var(--color-accent-400);
+  --success: var(--color-success-400);
+  --success-subtle-bg: var(--color-success-900);
+  --warning: var(--color-warning-400);
+  --warning-subtle-bg: var(--color-warning-900);
+  --danger: var(--color-danger-400);
+  --danger-subtle-bg: var(--color-danger-900);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-app);
+  color: var(--text-primary);
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
