@@ -19,10 +19,13 @@
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+  text-align: center;
 }
 
 .login-logo {
-  margin-bottom: 0.75rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  justify-content: center;
 }
 
 .login-subtitle {
@@ -33,9 +36,10 @@
 
 .login-card label {
   margin-top: 0.5rem;
+  text-align: left;
 }
 
-.login-card button {
+.login-card > button {
   margin-top: 1rem;
 }
 

@@ -119,3 +119,34 @@ label {
 .theme-toggle:hover {
   background: var(--bg-surface-secondary);
 }
+
+.password-input {
+  position: relative;
+  display: flex;
+}
+
+.password-input input {
+  padding-right: 40px;
+}
+
+.password-input-toggle {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.password-input-toggle:hover {
+  color: var(--text-secondary);
+  background: var(--bg-surface-secondary);
+}

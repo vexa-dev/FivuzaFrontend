@@ -1,12 +1,18 @@
 /* Satoshi (Fontshare) -unica familia del sistema, landing y software.
-   Los archivos van en src/assets/fuentes/ (ver fivuza-guia-tipografia.md,
-   seccion 3). Mientras no esten presentes, el navegador cae al fallback
-   del sistema declarado en --font-base sin romper nada. */
+   Los archivos viven en public/fonts/ (no en src/assets/) y se referencian
+   con ruta absoluta desde la raiz -public/ se sirve tal cual, sin pasar
+   por el pipeline de assets de Vite. Una ruta relativa aqui (../assets/...)
+   se resuelve contra la URL de la pagina, no contra este archivo CSS, lo
+   cual rompia la carga en cualquier ruta que no fuera exactamente /admin/*.
+
+   format('woff2-variations') es el hint correcto para un archivo variable
+   (soporta pesos 300-900 en un solo .woff2) -format('woff2') a secas hace
+   que algunos navegadores rechacen la regla completa para este tipo de
+   archivo. Un solo entry por archivo: duplicar la misma URL con ambos
+   formats tambien rompe la regla completa, no solo el hint no reconocido. */
 @font-face {
   font-family: 'Satoshi';
-  src:
-    url('../assets/fuentes/Satoshi-Variable.woff2') format('woff2-variations'),
-    url('../assets/fuentes/Satoshi-Variable.woff2') format('woff2');
+  src: url('/fonts/Satoshi-Variable.woff2') format('woff2-variations');
   font-weight: 300 900;
   font-style: normal;
   font-display: swap;
@@ -14,9 +20,7 @@
 
 @font-face {
   font-family: 'Satoshi';
-  src:
-    url('../assets/fuentes/Satoshi-VariableItalic.woff2') format('woff2-variations'),
-    url('../assets/fuentes/Satoshi-VariableItalic.woff2') format('woff2');
+  src: url('/fonts/Satoshi-VariableItalic.woff2') format('woff2-variations');
   font-weight: 300 900;
   font-style: italic;
   font-display: swap;
