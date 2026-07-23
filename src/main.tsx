@@ -3,8 +3,12 @@ import { createRoot } from 'react-dom/client'
 import * as Sentry from '@sentry/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrowserRouter } from 'react-router-dom'
+import './theme/fonts.css'
+import './theme/theme.css'
+import './shared/styles/components.css'
 import './index.css'
 import App from './App.tsx'
+import { ThemeProvider } from './theme/ThemeContext.tsx'
 
 const queryClient = new QueryClient()
 
@@ -25,10 +29,12 @@ if (sentryDsn) {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter>
-      <QueryClientProvider client={queryClient}>
-        <App />
-      </QueryClientProvider>
-    </BrowserRouter>
+    <ThemeProvider>
+      <BrowserRouter>
+        <QueryClientProvider client={queryClient}>
+          <App />
+        </QueryClientProvider>
+      </BrowserRouter>
+    </ThemeProvider>
   </StrictMode>,
 )
