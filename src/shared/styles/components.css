@@ -95,6 +95,23 @@ input:focus {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus-ring) 25%, transparent);
 }
 
+select {
+  font-family: var(--font-base);
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: 0.8125rem;
+  width: 100%;
+  outline: none;
+}
+
+select:focus {
+  border-color: var(--focus-ring);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus-ring) 25%, transparent);
+}
+
 label {
   font-size: 0.75rem;
   color: var(--text-secondary);
