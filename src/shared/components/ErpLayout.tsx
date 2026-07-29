@@ -8,7 +8,7 @@ import './ErpLayout.css'
 
 const NAV_ITEMS = [
   { to: '/dashboard', label: 'Dashboard' },
-  { to: '/inventario', label: 'Inventario' },
+  { to: '/inventario', label: 'Inventario', requirePermission: 'INVENTORY_VIEW' },
   { to: '/ventas', label: 'Ventas' },
   { to: '/usuarios', label: 'Usuarios', requirePermission: 'USERS_MANAGE' },
 ]
