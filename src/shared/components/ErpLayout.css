@@ -1,0 +1,115 @@
+.erp-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 100vh;
+  transition: grid-template-columns 0.15s ease;
+}
+
+.erp-layout-collapsed {
+  grid-template-columns: 64px 1fr;
+}
+
+.erp-sidebar {
+  background: var(--bg-surface);
+  border-right: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.erp-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  white-space: nowrap;
+}
+
+.erp-sidebar-toggle {
+  background: transparent;
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  width: 24px;
+  height: 24px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.erp-sidebar-toggle:hover {
+  background: var(--bg-surface-secondary);
+}
+
+.erp-sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  gap: 4px;
+}
+
+.erp-sidebar-link {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.erp-sidebar-link:hover {
+  background: var(--bg-surface-secondary);
+  color: var(--text-primary);
+}
+
+.erp-sidebar-link-active {
+  background: var(--color-accent-100);
+  color: var(--color-accent-700);
+}
+
+.erp-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.erp-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-subtle);
+  position: sticky;
+  top: 0;
+  background: var(--bg-app);
+  z-index: 10;
+}
+
+.erp-topbar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.erp-topbar-email {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.erp-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.erp-content {
+  padding: 32px 24px;
+  flex: 1;
+}

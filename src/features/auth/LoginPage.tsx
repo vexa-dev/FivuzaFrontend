@@ -2,8 +2,8 @@ import { useState, type FormEvent } from 'react'
 import { Logo } from '../../shared/components/Logo'
 import { PasswordInput } from '../../shared/components/PasswordInput'
 import { ThemeToggle } from '../../shared/components/ThemeToggle'
-import { useLogin } from './hooks/useLogin'
 import '../../shared/styles/login.css'
+import { useLogin } from './hooks/useLogin'
 
 export function LoginPage() {
   const [email, setEmail] = useState('')
@@ -23,9 +23,9 @@ export function LoginPage() {
 
       <form className="login-card card" onSubmit={handleSubmit}>
         <div className="login-logo">
-          <Logo height={128} layout="stacked" />
+          <Logo height={96} layout="stacked" />
         </div>
-        <p className="login-subtitle">Todo tu ecosistema Fivuza, en un solo lugar.</p>
+        <p className="login-subtitle">Ingresa a tu negocio en Fivuza.</p>
 
         <label htmlFor="email">Correo</label>
         <input
@@ -34,7 +34,7 @@ export function LoginPage() {
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           autoComplete="username"
-          placeholder="admin@fivuza.com"
+          placeholder="tucorreo@negocio.com"
         />
 
         <label htmlFor="password">Contraseña</label>
