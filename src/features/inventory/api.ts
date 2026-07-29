@@ -1,0 +1,159 @@
+import { getAccessToken } from '../auth/hooks/session'
+import { tenantApiFetch } from '../../shared/utils/tenantApiClient'
+
+export interface Warehouse {
+  id: number
+  name: string
+  address: string
+  is_active: boolean
+  created_at: string
+}
+
+export interface Category {
+  id: number
+  name: string
+  is_active: boolean
+}
+
+export interface Supplier {
+  id: number
+  ruc_or_dni: string
+  company_name: string
+  phone: string
+  address: string
+}
+
+export interface Attribute {
+  id: number
+  name: string
+}
+
+export interface ProductVariant {
+  id: number
+  product: number
+  sku: string
+  barcode: string | null
+  cost: string
+  price: string
+  min_stock: string
+  image_url: string | null
+  is_default: boolean
+  is_active: boolean
+  updated_at: string
+}
+
+export interface Product {
+  id: number
+  type: 'PRODUCT' | 'SERVICE' | 'ASSET'
+  name: string
+  description: string
+  category: number
+  supplier: number | null
+  unit_of_measure: 'UND' | 'KG'
+  is_for_sale: boolean
+  is_active: boolean
+  variants: ProductVariant[]
+  updated_at: string
+  created_at: string
+}
+
+export interface NewVariantInput {
+  sku: string
+  barcode?: string
+  cost?: string
+  price?: string
+  min_stock?: string
+}
+
+function authed<T>(path: string, init: Parameters<typeof tenantApiFetch>[1] = {}) {
+  return tenantApiFetch<T>(path, { ...init, token: getAccessToken() })
+}
+
+// Almacenes
+export const fetchWarehouses = (search?: string) =>
+  authed<Warehouse[]>(`/inventario/warehouses/${search ? `?search=${search}` : ''}`)
+
+export const createWarehouse = (data: { name: string; address?: string }) =>
+  authed<Warehouse>('/inventario/warehouses/', { method: 'POST', body: data })
+
+export const updateWarehouse = (id: number, data: Partial<Warehouse>) =>
+  authed<Warehouse>(`/inventario/warehouses/${id}/`, { method: 'PATCH', body: data })
+
+export const deleteWarehouse = (id: number) =>
+  authed<void>(`/inventario/warehouses/${id}/`, { method: 'DELETE' })
+
+// Categorías
+export const fetchCategories = (search?: string) =>
+  authed<Category[]>(`/inventario/categories/${search ? `?search=${search}` : ''}`)
+
+export const createCategory = (data: { name: string }) =>
+  authed<Category>('/inventario/categories/', { method: 'POST', body: data })
+
+export const updateCategory = (id: number, data: Partial<Category>) =>
+  authed<Category>(`/inventario/categories/${id}/`, { method: 'PATCH', body: data })
+
+export const deleteCategory = (id: number) =>
+  authed<void>(`/inventario/categories/${id}/`, { method: 'DELETE' })
+
+// Proveedores
+export const fetchSuppliers = (search?: string) =>
+  authed<Supplier[]>(`/inventario/suppliers/${search ? `?search=${search}` : ''}`)
+
+export const createSupplier = (data: Omit<Supplier, 'id'>) =>
+  authed<Supplier>('/inventario/suppliers/', { method: 'POST', body: data })
+
+export const updateSupplier = (id: number, data: Partial<Supplier>) =>
+  authed<Supplier>(`/inventario/suppliers/${id}/`, { method: 'PATCH', body: data })
+
+export const deleteSupplier = (id: number) =>
+  authed<void>(`/inventario/suppliers/${id}/`, { method: 'DELETE' })
+
+// Productos
+export const fetchProducts = (params?: { search?: string; category?: number }) => {
+  const query = new URLSearchParams()
+  if (params?.search) query.set('search', params.search)
+  if (params?.category) query.set('category', String(params.category))
+  const qs = query.toString()
+  return authed<Product[]>(`/inventario/products/${qs ? `?${qs}` : ''}`)
+}
+
+export const createProduct = (data: {
+  type: Product['type']
+  name: string
+  description?: string
+  category: number
+  supplier?: number | null
+  unit_of_measure: Product['unit_of_measure']
+  variants_input?: NewVariantInput[]
+}) => authed<Product>('/inventario/products/', { method: 'POST', body: data })
+
+export const updateProduct = (id: number, data: Partial<Product>) =>
+  authed<Product>(`/inventario/products/${id}/`, { method: 'PATCH', body: data })
+
+export const deleteProduct = (id: number) =>
+  authed<void>(`/inventario/products/${id}/`, { method: 'DELETE' })
+
+// Variantes
+export const createVariant = (
+  productId: number,
+  data: NewVariantInput & { attribute_value_ids?: number[] },
+) =>
+  authed<ProductVariant>('/inventario/product-variants/', {
+    method: 'POST',
+    body: { product: productId, ...data },
+  })
+
+export const updateVariant = (id: number, data: Partial<ProductVariant>) =>
+  authed<ProductVariant>(`/inventario/product-variants/${id}/`, {
+    method: 'PATCH',
+    body: data,
+  })
+
+export const deleteVariant = (id: number) =>
+  authed<void>(`/inventario/product-variants/${id}/`, { method: 'DELETE' })
+
+export const requestVariantImageUploadUrl = (variantId: number, contentType: string) =>
+  authed<{ upload_url: string; image_url: string }>(
+    `/inventario/product-variants/${variantId}/upload-image-url/`,
+    { method: 'POST', body: { content_type: contentType } },
+  )

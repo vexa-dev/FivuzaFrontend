@@ -29,7 +29,9 @@ function App() {
           <Route element={<TenantProtectedRoute />}>
             <Route element={<ErpLayout />}>
               <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/inventario" element={<InventoryPage />} />
+              <Route element={<TenantProtectedRoute requirePermission="INVENTORY_VIEW" />}>
+                <Route path="/inventario" element={<InventoryPage />} />
+              </Route>
               <Route path="/ventas" element={<SalesPage />} />
               <Route element={<TenantProtectedRoute requirePermission="USERS_MANAGE" />}>
                 <Route path="/usuarios" element={<UsersPage />} />
