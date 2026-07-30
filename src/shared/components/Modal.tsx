@@ -1,3 +1,4 @@
+import { X } from 'lucide-react'
 import type { ReactNode } from 'react'
 import './Modal.css'
 
@@ -19,7 +20,7 @@ export function Modal({ title, onClose, children }: ModalProps) {
             onClick={onClose}
             aria-label="Cerrar"
           >
-            ✕
+            <X size={16} strokeWidth={2} />
           </button>
         </div>
         <div className="modal-body">{children}</div>

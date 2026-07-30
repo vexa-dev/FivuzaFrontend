@@ -1,5 +1,7 @@
+import { PackageSearch, Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import '../core/CorePage.css'
+import { EmptyState } from '../../shared/components/EmptyState'
 import { useAuth } from '../auth/hooks/useAuth'
 import { CategoryFormModal } from './components/CategoryFormModal'
 import { ProductDetailModal } from './components/ProductDetailModal'
@@ -13,6 +15,22 @@ import { useDeleteSupplier, useSuppliers } from './hooks/useSuppliers'
 import { useDeleteWarehouse, useWarehouses } from './hooks/useWarehouses'
 
 type Tab = 'productos' | 'categorias' | 'proveedores' | 'almacenes'
+
+const TABS: [Tab, string][] = [
+  ['productos', 'Productos'],
+  ['categorias', 'Categorías'],
+  ['proveedores', 'Proveedores'],
+  ['almacenes', 'Almacenes'],
+]
+
+function LoadingRow() {
+  return (
+    <div className="loading-row">
+      <span className="spinner" />
+      Cargando...
+    </div>
+  )
+}
 
 export function InventoryPage() {
   const { hasPermission } = useAuth()
@@ -45,22 +63,19 @@ export function InventoryPage() {
 
   return (
     <div>
-      <h1 className="core-page-title">Inventario</h1>
-      <p className="core-page-subtitle">Catálogo, almacenes y proveedores</p>
+      <div className="page-header">
+        <div>
+          <h1 className="core-page-title">Inventario</h1>
+          <p className="core-page-subtitle">Catálogo, almacenes y proveedores</p>
+        </div>
+      </div>
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-        {(
-          [
-            ['productos', 'Productos'],
-            ['categorias', 'Categorías'],
-            ['proveedores', 'Proveedores'],
-            ['almacenes', 'Almacenes'],
-          ] as [Tab, string][]
-        ).map(([value, label]) => (
+      <div className="tabs">
+        {TABS.map(([value, label]) => (
           <button
             key={value}
             type="button"
-            className={tab === value ? 'btn btn-primary' : 'btn btn-ghost'}
+            className={`tab ${tab === value ? 'tab-active' : ''}`}
             onClick={() => setTab(value)}
           >
             {label}
@@ -70,22 +85,38 @@ export function InventoryPage() {
 
       {tab === 'productos' && (
         <div className="card core-table-card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-            <input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Buscar por nombre..."
-              style={{ maxWidth: 280 }}
-            />
+          <div className="table-toolbar">
+            <div className="search-input">
+              <Search />
+              <input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Buscar por nombre..."
+              />
+            </div>
             {canManage && (
               <button type="button" className="btn btn-primary" onClick={() => setShowProductForm(true)}>
-                + Nuevo producto
+                <Plus size={15} strokeWidth={2.5} />
+                Nuevo producto
               </button>
             )}
           </div>
 
-          {loadingProducts && <p className="core-state-message">Cargando...</p>}
-          {products && (
+          {loadingProducts && <LoadingRow />}
+          {products && products.length === 0 && (
+            <EmptyState
+              icon={<PackageSearch />}
+              title={search ? 'Sin resultados' : 'Todavía no hay productos'}
+              subtitle={
+                search
+                  ? 'Prueba con otro término de búsqueda.'
+                  : canManage
+                    ? 'Crea el primero con "Nuevo producto".'
+                    : 'Cuando se agreguen productos, aparecerán aquí.'
+              }
+            />
+          )}
+          {products && products.length > 0 && (
             <table className="core-table">
               <thead>
                 <tr>
@@ -101,27 +132,30 @@ export function InventoryPage() {
                     <td className="core-table-strong">{product.name}</td>
                     <td>{categoryName(product.category)}</td>
                     <td>{product.variants.length}</td>
-                    <td style={{ display: 'flex', gap: 6 }}>
-                      <button
-                        type="button"
-                        className="btn btn-ghost"
-                        onClick={() => setViewingProductId(product.id)}
-                      >
-                        Ver variantes
-                      </button>
-                      {canManage && (
+                    <td>
+                      <div className="row-actions">
                         <button
                           type="button"
-                          className="btn btn-ghost"
-                          onClick={() => {
-                            if (confirm(`¿Dar de baja ${product.name}?`)) {
-                              deleteProduct.mutate(product.id)
-                            }
-                          }}
+                          className="btn btn-ghost btn-sm"
+                          onClick={() => setViewingProductId(product.id)}
                         >
-                          Eliminar
+                          Ver variantes
                         </button>
-                      )}
+                        {canManage && (
+                          <button
+                            type="button"
+                            className="btn btn-danger-ghost btn-sm btn-icon"
+                            aria-label={`Eliminar ${product.name}`}
+                            onClick={() => {
+                              if (confirm(`¿Dar de baja ${product.name}?`)) {
+                                deleteProduct.mutate(product.id)
+                              }
+                            }}
+                          >
+                            <Trash2 />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -134,17 +168,22 @@ export function InventoryPage() {
       {tab === 'categorias' && (
         <div className="card core-table-card">
           {canManage && (
-            <button
-              type="button"
-              className="btn btn-primary"
-              style={{ marginBottom: 12 }}
-              onClick={() => setEditingCategory(null)}
-            >
-              + Nueva categoría
-            </button>
+            <div className="table-toolbar" style={{ justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => setEditingCategory(null)}
+              >
+                <Plus size={15} strokeWidth={2.5} />
+                Nueva categoría
+              </button>
+            </div>
           )}
-          {loadingCategories && <p className="core-state-message">Cargando...</p>}
-          {categories && (
+          {loadingCategories && <LoadingRow />}
+          {categories && categories.length === 0 && (
+            <EmptyState icon={<PackageSearch />} title="Todavía no hay categorías" />
+          )}
+          {categories && categories.length > 0 && (
             <table className="core-table">
               <thead>
                 <tr>
@@ -157,25 +196,29 @@ export function InventoryPage() {
                   <tr key={category.id}>
                     <td className="core-table-strong">{category.name}</td>
                     {canManage && (
-                      <td style={{ display: 'flex', gap: 6 }}>
-                        <button
-                          type="button"
-                          className="btn btn-ghost"
-                          onClick={() => setEditingCategory(category)}
-                        >
-                          Editar
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-ghost"
-                          onClick={() => {
-                            if (confirm(`¿Eliminar ${category.name}?`)) {
-                              deleteCategory.mutate(category.id)
-                            }
-                          }}
-                        >
-                          Eliminar
-                        </button>
+                      <td>
+                        <div className="row-actions">
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-sm btn-icon"
+                            aria-label={`Editar ${category.name}`}
+                            onClick={() => setEditingCategory(category)}
+                          >
+                            <Pencil />
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-danger-ghost btn-sm btn-icon"
+                            aria-label={`Eliminar ${category.name}`}
+                            onClick={() => {
+                              if (confirm(`¿Eliminar ${category.name}?`)) {
+                                deleteCategory.mutate(category.id)
+                              }
+                            }}
+                          >
+                            <Trash2 />
+                          </button>
+                        </div>
                       </td>
                     )}
                   </tr>
@@ -189,17 +232,22 @@ export function InventoryPage() {
       {tab === 'proveedores' && (
         <div className="card core-table-card">
           {canManage && (
-            <button
-              type="button"
-              className="btn btn-primary"
-              style={{ marginBottom: 12 }}
-              onClick={() => setEditingSupplier(null)}
-            >
-              + Nuevo proveedor
-            </button>
+            <div className="table-toolbar" style={{ justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => setEditingSupplier(null)}
+              >
+                <Plus size={15} strokeWidth={2.5} />
+                Nuevo proveedor
+              </button>
+            </div>
           )}
-          {loadingSuppliers && <p className="core-state-message">Cargando...</p>}
-          {suppliers && (
+          {loadingSuppliers && <LoadingRow />}
+          {suppliers && suppliers.length === 0 && (
+            <EmptyState icon={<PackageSearch />} title="Todavía no hay proveedores" />
+          )}
+          {suppliers && suppliers.length > 0 && (
             <table className="core-table">
               <thead>
                 <tr>
@@ -216,25 +264,29 @@ export function InventoryPage() {
                     <td className="core-table-strong">{supplier.company_name}</td>
                     <td>{supplier.phone}</td>
                     {canManage && (
-                      <td style={{ display: 'flex', gap: 6 }}>
-                        <button
-                          type="button"
-                          className="btn btn-ghost"
-                          onClick={() => setEditingSupplier(supplier)}
-                        >
-                          Editar
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-ghost"
-                          onClick={() => {
-                            if (confirm(`¿Eliminar ${supplier.company_name}?`)) {
-                              deleteSupplier.mutate(supplier.id)
-                            }
-                          }}
-                        >
-                          Eliminar
-                        </button>
+                      <td>
+                        <div className="row-actions">
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-sm btn-icon"
+                            aria-label={`Editar ${supplier.company_name}`}
+                            onClick={() => setEditingSupplier(supplier)}
+                          >
+                            <Pencil />
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-danger-ghost btn-sm btn-icon"
+                            aria-label={`Eliminar ${supplier.company_name}`}
+                            onClick={() => {
+                              if (confirm(`¿Eliminar ${supplier.company_name}?`)) {
+                                deleteSupplier.mutate(supplier.id)
+                              }
+                            }}
+                          >
+                            <Trash2 />
+                          </button>
+                        </div>
                       </td>
                     )}
                   </tr>
@@ -248,17 +300,22 @@ export function InventoryPage() {
       {tab === 'almacenes' && (
         <div className="card core-table-card">
           {canManage && (
-            <button
-              type="button"
-              className="btn btn-primary"
-              style={{ marginBottom: 12 }}
-              onClick={() => setEditingWarehouse(null)}
-            >
-              + Nuevo almacén
-            </button>
+            <div className="table-toolbar" style={{ justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => setEditingWarehouse(null)}
+              >
+                <Plus size={15} strokeWidth={2.5} />
+                Nuevo almacén
+              </button>
+            </div>
           )}
-          {loadingWarehouses && <p className="core-state-message">Cargando...</p>}
-          {warehouses && (
+          {loadingWarehouses && <LoadingRow />}
+          {warehouses && warehouses.length === 0 && (
+            <EmptyState icon={<PackageSearch />} title="Todavía no hay almacenes" />
+          )}
+          {warehouses && warehouses.length > 0 && (
             <table className="core-table">
               <thead>
                 <tr>
@@ -273,25 +330,29 @@ export function InventoryPage() {
                     <td className="core-table-strong">{warehouse.name}</td>
                     <td>{warehouse.address}</td>
                     {canManage && (
-                      <td style={{ display: 'flex', gap: 6 }}>
-                        <button
-                          type="button"
-                          className="btn btn-ghost"
-                          onClick={() => setEditingWarehouse(warehouse)}
-                        >
-                          Editar
-                        </button>
-                        <button
-                          type="button"
-                          className="btn btn-ghost"
-                          onClick={() => {
-                            if (confirm(`¿Eliminar ${warehouse.name}?`)) {
-                              deleteWarehouse.mutate(warehouse.id)
-                            }
-                          }}
-                        >
-                          Eliminar
-                        </button>
+                      <td>
+                        <div className="row-actions">
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-sm btn-icon"
+                            aria-label={`Editar ${warehouse.name}`}
+                            onClick={() => setEditingWarehouse(warehouse)}
+                          >
+                            <Pencil />
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-danger-ghost btn-sm btn-icon"
+                            aria-label={`Eliminar ${warehouse.name}`}
+                            onClick={() => {
+                              if (confirm(`¿Eliminar ${warehouse.name}?`)) {
+                                deleteWarehouse.mutate(warehouse.id)
+                              }
+                            }}
+                          >
+                            <Trash2 />
+                          </button>
+                        </div>
                       </td>
                     )}
                   </tr>
