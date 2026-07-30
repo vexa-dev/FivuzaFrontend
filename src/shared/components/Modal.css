@@ -1,12 +1,14 @@
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: color-mix(in srgb, black 45%, transparent);
+  background: color-mix(in srgb, black 50%, transparent);
+  backdrop-filter: blur(2px);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 1rem;
   z-index: 100;
+  animation: modal-fade-in 0.15s ease;
 }
 
 .modal-card {
@@ -14,6 +16,21 @@
   max-width: 28rem;
   max-height: 90vh;
   overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+  animation: modal-slide-in 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modal-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes modal-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
 }
 
 .modal-header {
@@ -30,18 +47,23 @@
 }
 
 .modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: transparent;
   border: none;
   color: var(--text-secondary);
   cursor: pointer;
-  font-size: 1rem;
   width: 28px;
   height: 28px;
   border-radius: 6px;
+  flex-shrink: 0;
+  transition: background 0.15s;
 }
 
 .modal-close:hover {
   background: var(--bg-surface-secondary);
+  color: var(--text-primary);
 }
 
 .modal-body {

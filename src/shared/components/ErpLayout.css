@@ -1,6 +1,6 @@
 .erp-layout {
   display: grid;
-  grid-template-columns: 240px 1fr;
+  grid-template-columns: 232px 1fr;
   min-height: 100vh;
   transition: grid-template-columns 0.15s ease;
 }
@@ -24,12 +24,15 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px;
+  padding: 18px 16px;
   border-bottom: 1px solid var(--border-subtle);
   white-space: nowrap;
 }
 
 .erp-sidebar-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: transparent;
   border: 1px solid var(--border-default);
   border-radius: 6px;
@@ -38,29 +41,46 @@
   color: var(--text-secondary);
   cursor: pointer;
   flex-shrink: 0;
+  transition: background 0.15s;
 }
 
 .erp-sidebar-toggle:hover {
   background: var(--bg-surface-secondary);
+  color: var(--text-primary);
 }
 
 .erp-sidebar-nav {
   display: flex;
   flex-direction: column;
   padding: 12px;
-  gap: 4px;
+  gap: 2px;
 }
 
 .erp-sidebar-link {
-  display: block;
-  padding: 10px 12px;
-  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
   color: var(--text-secondary);
   text-decoration: none;
   font-size: 0.875rem;
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
+  position: relative;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.erp-sidebar-link-icon {
+  flex-shrink: 0;
+}
+
+.erp-sidebar-link-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .erp-sidebar-link:hover {
@@ -69,8 +89,20 @@
 }
 
 .erp-sidebar-link-active {
-  background: var(--color-accent-100);
-  color: var(--color-accent-700);
+  background: var(--primary-subtle-bg);
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.erp-sidebar-link-active::before {
+  content: '';
+  position: absolute;
+  left: -12px;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--primary);
 }
 
 .erp-main {
@@ -83,11 +115,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 24px;
+  padding: 12px 24px;
   border-bottom: 1px solid var(--border-subtle);
   position: sticky;
   top: 0;
-  background: var(--bg-app);
+  background: color-mix(in srgb, var(--bg-app) 92%, transparent);
+  backdrop-filter: blur(6px);
   z-index: 10;
 }
 
@@ -97,8 +130,14 @@
   gap: 10px;
 }
 
+.erp-topbar-user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .erp-topbar-email {
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   color: var(--text-primary);
   font-weight: 500;
 }
@@ -106,10 +145,10 @@
 .erp-topbar-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .erp-content {
-  padding: 32px 24px;
+  padding: 28px 32px 48px;
   flex: 1;
 }

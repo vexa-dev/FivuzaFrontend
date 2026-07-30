@@ -5,6 +5,13 @@
   justify-content: center;
   padding: 1rem;
   position: relative;
+  background:
+    radial-gradient(circle at 15% 10%, var(--primary-subtle-bg) 0%, transparent 45%),
+    var(--bg-app);
+}
+
+.login-card {
+  box-shadow: var(--shadow-lg);
 }
 
 .login-theme-toggle {

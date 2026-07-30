@@ -1,5 +1,7 @@
+import { KeyRound, Pencil, Plus, Trash2, UsersRound } from 'lucide-react'
 import { useState } from 'react'
 import '../core/CorePage.css'
+import { EmptyState } from '../../shared/components/EmptyState'
 import { RolePermissionMatrix } from './components/RolePermissionMatrix'
 import { UserFormModal } from './components/UserFormModal'
 import { UserOverridesModal } from './components/UserOverridesModal'
@@ -21,9 +23,14 @@ export function UsersPage() {
 
   const roleName = (roleId: number) => roles?.find((role) => role.id === roleId)?.name ?? '—'
 
+  const formatDate = (value: string | null) =>
+    value
+      ? new Date(value).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' })
+      : 'Nunca'
+
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div className="page-header">
         <div>
           <h1 className="core-page-title">Usuarios y roles</h1>
           <p className="core-page-subtitle">Gestiona quién accede al sistema y qué puede hacer</p>
@@ -37,22 +44,23 @@ export function UsersPage() {
               setShowForm(true)
             }}
           >
-            + Nuevo usuario
+            <Plus size={15} strokeWidth={2.5} />
+            Nuevo usuario
           </button>
         )}
       </div>
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+      <div className="tabs">
         <button
           type="button"
-          className={tab === 'usuarios' ? 'btn btn-primary' : 'btn btn-ghost'}
+          className={`tab ${tab === 'usuarios' ? 'tab-active' : ''}`}
           onClick={() => setTab('usuarios')}
         >
           Usuarios
         </button>
         <button
           type="button"
-          className={tab === 'roles' ? 'btn btn-primary' : 'btn btn-ghost'}
+          className={`tab ${tab === 'roles' ? 'tab-active' : ''}`}
           onClick={() => setTab('roles')}
         >
           Roles y permisos
@@ -61,13 +69,21 @@ export function UsersPage() {
 
       {tab === 'usuarios' && (
         <div className="card core-table-card">
-          {isLoading && <p className="core-state-message">Cargando...</p>}
+          {isLoading && (
+            <div className="loading-row">
+              <span className="spinner" />
+              Cargando...
+            </div>
+          )}
           {error && (
             <p className="core-state-message" role="alert">
               No se pudieron cargar los usuarios.
             </p>
           )}
-          {users && (
+          {users && users.length === 0 && (
+            <EmptyState icon={<UsersRound />} title="Todavía no hay usuarios" />
+          )}
+          {users && users.length > 0 && (
             <table className="core-table">
               <thead>
                 <tr>
@@ -89,36 +105,41 @@ export function UsersPage() {
                         {user.is_active ? 'Activo' : 'Inactivo'}
                       </span>
                     </td>
-                    <td>{user.last_login ?? 'Nunca'}</td>
-                    <td style={{ display: 'flex', gap: 6 }}>
-                      <button
-                        type="button"
-                        className="btn btn-ghost"
-                        onClick={() => {
-                          setEditingUser(user)
-                          setShowForm(true)
-                        }}
-                      >
-                        Editar
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-ghost"
-                        onClick={() => setOverridesFor(user)}
-                      >
-                        Permisos
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-ghost"
-                        onClick={() => {
-                          if (confirm(`¿Dar de baja a ${user.email}?`)) {
-                            deleteUser.mutate(user.id)
-                          }
-                        }}
-                      >
-                        Eliminar
-                      </button>
+                    <td>{formatDate(user.last_login)}</td>
+                    <td>
+                      <div className="row-actions">
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-sm btn-icon"
+                          aria-label={`Editar ${user.email}`}
+                          onClick={() => {
+                            setEditingUser(user)
+                            setShowForm(true)
+                          }}
+                        >
+                          <Pencil />
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-sm btn-icon"
+                          aria-label={`Permisos de ${user.email}`}
+                          onClick={() => setOverridesFor(user)}
+                        >
+                          <KeyRound />
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-danger-ghost btn-sm btn-icon"
+                          aria-label={`Eliminar ${user.email}`}
+                          onClick={() => {
+                            if (confirm(`¿Dar de baja a ${user.email}?`)) {
+                              deleteUser.mutate(user.id)
+                            }
+                          }}
+                        >
+                          <Trash2 />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
