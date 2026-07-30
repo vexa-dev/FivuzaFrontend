@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../../features/auth/hooks/useAuth'
 import { useLogout } from '../../features/auth/hooks/useLogout'
+import { useLowStockVariants } from '../../features/inventory/hooks/useStock'
 import { Logo } from './Logo'
 import { ThemeToggle } from './ThemeToggle'
 import './ErpLayout.css'
@@ -18,8 +19,11 @@ export function ErpLayout() {
   const [collapsed, setCollapsed] = useState(false)
   const { user, hasPermission } = useAuth()
   const handleLogout = useLogout()
+  const canViewInventory = hasPermission('INVENTORY_VIEW')
+  const { data: lowStockVariants } = useLowStockVariants({ enabled: canViewInventory })
 
   const initial = user?.email?.[0]?.toUpperCase() ?? '?'
+  const lowStockCount = lowStockVariants?.length ?? 0
 
   return (
     <div className={`erp-layout ${collapsed ? 'erp-layout-collapsed' : ''}`}>
@@ -52,6 +56,14 @@ export function ErpLayout() {
               >
                 <Icon size={17} strokeWidth={2} className="erp-sidebar-link-icon" />
                 <span className="erp-sidebar-link-label">{item.label}</span>
+                {item.to === '/inventario' && lowStockCount > 0 && (
+                  <span
+                    className="erp-sidebar-link-badge"
+                    title={`${lowStockCount} variante(s) con stock bajo`}
+                  >
+                    {lowStockCount}
+                  </span>
+                )}
               </NavLink>
             )
           })}
