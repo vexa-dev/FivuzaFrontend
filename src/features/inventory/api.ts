@@ -65,6 +65,35 @@ export interface NewVariantInput {
   min_stock?: string
 }
 
+export interface StockRecord {
+  id: number
+  variant: number
+  warehouse: number
+  quantity: string
+  updated_at: string
+}
+
+export interface InventoryMovement {
+  id: number
+  variant: number
+  warehouse: number
+  user: number
+  type: 'IN' | 'OUT'
+  quantity: string
+  concept: 'PURCHASE' | 'SALE' | 'ADJUSTMENT' | 'RETURN'
+  resulting_balance: string
+  oversell_flag: boolean
+  created_at: string
+}
+
+export interface LowStockVariant {
+  id: number
+  sku: string
+  product_name: string
+  total_stock: string
+  min_stock: string
+}
+
 function authed<T>(path: string, init: Parameters<typeof tenantApiFetch>[1] = {}) {
   return tenantApiFetch<T>(path, { ...init, token: getAccessToken() })
 }
@@ -157,3 +186,41 @@ export const requestVariantImageUploadUrl = (variantId: number, contentType: str
     `/inventario/product-variants/${variantId}/upload-image-url/`,
     { method: 'POST', body: { content_type: contentType } },
   )
+
+// Stock / Kardex
+export const fetchStock = (params?: { variant?: number; warehouse?: number }) => {
+  const query = new URLSearchParams()
+  if (params?.variant) query.set('variant', String(params.variant))
+  if (params?.warehouse) query.set('warehouse', String(params.warehouse))
+  const qs = query.toString()
+  return authed<StockRecord[]>(`/inventario/stock/${qs ? `?${qs}` : ''}`)
+}
+
+export const fetchInventoryMovements = (params?: {
+  variant?: number
+  warehouse?: number
+  date_from?: string
+  date_to?: string
+}) => {
+  const query = new URLSearchParams()
+  if (params?.variant) query.set('variant', String(params.variant))
+  if (params?.warehouse) query.set('warehouse', String(params.warehouse))
+  if (params?.date_from) query.set('date_from', params.date_from)
+  if (params?.date_to) query.set('date_to', params.date_to)
+  const qs = query.toString()
+  return authed<InventoryMovement[]>(`/inventario/inventory-movements/${qs ? `?${qs}` : ''}`)
+}
+
+export const adjustStock = (data: {
+  variant: number
+  warehouse: number
+  counted_quantity: string
+  concept: 'PURCHASE' | 'SALE' | 'ADJUSTMENT' | 'RETURN'
+}) =>
+  authed<InventoryMovement>('/inventario/stock/adjust/', {
+    method: 'POST',
+    body: data,
+  })
+
+export const fetchLowStockVariants = () =>
+  authed<LowStockVariant[]>('/inventario/stock/low-stock/')

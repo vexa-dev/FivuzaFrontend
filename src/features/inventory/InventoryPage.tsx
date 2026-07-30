@@ -4,8 +4,10 @@ import '../core/CorePage.css'
 import { EmptyState } from '../../shared/components/EmptyState'
 import { useAuth } from '../auth/hooks/useAuth'
 import { CategoryFormModal } from './components/CategoryFormModal'
+import { KardexTab } from './components/KardexTab'
 import { ProductDetailModal } from './components/ProductDetailModal'
 import { ProductFormModal } from './components/ProductFormModal'
+import { StockAdjustTab } from './components/StockAdjustTab'
 import { SupplierFormModal } from './components/SupplierFormModal'
 import { WarehouseFormModal } from './components/WarehouseFormModal'
 import type { Category, Supplier, Warehouse } from './api'
@@ -14,13 +16,15 @@ import { useDeleteProduct, useProducts } from './hooks/useProducts'
 import { useDeleteSupplier, useSuppliers } from './hooks/useSuppliers'
 import { useDeleteWarehouse, useWarehouses } from './hooks/useWarehouses'
 
-type Tab = 'productos' | 'categorias' | 'proveedores' | 'almacenes'
+type Tab = 'productos' | 'categorias' | 'proveedores' | 'almacenes' | 'stock' | 'kardex'
 
 const TABS: [Tab, string][] = [
   ['productos', 'Productos'],
   ['categorias', 'Categorías'],
   ['proveedores', 'Proveedores'],
   ['almacenes', 'Almacenes'],
+  ['stock', 'Ajustar stock'],
+  ['kardex', 'Kardex'],
 ]
 
 function LoadingRow() {
@@ -43,6 +47,10 @@ export function InventoryPage() {
   const { data: suppliers, isLoading: loadingSuppliers } = useSuppliers()
   const { data: warehouses, isLoading: loadingWarehouses } = useWarehouses()
   const { data: products, isLoading: loadingProducts } = useProducts({ search })
+  // Sin filtro de busqueda -Kardex/Ajustar stock necesitan el catalogo
+  // completo, independiente de lo que el usuario haya buscado en la tab
+  // Productos (son pestañas distintas, no deberian compartir ese estado).
+  const { data: allProducts } = useProducts()
 
   const deleteCategory = useDeleteCategory()
   const deleteSupplier = useDeleteSupplier()
@@ -71,7 +79,7 @@ export function InventoryPage() {
       </div>
 
       <div className="tabs">
-        {TABS.map(([value, label]) => (
+        {TABS.filter(([value]) => value !== 'stock' || canManage).map(([value, label]) => (
           <button
             key={value}
             type="button"
@@ -361,6 +369,14 @@ export function InventoryPage() {
             </table>
           )}
         </div>
+      )}
+
+      {tab === 'stock' && canManage && (
+        <StockAdjustTab products={allProducts ?? []} warehouses={warehouses ?? []} />
+      )}
+
+      {tab === 'kardex' && (
+        <KardexTab products={allProducts ?? []} warehouses={warehouses ?? []} />
       )}
 
       {showProductForm && (
