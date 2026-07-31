@@ -6,11 +6,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 24px;
+  padding: 12px 24px;
   border-bottom: 1px solid var(--border-subtle);
   position: sticky;
   top: 0;
-  background: var(--bg-app);
+  background: color-mix(in srgb, var(--bg-app) 92%, transparent);
+  backdrop-filter: blur(6px);
   z-index: 10;
 }
 
@@ -23,7 +24,7 @@
 .core-content {
   max-width: 960px;
   margin: 0 auto;
-  padding: 32px 24px;
+  padding: 28px 24px 48px;
 }
 
 .core-page-title {
@@ -35,7 +36,7 @@
 .core-page-subtitle {
   color: var(--text-secondary);
   font-size: 0.875rem;
-  margin-bottom: 24px;
+  margin: 0;
 }
 
 .core-table-card {
