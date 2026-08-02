@@ -12,8 +12,19 @@ import { ErpLayout } from './shared/components/ErpLayout'
 
 // Code splitting por ruta (Sprint 7, build de producción): cada pantalla del
 // ERP se sirve como su propio chunk, para que el bundle inicial (login) no
-// cargue Inventario/Ventas/Usuarios/CorePage por adelantado.
-const CorePage = lazy(() => import('./features/core/CorePage').then((m) => ({ default: m.CorePage })))
+// cargue Inventario/Ventas/Usuarios/panel core por adelantado.
+const CoreLayout = lazy(() =>
+  import('./features/core/CoreLayout').then((m) => ({ default: m.CoreLayout })),
+)
+const CoreDashboardPage = lazy(() =>
+  import('./features/core/DashboardPage').then((m) => ({ default: m.DashboardPage })),
+)
+const TenantsPage = lazy(() =>
+  import('./features/core/TenantsPage').then((m) => ({ default: m.TenantsPage })),
+)
+const TenantDetailPage = lazy(() =>
+  import('./features/core/TenantDetailPage').then((m) => ({ default: m.TenantDetailPage })),
+)
 const DashboardPage = lazy(() =>
   import('./features/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage })),
 )
@@ -32,7 +43,12 @@ function App() {
             {/* Panel interno de Fivuza (platform_staff) -siempre bajo /admin. */}
             <Route path="/admin/login" element={<PlatformLoginPage />} />
             <Route element={<CoreProtectedRoute />}>
-              <Route path="/admin" element={<CorePage />} />
+              <Route element={<CoreLayout />}>
+                <Route path="/admin" element={<Navigate to="/admin/resumen" replace />} />
+                <Route path="/admin/resumen" element={<CoreDashboardPage />} />
+                <Route path="/admin/tenants" element={<TenantsPage />} />
+                <Route path="/admin/tenants/:id" element={<TenantDetailPage />} />
+              </Route>
             </Route>
 
             {/* ERP de cada tenant -se accede desde el subdominio del negocio. */}
