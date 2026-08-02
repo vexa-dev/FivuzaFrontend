@@ -3,6 +3,7 @@ import { useState } from 'react'
 import '../core/CorePage.css'
 import { EmptyState } from '../../shared/components/EmptyState'
 import { useAuth } from '../auth/hooks/useAuth'
+import { CatalogImportTab } from './components/CatalogImportTab'
 import { CategoryFormModal } from './components/CategoryFormModal'
 import { KardexTab } from './components/KardexTab'
 import { ProductDetailModal } from './components/ProductDetailModal'
@@ -27,6 +28,7 @@ type Tab =
   | 'kardex'
   | 'compras'
   | 'impuestos'
+  | 'importar'
 
 const TABS: [Tab, string][] = [
   ['productos', 'Productos'],
@@ -37,6 +39,7 @@ const TABS: [Tab, string][] = [
   ['kardex', 'Kardex'],
   ['compras', 'Compras'],
   ['impuestos', 'Impuestos'],
+  ['importar', 'Importar catálogo'],
 ]
 
 function LoadingRow() {
@@ -94,7 +97,7 @@ export function InventoryPage() {
       <div className="tabs">
         {TABS.filter(
           ([value]) =>
-            (value !== 'stock' || canManage) &&
+            (!['stock', 'importar'].includes(value) || canManage) &&
             (!['compras', 'impuestos'].includes(value) || canManagePurchases),
         ).map(([value, label]) => (
           <button
@@ -408,6 +411,8 @@ export function InventoryPage() {
       {tab === 'impuestos' && canManagePurchases && (
         <TaxRatesTab canManage={canManagePurchases} />
       )}
+
+      {tab === 'importar' && canManage && <CatalogImportTab />}
 
       {showProductForm && (
         <ProductFormModal

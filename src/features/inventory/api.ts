@@ -1,5 +1,5 @@
 import { getAccessToken } from '../auth/hooks/session'
-import { tenantApiFetch } from '../../shared/utils/tenantApiClient'
+import { tenantApiFetch, tenantApiFetchBlob } from '../../shared/utils/tenantApiClient'
 
 export interface Warehouse {
   id: number
@@ -294,3 +294,30 @@ export const receivePurchaseOrder = (id: number) =>
     `/inventario/purchase-orders/${id}/receive/`,
     { method: 'POST' },
   )
+
+// Importacion masiva de catalogo
+export interface CatalogImportRow {
+  row: number
+  sku: string
+  status: 'created' | 'error'
+  error?: string
+}
+
+export interface CatalogImportReport {
+  total: number
+  created: number
+  errors: number
+  rows: CatalogImportRow[]
+}
+
+export const downloadCatalogImportTemplate = () =>
+  tenantApiFetchBlob('/inventario/catalog-import/template/', getAccessToken())
+
+export const importCatalog = (file: File) => {
+  const formData = new FormData()
+  formData.append('file', file)
+  return authed<CatalogImportReport>('/inventario/catalog-import/', {
+    method: 'POST',
+    body: formData,
+  })
+}
