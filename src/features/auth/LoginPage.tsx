@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { Logo } from '../../shared/components/Logo'
 import { PasswordInput } from '../../shared/components/PasswordInput'
 import { ThemeToggle } from '../../shared/components/ThemeToggle'
@@ -45,6 +46,10 @@ export function LoginPage() {
           autoComplete="current-password"
           placeholder="••••••••"
         />
+
+        <Link to="/forgot-password" className="login-forgot-link">
+          ¿Olvidaste tu contraseña?
+        </Link>
 
         {formError && (
           <p className="login-error" role="alert">

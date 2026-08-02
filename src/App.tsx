@@ -4,8 +4,10 @@ import { AuthProvider as CoreAuthProvider } from './features/core/hooks/AuthCont
 import { CorePage } from './features/core/CorePage'
 import { LoginPage as PlatformLoginPage } from './features/core/LoginPage'
 import { ProtectedRoute as TenantProtectedRoute } from './features/auth/components/ProtectedRoute'
+import { ForgotPasswordPage } from './features/auth/ForgotPasswordPage'
 import { AuthProvider as TenantAuthProvider } from './features/auth/hooks/AuthContext'
 import { LoginPage as TenantLoginPage } from './features/auth/LoginPage'
+import { ResetPasswordPage } from './features/auth/ResetPasswordPage'
 import { DashboardPage } from './features/dashboard/DashboardPage'
 import { InventoryPage } from './features/inventory/InventoryPage'
 import { SalesPage } from './features/sales/SalesPage'
@@ -26,6 +28,8 @@ function App() {
           {/* ERP de cada tenant -se accede desde el subdominio del negocio. */}
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<TenantLoginPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route element={<TenantProtectedRoute />}>
             <Route element={<ErpLayout />}>
               <Route path="/dashboard" element={<DashboardPage />} />

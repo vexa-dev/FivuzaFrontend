@@ -15,3 +15,17 @@ export function logoutTenantUser(refresh: string) {
     token: getAccessToken(),
   })
 }
+
+export function requestPasswordReset(email: string) {
+  return tenantApiFetch<void>('/auth/password-reset/', {
+    method: 'POST',
+    body: { email },
+  })
+}
+
+export function confirmPasswordReset(token: string, newPassword: string) {
+  return tenantApiFetch<void>('/auth/password-reset/confirm/', {
+    method: 'POST',
+    body: { token, new_password: newPassword },
+  })
+}
