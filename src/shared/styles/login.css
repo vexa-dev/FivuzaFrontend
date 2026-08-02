@@ -55,3 +55,27 @@
   font-size: 0.8125rem;
   margin: 0.25rem 0 0;
 }
+
+.login-forgot-link {
+  align-self: flex-end;
+  color: var(--primary);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-decoration: none;
+  margin-top: 4px;
+}
+
+.login-forgot-link:hover {
+  text-decoration: underline;
+}
+
+.login-back-link {
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  text-decoration: none;
+  margin-top: 1rem;
+}
+
+.login-back-link:hover {
+  color: var(--text-primary);
+}

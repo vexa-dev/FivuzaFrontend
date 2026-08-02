@@ -7,8 +7,10 @@ import { CategoryFormModal } from './components/CategoryFormModal'
 import { KardexTab } from './components/KardexTab'
 import { ProductDetailModal } from './components/ProductDetailModal'
 import { ProductFormModal } from './components/ProductFormModal'
+import { PurchaseOrdersTab } from './components/PurchaseOrdersTab'
 import { StockAdjustTab } from './components/StockAdjustTab'
 import { SupplierFormModal } from './components/SupplierFormModal'
+import { TaxRatesTab } from './components/TaxRatesTab'
 import { WarehouseFormModal } from './components/WarehouseFormModal'
 import type { Category, Supplier, Warehouse } from './api'
 import { useCategories, useDeleteCategory } from './hooks/useCategories'
@@ -16,7 +18,15 @@ import { useDeleteProduct, useProducts } from './hooks/useProducts'
 import { useDeleteSupplier, useSuppliers } from './hooks/useSuppliers'
 import { useDeleteWarehouse, useWarehouses } from './hooks/useWarehouses'
 
-type Tab = 'productos' | 'categorias' | 'proveedores' | 'almacenes' | 'stock' | 'kardex'
+type Tab =
+  | 'productos'
+  | 'categorias'
+  | 'proveedores'
+  | 'almacenes'
+  | 'stock'
+  | 'kardex'
+  | 'compras'
+  | 'impuestos'
 
 const TABS: [Tab, string][] = [
   ['productos', 'Productos'],
@@ -25,6 +35,8 @@ const TABS: [Tab, string][] = [
   ['almacenes', 'Almacenes'],
   ['stock', 'Ajustar stock'],
   ['kardex', 'Kardex'],
+  ['compras', 'Compras'],
+  ['impuestos', 'Impuestos'],
 ]
 
 function LoadingRow() {
@@ -39,6 +51,7 @@ function LoadingRow() {
 export function InventoryPage() {
   const { hasPermission } = useAuth()
   const canManage = hasPermission('INVENTORY_MANAGE')
+  const canManagePurchases = hasPermission('PURCHASES_MANAGE')
 
   const [tab, setTab] = useState<Tab>('productos')
   const [search, setSearch] = useState('')
@@ -79,7 +92,11 @@ export function InventoryPage() {
       </div>
 
       <div className="tabs">
-        {TABS.filter(([value]) => value !== 'stock' || canManage).map(([value, label]) => (
+        {TABS.filter(
+          ([value]) =>
+            (value !== 'stock' || canManage) &&
+            (!['compras', 'impuestos'].includes(value) || canManagePurchases),
+        ).map(([value, label]) => (
           <button
             key={value}
             type="button"
@@ -377,6 +394,19 @@ export function InventoryPage() {
 
       {tab === 'kardex' && (
         <KardexTab products={allProducts ?? []} warehouses={warehouses ?? []} />
+      )}
+
+      {tab === 'compras' && canManagePurchases && (
+        <PurchaseOrdersTab
+          canManage={canManagePurchases}
+          suppliers={suppliers ?? []}
+          warehouses={warehouses ?? []}
+          products={allProducts ?? []}
+        />
+      )}
+
+      {tab === 'impuestos' && canManagePurchases && (
+        <TaxRatesTab canManage={canManagePurchases} />
       )}
 
       {showProductForm && (

@@ -224,3 +224,73 @@ export const adjustStock = (data: {
 
 export const fetchLowStockVariants = () =>
   authed<LowStockVariant[]>('/inventario/stock/low-stock/')
+
+// Impuestos
+export interface TaxRate {
+  id: number
+  name: string
+  percentage: string
+  is_active: boolean
+}
+
+export const fetchTaxRates = () => authed<TaxRate[]>('/inventario/tax-rates/')
+
+export const createTaxRate = (data: { name: string; percentage: string; is_active?: boolean }) =>
+  authed<TaxRate>('/inventario/tax-rates/', { method: 'POST', body: data })
+
+export const updateTaxRate = (id: number, data: Partial<TaxRate>) =>
+  authed<TaxRate>(`/inventario/tax-rates/${id}/`, { method: 'PATCH', body: data })
+
+export const deleteTaxRate = (id: number) =>
+  authed<void>(`/inventario/tax-rates/${id}/`, { method: 'DELETE' })
+
+// Ordenes de compra
+export interface PurchaseOrderDetail {
+  id: number
+  purchase_order: number
+  variant_id: number
+  quantity: string
+  unit_cost: string
+  subtotal: string
+}
+
+export interface PurchaseOrder {
+  id: number
+  supplier: number
+  warehouse: number
+  user: number
+  invoice_number: string
+  status: 'PENDING' | 'RECEIVED' | 'CANCELLED'
+  total: string
+  currency: string
+  received_at: string | null
+  details: PurchaseOrderDetail[]
+  created_at: string
+}
+
+export interface NewPurchaseOrderLine {
+  variant_id: number
+  quantity: string
+  unit_cost: string
+}
+
+export const fetchPurchaseOrders = (params?: { status?: string; supplier?: number }) => {
+  const query = new URLSearchParams()
+  if (params?.status) query.set('status', params.status)
+  if (params?.supplier) query.set('supplier', String(params.supplier))
+  const qs = query.toString()
+  return authed<PurchaseOrder[]>(`/inventario/purchase-orders/${qs ? `?${qs}` : ''}`)
+}
+
+export const createPurchaseOrder = (data: {
+  supplier: number
+  warehouse: number
+  invoice_number?: string
+  details_input: NewPurchaseOrderLine[]
+}) => authed<PurchaseOrder>('/inventario/purchase-orders/', { method: 'POST', body: data })
+
+export const receivePurchaseOrder = (id: number) =>
+  authed<{ id: number; status: string; movements_created: number }>(
+    `/inventario/purchase-orders/${id}/receive/`,
+    { method: 'POST' },
+  )
