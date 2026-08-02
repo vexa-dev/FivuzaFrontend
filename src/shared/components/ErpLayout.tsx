@@ -1,4 +1,4 @@
-import { LayoutDashboard, LogOut, Package, ShoppingCart, Users as UsersIcon } from 'lucide-react'
+import { LayoutDashboard, LogOut, Menu, Package, ShoppingCart, Users as UsersIcon } from 'lucide-react'
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../../features/auth/hooks/useAuth'
@@ -17,6 +17,10 @@ const NAV_ITEMS = [
 
 export function ErpLayout() {
   const [collapsed, setCollapsed] = useState(false)
+  // Independiente de "collapsed" (que en desktop solo angosta el sidebar):
+  // en mobile el sidebar vive fuera de pantalla por defecto y este estado
+  // lo trae como un drawer superpuesto, sin afectar el layout de desktop.
+  const [mobileOpen, setMobileOpen] = useState(false)
   const { user, hasPermission } = useAuth()
   const handleLogout = useLogout()
   const canViewInventory = hasPermission('INVENTORY_VIEW')
@@ -27,7 +31,11 @@ export function ErpLayout() {
 
   return (
     <div className={`erp-layout ${collapsed ? 'erp-layout-collapsed' : ''}`}>
-      <aside className="erp-sidebar">
+      {mobileOpen && (
+        <div className="erp-sidebar-backdrop" onClick={() => setMobileOpen(false)} />
+      )}
+
+      <aside className={`erp-sidebar ${mobileOpen ? 'erp-sidebar-mobile-open' : ''}`}>
         <div className="erp-sidebar-header">
           <Logo height={22} withWordmark={!collapsed} />
           <button
@@ -49,6 +57,7 @@ export function ErpLayout() {
               <NavLink
                 key={item.to}
                 to={item.to}
+                onClick={() => setMobileOpen(false)}
                 className={({ isActive }) =>
                   `erp-sidebar-link ${isActive ? 'erp-sidebar-link-active' : ''}`
                 }
@@ -73,6 +82,14 @@ export function ErpLayout() {
       <div className="erp-main">
         <header className="erp-topbar">
           <div className="erp-topbar-user">
+            <button
+              type="button"
+              className="erp-mobile-menu-toggle"
+              onClick={() => setMobileOpen(true)}
+              aria-label="Abrir menú"
+            >
+              <Menu size={20} strokeWidth={2} />
+            </button>
             <span className="avatar">{initial}</span>
             <div className="erp-topbar-user-info">
               <span className="erp-topbar-email">{user?.email}</span>

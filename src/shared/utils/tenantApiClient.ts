@@ -21,15 +21,28 @@ interface RequestOptions {
 }
 
 async function rawFetch<T>(path: string, options: RequestOptions): Promise<T> {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  const headers: Record<string, string> = {}
   if (options.token) {
     headers.Authorization = `Bearer ${options.token}`
+  }
+
+  // FormData (subida de archivos) nunca se serializa como JSON, y el
+  // Content-Type con el boundary lo pone el navegador solo -si lo fijamos
+  // a mano aqui, el boundary real se pierde y el backend no puede parsear
+  // el multipart.
+  const isFormData = options.body instanceof FormData
+  let body: BodyInit | undefined
+  if (isFormData) {
+    body = options.body as FormData
+  } else if (options.body) {
+    headers['Content-Type'] = 'application/json'
+    body = JSON.stringify(options.body)
   }
 
   const response = await fetch(`${getTenantApiUrl()}${path}`, {
     method: options.method ?? 'GET',
     headers,
-    body: options.body ? JSON.stringify(options.body) : undefined,
+    body,
   })
 
   const isJson = response.headers.get('content-type')?.includes('application/json')
@@ -40,6 +53,25 @@ async function rawFetch<T>(path: string, options: RequestOptions): Promise<T> {
   }
 
   return data as T
+}
+
+/**
+ * Descarga un archivo (ej. la plantilla CSV de importacion) autenticado con
+ * el mismo esquema de tenant -tenantApiFetch solo sabe parsear JSON, esta
+ * variante devuelve el Blob crudo para que el llamador dispare la descarga.
+ */
+export async function tenantApiFetchBlob(
+  path: string,
+  token: string | null,
+): Promise<Blob> {
+  const headers: Record<string, string> = {}
+  if (token) headers.Authorization = `Bearer ${token}`
+
+  const response = await fetch(`${getTenantApiUrl()}${path}`, { headers })
+  if (!response.ok) {
+    throw new ApiError(response.status, null)
+  }
+  return response.blob()
 }
 
 /**
