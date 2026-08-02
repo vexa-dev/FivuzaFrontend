@@ -190,6 +190,17 @@
   font-size: 0.875rem;
 }
 
+.audit-log-details {
+  background: var(--bg-surface-secondary);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+}
+
 .settings-toggle-row {
   display: flex;
   align-items: center;

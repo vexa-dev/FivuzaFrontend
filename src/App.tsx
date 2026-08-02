@@ -25,6 +25,21 @@ const TenantsPage = lazy(() =>
 const TenantDetailPage = lazy(() =>
   import('./features/core/TenantDetailPage').then((m) => ({ default: m.TenantDetailPage })),
 )
+const PlansPage = lazy(() =>
+  import('./features/core/PlansPage').then((m) => ({ default: m.PlansPage })),
+)
+const SubscriptionsPage = lazy(() =>
+  import('./features/core/SubscriptionsPage').then((m) => ({ default: m.SubscriptionsPage })),
+)
+const PaymentsPage = lazy(() =>
+  import('./features/core/PaymentsPage').then((m) => ({ default: m.PaymentsPage })),
+)
+const StaffPage = lazy(() =>
+  import('./features/core/StaffPage').then((m) => ({ default: m.StaffPage })),
+)
+const ActivityPage = lazy(() =>
+  import('./features/core/ActivityPage').then((m) => ({ default: m.ActivityPage })),
+)
 const DashboardPage = lazy(() =>
   import('./features/dashboard/DashboardPage').then((m) => ({ default: m.DashboardPage })),
 )
@@ -48,6 +63,13 @@ function App() {
                 <Route path="/admin/resumen" element={<CoreDashboardPage />} />
                 <Route path="/admin/tenants" element={<TenantsPage />} />
                 <Route path="/admin/tenants/:id" element={<TenantDetailPage />} />
+                <Route path="/admin/planes" element={<PlansPage />} />
+                <Route path="/admin/suscripciones" element={<SubscriptionsPage />} />
+                <Route path="/admin/pagos" element={<PaymentsPage />} />
+                <Route path="/admin/actividad" element={<ActivityPage />} />
+                <Route element={<CoreProtectedRoute requireRole={['SUPER_ADMIN']} />}>
+                  <Route path="/admin/equipo" element={<StaffPage />} />
+                </Route>
               </Route>
             </Route>
 

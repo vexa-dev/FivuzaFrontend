@@ -56,6 +56,13 @@
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.core-topbar-role {
+  font-size: 0.6875rem;
 }
 
 @media (max-width: 768px) {
