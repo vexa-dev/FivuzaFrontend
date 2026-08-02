@@ -1,5 +1,5 @@
 import { apiFetch } from '../../shared/utils/apiClient'
-import { getAccessToken, type PlatformTokens } from './hooks/session'
+import { getAccessToken, type PlatformStaffInfo, type PlatformTokens } from './hooks/session'
 
 export interface Tenant {
   id: number
@@ -23,6 +23,24 @@ export interface Plan {
   price_semiannual: string
   price_annual: string
   is_active: boolean
+}
+
+export const PLAN_FEATURE_CODES = [
+  'HAS_SALES_MODULE',
+  'HAS_PURCHASES_MODULE',
+  'HAS_VARIANTS',
+  'HAS_MULTI_WAREHOUSE',
+  'HAS_HR_MODULE',
+  'HAS_CASH_MODULE',
+] as const
+
+export type PlanFeatureCode = (typeof PLAN_FEATURE_CODES)[number]
+
+export interface PlanFeature {
+  id: number
+  plan: number
+  feature_code: PlanFeatureCode
+  is_enabled: boolean
 }
 
 export interface Subscription {
@@ -59,6 +77,16 @@ export interface TenantSettingsRecord {
   hr_module_enabled: boolean
   cash_module_enabled: boolean
   updated_at: string
+}
+
+export interface PlatformStaffRecord {
+  id: number
+  email: string
+  full_name: string
+  role: PlatformStaffInfo['role']
+  is_active: boolean
+  last_login: string | null
+  created_at: string
 }
 
 export interface PlatformAuditLog {
@@ -164,17 +192,103 @@ export function fetchPlans() {
   return apiFetch<Plan[]>('/core/plans/', { token: getAccessToken() })
 }
 
-export function fetchSubscriptions(tenantId: number) {
-  return apiFetch<Subscription[]>(`/core/subscriptions/?tenant=${tenantId}`, {
+export interface PlanPayload {
+  code: string
+  name: string
+  max_users: number
+  price_monthly: string
+  price_semiannual: string
+  price_annual: string
+  is_active?: boolean
+}
+
+export function createPlan(payload: PlanPayload) {
+  return apiFetch<Plan>('/core/plans/', { method: 'POST', body: payload, token: getAccessToken() })
+}
+
+export function updatePlan(id: number, payload: Partial<PlanPayload>) {
+  return apiFetch<Plan>(`/core/plans/${id}/`, {
+    method: 'PATCH',
+    body: payload,
     token: getAccessToken(),
   })
 }
 
-export function fetchPayments(subscriptionId: number) {
-  return apiFetch<SubscriptionPayment[]>(
-    `/core/subscription-payments/?subscription=${subscriptionId}`,
-    { token: getAccessToken() },
-  )
+export function fetchPlanFeatures(planId: number) {
+  return apiFetch<PlanFeature[]>(`/core/plan-features/?plan=${planId}`, {
+    token: getAccessToken(),
+  })
+}
+
+export function createPlanFeature(plan: number, featureCode: PlanFeatureCode, isEnabled: boolean) {
+  return apiFetch<PlanFeature>('/core/plan-features/', {
+    method: 'POST',
+    body: { plan, feature_code: featureCode, is_enabled: isEnabled },
+    token: getAccessToken(),
+  })
+}
+
+export function updatePlanFeature(id: number, isEnabled: boolean) {
+  return apiFetch<PlanFeature>(`/core/plan-features/${id}/`, {
+    method: 'PATCH',
+    body: { is_enabled: isEnabled },
+    token: getAccessToken(),
+  })
+}
+
+export interface SubscriptionFilters {
+  tenant?: number
+  status?: Subscription['status']
+}
+
+export function fetchSubscriptions(filters: SubscriptionFilters = {}) {
+  const params = new URLSearchParams()
+  if (filters.tenant) params.set('tenant', String(filters.tenant))
+  if (filters.status) params.set('status', filters.status)
+  return apiFetch<Subscription[]>(`/core/subscriptions/?${params.toString()}`, {
+    token: getAccessToken(),
+  })
+}
+
+export function updateSubscription(
+  id: number,
+  data: Partial<Pick<Subscription, 'plan' | 'billing_cycle' | 'status' | 'expires_at'>>,
+) {
+  return apiFetch<Subscription>(`/core/subscriptions/${id}/`, {
+    method: 'PATCH',
+    body: data,
+    token: getAccessToken(),
+  })
+}
+
+export interface PaymentFilters {
+  subscription?: number
+  status?: SubscriptionPayment['status']
+}
+
+export function fetchPayments(filters: PaymentFilters = {}) {
+  const params = new URLSearchParams()
+  if (filters.subscription) params.set('subscription', String(filters.subscription))
+  if (filters.status) params.set('status', filters.status)
+  return apiFetch<SubscriptionPayment[]>(`/core/subscription-payments/?${params.toString()}`, {
+    token: getAccessToken(),
+  })
+}
+
+export interface CreatePaymentPayload {
+  subscription: number
+  amount: string
+  payment_method: SubscriptionPayment['payment_method']
+  external_reference?: string
+  status: SubscriptionPayment['status']
+}
+
+export function createPayment(payload: CreatePaymentPayload) {
+  return apiFetch<SubscriptionPayment>('/core/subscription-payments/', {
+    method: 'POST',
+    body: payload,
+    token: getAccessToken(),
+  })
 }
 
 export function confirmPayment(id: number) {
@@ -182,6 +296,34 @@ export function confirmPayment(id: number) {
     `/core/subscription-payments/${id}/confirm/`,
     { method: 'POST', body: {}, token: getAccessToken() },
   )
+}
+
+export function fetchStaff() {
+  return apiFetch<PlatformStaffRecord[]>('/core/platform-staff/', { token: getAccessToken() })
+}
+
+export interface StaffPayload {
+  email: string
+  full_name: string
+  role: PlatformStaffInfo['role']
+  password?: string
+  is_active?: boolean
+}
+
+export function createStaff(payload: StaffPayload) {
+  return apiFetch<PlatformStaffRecord>('/core/platform-staff/', {
+    method: 'POST',
+    body: payload,
+    token: getAccessToken(),
+  })
+}
+
+export function updateStaff(id: number, payload: Partial<StaffPayload>) {
+  return apiFetch<PlatformStaffRecord>(`/core/platform-staff/${id}/`, {
+    method: 'PATCH',
+    body: payload,
+    token: getAccessToken(),
+  })
 }
 
 export function fetchTenantSettings(tenantId: number) {
@@ -213,6 +355,28 @@ export function updateTenantSettings(
 export function fetchTenantAuditLogs(entityId: number) {
   return apiFetch<PaginatedResponse<PlatformAuditLog>>(
     `/core/platform-audit-logs/?entity=Tenant&entity_id=${entityId}&ordering=-created_at`,
+    { token: getAccessToken() },
+  )
+}
+
+export interface AuditLogFilters {
+  platform_staff?: number
+  entity?: string
+  date_from?: string
+  date_to?: string
+  page?: number
+}
+
+export function fetchAuditLogs(filters: AuditLogFilters = {}) {
+  const params = new URLSearchParams()
+  params.set('ordering', '-created_at')
+  if (filters.platform_staff) params.set('platform_staff', String(filters.platform_staff))
+  if (filters.entity) params.set('entity', filters.entity)
+  if (filters.date_from) params.set('date_from', filters.date_from)
+  if (filters.date_to) params.set('date_to', filters.date_to)
+  if (filters.page) params.set('page', String(filters.page))
+  return apiFetch<PaginatedResponse<PlatformAuditLog>>(
+    `/core/platform-audit-logs/?${params.toString()}`,
     { token: getAccessToken() },
   )
 }

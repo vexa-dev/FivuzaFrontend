@@ -17,14 +17,14 @@ export function usePlans() {
 export function useTenantSubscriptions(tenantId: number) {
   return useQuery({
     queryKey: ['core', 'subscriptions', tenantId],
-    queryFn: () => fetchSubscriptions(tenantId),
+    queryFn: () => fetchSubscriptions({ tenant: tenantId }),
   })
 }
 
 export function useSubscriptionPayments(subscriptionId: number | undefined) {
   return useQuery({
     queryKey: ['core', 'payments', subscriptionId],
-    queryFn: () => fetchPayments(subscriptionId as number),
+    queryFn: () => fetchPayments({ subscription: subscriptionId as number }),
     enabled: subscriptionId !== undefined,
   })
 }
