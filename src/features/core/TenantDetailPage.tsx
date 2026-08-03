@@ -1,6 +1,7 @@
 import { ArrowLeft, CheckCircle2, ShieldAlert } from 'lucide-react'
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { OnboardingBadges } from './components/OnboardingBadges'
 import { StartImpersonationModal } from './components/StartImpersonationModal'
 import { useAuth } from './hooks/useAuth'
 import { useTenant } from './hooks/useTenantLifecycle'
@@ -17,15 +18,32 @@ import {
   useSetFeatureOverride,
   useTenantFeatureOverrides,
 } from './hooks/useFeatureOverrides'
+import {
+  useCreateSubscriptionDiscount,
+  useCreateTenantNote,
+  useRemoveSubscriptionDiscount,
+  useSubscriptionDiscounts,
+  useTenantHealth,
+  useTenantNotes,
+} from './hooks/useTenantExtras'
 import { PLAN_FEATURE_CODES, type Tenant, type TenantSettingsRecord } from './api'
 
-type Tab = 'general' | 'suscripcion' | 'modulos' | 'caracteristicas' | 'actividad'
+type Tab =
+  | 'general'
+  | 'suscripcion'
+  | 'modulos'
+  | 'caracteristicas'
+  | 'notas'
+  | 'salud'
+  | 'actividad'
 
 const TABS: [Tab, string][] = [
   ['general', 'Datos generales'],
   ['suscripcion', 'Suscripción y pagos'],
   ['modulos', 'Módulos'],
   ['caracteristicas', 'Características especiales'],
+  ['notas', 'Notas internas'],
+  ['salud', 'Salud técnica'],
   ['actividad', 'Actividad'],
 ]
 
@@ -110,6 +128,8 @@ export function TenantDetailPage() {
       {tab === 'suscripcion' && <SubscriptionTab tenantId={tenant.id} />}
       {tab === 'modulos' && <ModulesTab tenantId={tenant.id} />}
       {tab === 'caracteristicas' && <FeatureOverridesTab tenantId={tenant.id} />}
+      {tab === 'notas' && <NotesTab tenantId={tenant.id} />}
+      {tab === 'salud' && <HealthTab tenantId={tenant.id} />}
       {tab === 'actividad' && <ActivityTab tenantId={tenant.id} />}
 
       {showImpersonationModal && (
@@ -124,7 +144,14 @@ export function TenantDetailPage() {
 
 function GeneralTab({ tenant }: { tenant: Tenant }) {
   return (
-    <div className="card" style={{ padding: 20 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div className="card" style={{ padding: 20 }}>
+        <span className="summary-section-title" style={{ display: 'block', marginBottom: 10 }}>
+          Onboarding
+        </span>
+        <OnboardingBadges tenantId={tenant.id} />
+      </div>
+      <div className="card" style={{ padding: 20 }}>
       <dl className="detail-grid">
         <dt>Nombre</dt>
         <dd>{tenant.company_name}</dd>
@@ -152,7 +179,8 @@ function GeneralTab({ tenant }: { tenant: Tenant }) {
             <dd>{formatDate(tenant.canceled_at)}</dd>
           </>
         )}
-      </dl>
+        </dl>
+      </div>
     </div>
   )
 }
@@ -258,6 +286,124 @@ function SubscriptionTab({ tenantId }: { tenantId: number }) {
           </table>
         )}
       </div>
+
+      <DiscountSection subscriptionId={currentSubscription.id} />
+    </div>
+  )
+}
+
+function DiscountSection({ subscriptionId }: { subscriptionId: number }) {
+  const { hasRole } = useAuth()
+  const { data: discounts, isLoading } = useSubscriptionDiscounts(subscriptionId)
+  const createDiscount = useCreateSubscriptionDiscount()
+  const removeDiscount = useRemoveSubscriptionDiscount(subscriptionId)
+  const [discountType, setDiscountType] = useState<'discount_percent' | 'override_price'>(
+    'discount_percent',
+  )
+  const [value, setValue] = useState('')
+  const [reason, setReason] = useState('')
+  const [error, setError] = useState<string | null>(null)
+
+  if (!hasRole('SUPER_ADMIN', 'BILLING')) {
+    return null
+  }
+
+  const activeDiscount = discounts?.[0]
+
+  const handleSubmit = (event: FormEvent) => {
+    event.preventDefault()
+    setError(null)
+    if (!value.trim() || !reason.trim()) {
+      setError('El valor y el motivo son requeridos.')
+      return
+    }
+    createDiscount
+      .mutateAsync({
+        subscription_id: subscriptionId,
+        [discountType]: value,
+        reason,
+      })
+      .then(() => {
+        setValue('')
+        setReason('')
+      })
+      .catch(() => setError('No se pudo aplicar el descuento.'))
+  }
+
+  return (
+    <div className="card" style={{ padding: 20 }}>
+      <span className="summary-section-title" style={{ display: 'block', marginBottom: 12 }}>
+        Descuento de suscripción
+      </span>
+
+      {isLoading && (
+        <div className="loading-row">
+          <span className="spinner" />
+          Cargando...
+        </div>
+      )}
+
+      {activeDiscount ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <p style={{ margin: 0, fontWeight: 600 }}>
+              {activeDiscount.discount_percent
+                ? `${activeDiscount.discount_percent}% de descuento`
+                : `Precio fijo: ${activeDiscount.override_price}`}
+            </p>
+            <p className="core-state-message" style={{ margin: '4px 0 0' }}>
+              {activeDiscount.reason}
+              {activeDiscount.expires_at && ` · vence ${formatDate(activeDiscount.expires_at)}`}
+            </p>
+          </div>
+          <button
+            type="button"
+            className="btn btn-danger-ghost btn-sm"
+            disabled={removeDiscount.isPending}
+            onClick={() => removeDiscount.mutate(activeDiscount.id)}
+          >
+            Quitar descuento
+          </button>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <select
+              value={discountType}
+              onChange={(event) =>
+                setDiscountType(event.target.value as 'discount_percent' | 'override_price')
+              }
+            >
+              <option value="discount_percent">% de descuento</option>
+              <option value="override_price">Precio fijo</option>
+            </select>
+            <input
+              value={value}
+              onChange={(event) => setValue(event.target.value)}
+              placeholder={discountType === 'discount_percent' ? '20' : '50.00'}
+            />
+          </div>
+          <textarea
+            value={reason}
+            onChange={(event) => setReason(event.target.value)}
+            placeholder="Motivo (ej. negociación por ser tenant piloto)"
+            rows={2}
+          />
+          {error && (
+            <p className="login-error" role="alert">
+              {error}
+            </p>
+          )}
+          <button
+            type="submit"
+            className="btn btn-primary btn-sm"
+            disabled={createDiscount.isPending}
+            style={{ alignSelf: 'flex-start' }}
+          >
+            {createDiscount.isPending ? 'Aplicando...' : 'Aplicar descuento'}
+          </button>
+        </form>
+      )}
     </div>
   )
 }
@@ -412,6 +558,112 @@ function ActivityTab({ tenantId }: { tenantId: number }) {
           ))}
         </tbody>
       </table>
+    </div>
+  )
+}
+
+function NotesTab({ tenantId }: { tenantId: number }) {
+  const { data: notes, isLoading } = useTenantNotes(tenantId)
+  const createNote = useCreateTenantNote(tenantId)
+  const [text, setText] = useState('')
+  const [error, setError] = useState<string | null>(null)
+
+  const handleSubmit = (event: FormEvent) => {
+    event.preventDefault()
+    setError(null)
+    if (!text.trim()) {
+      setError('La nota no puede estar vacía.')
+      return
+    }
+    createNote.mutateAsync(text).then(() => setText('')).catch(() => setError('No se pudo guardar la nota.'))
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div className="card" style={{ padding: 20 }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <textarea
+            value={text}
+            onChange={(event) => setText(event.target.value)}
+            placeholder="Agregar una nota interna sobre este tenant..."
+            rows={3}
+          />
+          {error && (
+            <p className="login-error" role="alert">
+              {error}
+            </p>
+          )}
+          <button
+            type="submit"
+            className="btn btn-primary btn-sm"
+            disabled={createNote.isPending}
+            style={{ alignSelf: 'flex-start' }}
+          >
+            {createNote.isPending ? 'Guardando...' : 'Agregar nota'}
+          </button>
+        </form>
+      </div>
+
+      {isLoading && (
+        <div className="loading-row">
+          <span className="spinner" />
+          Cargando...
+        </div>
+      )}
+      {notes && notes.length === 0 && (
+        <p className="core-state-message">Todavía no hay notas internas para este tenant.</p>
+      )}
+      {notes && notes.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {notes.map((note) => (
+            <div key={note.id} className="card" style={{ padding: 16 }}>
+              <p style={{ margin: '0 0 6px', whiteSpace: 'pre-wrap' }}>{note.text}</p>
+              <p className="core-state-message" style={{ margin: 0 }}>
+                {note.platform_staff.full_name} · {formatDate(note.created_at)}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function HealthTab({ tenantId }: { tenantId: number }) {
+  const { data, isLoading } = useTenantHealth(tenantId)
+
+  if (isLoading) {
+    return (
+      <div className="loading-row">
+        <span className="spinner" />
+        Cargando...
+      </div>
+    )
+  }
+
+  if (!data) {
+    return <p className="core-state-message">No se pudo cargar la salud técnica de este tenant.</p>
+  }
+
+  return (
+    <div className="card" style={{ padding: 20 }}>
+      <dl className="detail-grid">
+        <dt>Errores recientes (24h)</dt>
+        <dd>
+          <span
+            className={`badge ${data.recent_errors_count > 0 ? 'badge-danger' : 'badge-success'}`}
+          >
+            <span className="dot" />
+            {data.recent_errors_count}
+          </span>
+        </dd>
+        <dt>Último error</dt>
+        <dd>{formatDate(data.last_error_at)}</dd>
+        <dt>Último login</dt>
+        <dd>{formatDate(data.last_login_at)}</dd>
+        <dt>Última venta</dt>
+        <dd>{formatDate(data.last_sale_at)}</dd>
+      </dl>
     </div>
   )
 }
