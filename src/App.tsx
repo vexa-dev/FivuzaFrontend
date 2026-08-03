@@ -48,6 +48,11 @@ const InventoryPage = lazy(() =>
 )
 const SalesPage = lazy(() => import('./features/sales/SalesPage').then((m) => ({ default: m.SalesPage })))
 const UsersPage = lazy(() => import('./features/users/UsersPage').then((m) => ({ default: m.UsersPage })))
+const ImpersonateLandingPage = lazy(() =>
+  import('./features/auth/ImpersonateLandingPage').then((m) => ({
+    default: m.ImpersonateLandingPage,
+  })),
+)
 
 function App() {
   return (
@@ -78,6 +83,7 @@ function App() {
             <Route path="/login" element={<TenantLoginPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/impersonate" element={<ImpersonateLandingPage />} />
             <Route element={<TenantProtectedRoute />}>
               <Route element={<ErpLayout />}>
                 <Route path="/dashboard" element={<DashboardPage />} />

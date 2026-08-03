@@ -12,6 +12,7 @@ export interface Tenant {
   canceled_at: string | null
   provisioning_status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED'
   created_on: string
+  domain: string | null
 }
 
 export interface Plan {
@@ -383,4 +384,62 @@ export function fetchAuditLogs(filters: AuditLogFilters = {}) {
 
 export function fetchDashboardSummary() {
   return apiFetch<DashboardSummary>('/core/dashboard/summary/', { token: getAccessToken() })
+}
+
+export interface ImpersonationStartResult {
+  session_id: number
+  access_token: string
+  expires_at: string
+  user: {
+    id: number
+    email: string
+    role: string
+    permissions: string[]
+  }
+}
+
+export function startImpersonation(tenantId: number, reason: string) {
+  return apiFetch<ImpersonationStartResult>(`/core/tenants/${tenantId}/impersonation/`, {
+    method: 'POST',
+    body: { reason },
+    token: getAccessToken(),
+  })
+}
+
+export function endImpersonationSession(tenantId: number, sessionId: number) {
+  return apiFetch<void>(`/core/tenants/${tenantId}/impersonation/${sessionId}/`, {
+    method: 'DELETE',
+    token: getAccessToken(),
+  })
+}
+
+export interface TenantFeatureOverride {
+  id: number
+  tenant: number
+  feature_code: PlanFeatureCode
+  is_enabled: boolean
+}
+
+export function fetchTenantFeatureOverrides(tenantId: number) {
+  return apiFetch<TenantFeatureOverride[]>(`/core/tenants/${tenantId}/feature-overrides/`, {
+    token: getAccessToken(),
+  })
+}
+
+export function setTenantFeatureOverride(
+  tenantId: number,
+  featureCode: PlanFeatureCode,
+  isEnabled: boolean,
+) {
+  return apiFetch<{ tenant_id: number; feature_code: string; is_enabled: boolean }>(
+    `/core/tenants/${tenantId}/feature-overrides/${featureCode}/`,
+    { method: 'PATCH', body: { is_enabled: isEnabled }, token: getAccessToken() },
+  )
+}
+
+export function removeTenantFeatureOverride(tenantId: number, featureCode: PlanFeatureCode) {
+  return apiFetch<void>(`/core/tenants/${tenantId}/feature-overrides/${featureCode}/`, {
+    method: 'DELETE',
+    token: getAccessToken(),
+  })
 }

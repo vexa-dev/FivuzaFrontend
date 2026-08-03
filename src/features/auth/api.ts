@@ -29,3 +29,11 @@ export function confirmPasswordReset(token: string, newPassword: string) {
     body: { token, new_password: newPassword },
   })
 }
+
+export function endImpersonation() {
+  return tenantApiFetch<void>('/impersonation/end/', {
+    method: 'POST',
+    body: {},
+    token: getAccessToken(),
+  })
+}
