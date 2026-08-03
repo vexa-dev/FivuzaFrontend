@@ -1,6 +1,8 @@
-import { ArrowLeft, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, CheckCircle2, ShieldAlert } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { StartImpersonationModal } from './components/StartImpersonationModal'
+import { useAuth } from './hooks/useAuth'
 import { useTenant } from './hooks/useTenantLifecycle'
 import {
   useConfirmPayment,
@@ -10,14 +12,20 @@ import {
   useTenantSubscriptions,
   useUpdateTenantSettings,
 } from './hooks/useTenantBilling'
-import type { Tenant, TenantSettingsRecord } from './api'
+import {
+  useRemoveFeatureOverride,
+  useSetFeatureOverride,
+  useTenantFeatureOverrides,
+} from './hooks/useFeatureOverrides'
+import { PLAN_FEATURE_CODES, type Tenant, type TenantSettingsRecord } from './api'
 
-type Tab = 'general' | 'suscripcion' | 'modulos' | 'actividad'
+type Tab = 'general' | 'suscripcion' | 'modulos' | 'caracteristicas' | 'actividad'
 
 const TABS: [Tab, string][] = [
   ['general', 'Datos generales'],
   ['suscripcion', 'Suscripción y pagos'],
   ['modulos', 'Módulos'],
+  ['caracteristicas', 'Características especiales'],
   ['actividad', 'Actividad'],
 ]
 
@@ -45,6 +53,8 @@ export function TenantDetailPage() {
   const { id } = useParams<{ id: string }>()
   const tenantId = Number(id)
   const [tab, setTab] = useState<Tab>('general')
+  const [showImpersonationModal, setShowImpersonationModal] = useState(false)
+  const { hasRole } = useAuth()
 
   const { data: tenant, isLoading } = useTenant(tenantId)
 
@@ -71,6 +81,16 @@ export function TenantDetailPage() {
             {tenant.schema_name} · {STATUS_LABEL[tenant.status]}
           </p>
         </div>
+        {hasRole('SUPER_ADMIN', 'SUPPORT') && (
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => setShowImpersonationModal(true)}
+          >
+            <ShieldAlert size={15} strokeWidth={2} />
+            Ingresar como soporte
+          </button>
+        )}
       </div>
 
       <div className="tabs">
@@ -89,7 +109,15 @@ export function TenantDetailPage() {
       {tab === 'general' && <GeneralTab tenant={tenant} />}
       {tab === 'suscripcion' && <SubscriptionTab tenantId={tenant.id} />}
       {tab === 'modulos' && <ModulesTab tenantId={tenant.id} />}
+      {tab === 'caracteristicas' && <FeatureOverridesTab tenantId={tenant.id} />}
       {tab === 'actividad' && <ActivityTab tenantId={tenant.id} />}
+
+      {showImpersonationModal && (
+        <StartImpersonationModal
+          tenant={tenant}
+          onClose={() => setShowImpersonationModal(false)}
+        />
+      )}
     </div>
   )
 }
@@ -270,6 +298,79 @@ function ModulesTab({ tenantId }: { tenantId: number }) {
             <span>{label}</span>
           </label>
         ))}
+      </div>
+    </div>
+  )
+}
+
+function FeatureOverridesTab({ tenantId }: { tenantId: number }) {
+  const { data: overrides, isLoading } = useTenantFeatureOverrides(tenantId)
+  const setOverride = useSetFeatureOverride(tenantId)
+  const removeOverride = useRemoveFeatureOverride(tenantId)
+
+  if (isLoading) {
+    return (
+      <div className="loading-row">
+        <span className="spinner" />
+        Cargando...
+      </div>
+    )
+  }
+
+  const overrideByCode = new Map((overrides ?? []).map((o) => [o.feature_code, o]))
+
+  return (
+    <div className="card" style={{ padding: 20 }}>
+      <p className="core-state-message" style={{ marginBottom: 14 }}>
+        Activa o desactiva una característica para ESTE tenant, sin cambiarle de plan contratado.
+      </p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {PLAN_FEATURE_CODES.map((code) => {
+          const override = overrideByCode.get(code)
+          return (
+            <div
+              key={code}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12,
+              }}
+            >
+              <label className="settings-toggle-row">
+                <input
+                  type="checkbox"
+                  checked={override?.is_enabled ?? false}
+                  onChange={(event) =>
+                    setOverride.mutate({ featureCode: code, isEnabled: event.target.checked })
+                  }
+                />
+                <span>{code}</span>
+              </label>
+              {override ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span className="badge badge-warning">
+                    <span className="dot" />
+                    Override individual
+                  </span>
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    disabled={removeOverride.isPending}
+                    onClick={() => removeOverride.mutate(code)}
+                  >
+                    Volver al plan
+                  </button>
+                </div>
+              ) : (
+                <span className="badge badge-neutral">
+                  <span className="dot" />
+                  Heredado del plan
+                </span>
+              )}
+            </div>
+          )
+        })}
       </div>
     </div>
   )

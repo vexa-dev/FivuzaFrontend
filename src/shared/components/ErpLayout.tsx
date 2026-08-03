@@ -4,6 +4,7 @@ import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../../features/auth/hooks/useAuth'
 import { useLogout } from '../../features/auth/hooks/useLogout'
 import { useLowStockVariants } from '../../features/inventory/hooks/useStock'
+import { ImpersonationBanner } from './ImpersonationBanner'
 import { Logo } from './Logo'
 import { ThemeToggle } from './ThemeToggle'
 import './ErpLayout.css'
@@ -31,6 +32,7 @@ export function ErpLayout() {
 
   return (
     <div className={`erp-layout ${collapsed ? 'erp-layout-collapsed' : ''}`}>
+      <ImpersonationBanner />
       {mobileOpen && (
         <div className="erp-sidebar-backdrop" onClick={() => setMobileOpen(false)} />
       )}
