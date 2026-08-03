@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { EmptyState } from '../../shared/components/EmptyState'
 import type { Tenant } from './api'
 import { CancelTenantModal } from './components/CancelTenantModal'
+import { OnboardingBadges } from './components/OnboardingBadges'
 import { ReactivateTenantModal } from './components/ReactivateTenantModal'
 import { RegisterTenantModal } from './components/RegisterTenantModal'
 import { SuspendTenantModal } from './components/SuspendTenantModal'
@@ -111,6 +112,7 @@ export function TenantsPage() {
                 <th>Schema</th>
                 <th>RUC</th>
                 <th>Estado</th>
+                <th>Onboarding</th>
                 <th>Creado</th>
                 <th></th>
               </tr>
@@ -128,6 +130,9 @@ export function TenantsPage() {
                       <span className="dot" />
                       {STATUS_LABEL[tenant.status] ?? tenant.status}
                     </span>
+                  </td>
+                  <td>
+                    <OnboardingBadges tenantId={tenant.id} />
                   </td>
                   <td>
                     {new Date(tenant.created_on).toLocaleDateString('es-PE', {

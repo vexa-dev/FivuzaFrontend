@@ -1,6 +1,8 @@
 import { AlertTriangle, Ban, Building2, DollarSign } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { ConsumptionSection } from './components/ConsumptionSection'
 import { useDashboardSummary } from './hooks/useDashboardSummary'
+import { useTenants } from './hooks/useTenants'
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat('es-PE', { style: 'currency', currency: 'PEN' }).format(value)
@@ -12,6 +14,7 @@ function formatDate(value: string) {
 
 export function DashboardPage() {
   const { data, isLoading, error } = useDashboardSummary()
+  const { data: tenants } = useTenants()
 
   return (
     <div>
@@ -119,6 +122,8 @@ export function DashboardPage() {
               </ul>
             </div>
           </div>
+
+          {tenants && <ConsumptionSection tenants={tenants} />}
         </>
       )}
     </div>

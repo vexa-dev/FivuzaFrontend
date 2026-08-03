@@ -443,3 +443,102 @@ export function removeTenantFeatureOverride(tenantId: number, featureCode: PlanF
     token: getAccessToken(),
   })
 }
+
+export interface TenantNote {
+  id: number
+  tenant: number
+  platform_staff: { id: number; full_name: string }
+  text: string
+  created_at: string
+}
+
+export function fetchTenantNotes(tenantId: number) {
+  return apiFetch<TenantNote[]>(`/core/tenants/${tenantId}/notes/`, {
+    token: getAccessToken(),
+  })
+}
+
+export function createTenantNote(tenantId: number, text: string) {
+  return apiFetch<TenantNote>(`/core/tenants/${tenantId}/notes/`, {
+    method: 'POST',
+    body: { text },
+    token: getAccessToken(),
+  })
+}
+
+export interface SubscriptionDiscount {
+  id: number
+  subscription_id: number
+  discount_percent: string | null
+  override_price: string | null
+  reason: string
+  expires_at: string | null
+  created_at: string
+}
+
+export interface CreateDiscountPayload {
+  subscription_id: number
+  discount_percent?: string
+  override_price?: string
+  reason: string
+  expires_at?: string
+}
+
+export function fetchSubscriptionDiscounts(subscriptionId: number) {
+  return apiFetch<SubscriptionDiscount[]>(
+    `/core/subscription-discounts/?subscription=${subscriptionId}`,
+    { token: getAccessToken() },
+  )
+}
+
+export function createSubscriptionDiscount(payload: CreateDiscountPayload) {
+  return apiFetch<SubscriptionDiscount>('/core/subscription-discounts/', {
+    method: 'POST',
+    body: payload,
+    token: getAccessToken(),
+  })
+}
+
+export function removeSubscriptionDiscount(id: number) {
+  return apiFetch<void>(`/core/subscription-discounts/${id}/`, {
+    method: 'DELETE',
+    token: getAccessToken(),
+  })
+}
+
+export interface OnboardingChecklist {
+  has_catalog: boolean
+  has_first_sale: boolean
+  has_users_created: boolean
+}
+
+export function fetchTenantOnboarding(tenantId: number) {
+  return apiFetch<OnboardingChecklist>(`/core/tenants/${tenantId}/onboarding/`, {
+    token: getAccessToken(),
+  })
+}
+
+export interface TenantHealth {
+  recent_errors_count: number
+  last_error_at: string | null
+  last_login_at: string | null
+  last_sale_at: string | null
+}
+
+export function fetchTenantHealth(tenantId: number) {
+  return apiFetch<TenantHealth>(`/core/tenants/${tenantId}/health/`, {
+    token: getAccessToken(),
+  })
+}
+
+export interface TenantConsumption {
+  sales_count_last_30_days: number
+  active_users_count: number
+  catalog_size: number
+}
+
+export function fetchTenantConsumption(tenantId: number) {
+  return apiFetch<TenantConsumption>(`/core/tenants/${tenantId}/consumption/`, {
+    token: getAccessToken(),
+  })
+}
