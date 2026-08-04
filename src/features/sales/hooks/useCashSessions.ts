@@ -4,10 +4,12 @@ import {
   createCashMovement,
   fetchCashMovements,
   fetchCashRegisters,
+  fetchCashSessionDetail,
   fetchCashSessions,
   openCashSession,
   type CashMovementConcept,
   type CashMovementType,
+  type CashSessionFilters,
 } from '../api'
 
 export function useCashRegisters() {
@@ -18,6 +20,21 @@ export function useOpenCashSessions() {
   return useQuery({
     queryKey: ['sales', 'cash-sessions', 'open'],
     queryFn: () => fetchCashSessions({ status: 'OPEN' }),
+  })
+}
+
+export function useCashSessionHistory(filters: CashSessionFilters) {
+  return useQuery({
+    queryKey: ['sales', 'cash-sessions', 'history', filters],
+    queryFn: () => fetchCashSessions(filters),
+  })
+}
+
+export function useCashSessionDetail(sessionId: number | undefined) {
+  return useQuery({
+    queryKey: ['sales', 'cash-sessions', 'detail', sessionId],
+    queryFn: () => fetchCashSessionDetail(sessionId as number),
+    enabled: sessionId !== undefined,
   })
 }
 
@@ -68,16 +85,22 @@ export function useCreateCashMovement(sessionId: number | undefined) {
       type,
       concept,
       amount,
+      reason,
+      receiptUrl,
     }: {
       type: CashMovementType
       concept: CashMovementConcept
       amount: string
+      reason?: string
+      receiptUrl?: string | null
     }) =>
       createCashMovement({
         cash_session: sessionId as number,
         type,
         concept,
         amount,
+        reason,
+        receipt_url: receiptUrl,
       }),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ['sales', 'cash-movements', sessionId] }),

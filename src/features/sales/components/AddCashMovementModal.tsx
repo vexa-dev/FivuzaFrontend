@@ -1,7 +1,7 @@
-import { useState, type FormEvent } from 'react'
+import { useState, type ChangeEvent, type FormEvent } from 'react'
 import { Modal } from '../../../shared/components/Modal'
 import { ApiError } from '../../../shared/utils/apiClient'
-import type { CashMovementConcept, CashMovementType } from '../api'
+import { requestCashMovementReceiptUploadUrl, type CashMovementConcept, type CashMovementType } from '../api'
 import { useCreateCashMovement } from '../hooks/useCashSessions'
 
 const CONCEPTS: [CashMovementConcept, string][] = [
@@ -10,6 +10,8 @@ const CONCEPTS: [CashMovementConcept, string][] = [
   ['DEPOSITO_BANCO', 'Depósito a banco'],
   ['AJUSTE', 'Ajuste'],
 ]
+
+const ALLOWED_RECEIPT_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
 
 export function AddCashMovementModal({
   sessionId,
@@ -22,7 +24,36 @@ export function AddCashMovementModal({
   const [type, setType] = useState<CashMovementType>('OUT')
   const [concept, setConcept] = useState<CashMovementConcept>('RETIRO')
   const [amount, setAmount] = useState('')
+  const [reason, setReason] = useState('')
+  const [receiptUrl, setReceiptUrl] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const handleReceiptChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    if (!ALLOWED_RECEIPT_TYPES.includes(file.type)) {
+      setError('Formato de comprobante no permitido (usa JPG, PNG, WEBP o PDF).')
+      return
+    }
+
+    setUploading(true)
+    setError(null)
+    try {
+      const { upload_url, receipt_url } = await requestCashMovementReceiptUploadUrl(file.type)
+      const uploadResponse = await fetch(upload_url, {
+        method: 'PUT',
+        headers: { 'Content-Type': file.type },
+        body: file,
+      })
+      if (!uploadResponse.ok) throw new Error('upload_failed')
+      setReceiptUrl(receipt_url)
+    } catch {
+      setError('No se pudo subir el comprobante.')
+    } finally {
+      setUploading(false)
+    }
+  }
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
@@ -32,7 +63,7 @@ export function AddCashMovementModal({
       return
     }
     createMovement
-      .mutateAsync({ type, concept, amount })
+      .mutateAsync({ type, concept, amount, reason, receiptUrl })
       .then(onClose)
       .catch((err: unknown) => {
         const body =
@@ -79,12 +110,41 @@ export function AddCashMovementModal({
             placeholder="10.00"
           />
         </div>
+        <div>
+          <label htmlFor="movement-reason">Motivo (opcional)</label>
+          <textarea
+            id="movement-reason"
+            value={reason}
+            onChange={(event) => setReason(event.target.value)}
+            rows={2}
+          />
+        </div>
+        <div>
+          <label htmlFor="movement-receipt">Comprobante (opcional)</label>
+          {receiptUrl && (
+            <p className="core-page-subtitle" style={{ margin: '0 0 6px' }}>
+              Comprobante subido.
+            </p>
+          )}
+          <input
+            id="movement-receipt"
+            type="file"
+            accept={ALLOWED_RECEIPT_TYPES.join(',')}
+            onChange={handleReceiptChange}
+            disabled={uploading}
+          />
+          {uploading && <p className="core-page-subtitle">Subiendo...</p>}
+        </div>
         {error && (
           <p className="login-error" role="alert">
             {error}
           </p>
         )}
-        <button type="submit" className="btn btn-primary" disabled={createMovement.isPending}>
+        <button
+          type="submit"
+          className="btn btn-primary"
+          disabled={createMovement.isPending || uploading}
+        >
           {createMovement.isPending ? 'Guardando...' : 'Registrar movimiento'}
         </button>
       </form>

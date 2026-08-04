@@ -77,6 +77,7 @@ export interface TenantSettingsRecord {
   multi_warehouse_enabled: boolean
   hr_module_enabled: boolean
   cash_module_enabled: boolean
+  cash_difference_alert_threshold: string
   updated_at: string
 }
 
@@ -343,6 +344,7 @@ export function updateTenantSettings(
       | 'multi_warehouse_enabled'
       | 'hr_module_enabled'
       | 'cash_module_enabled'
+      | 'cash_difference_alert_threshold'
     >
   >,
 ) {

@@ -1,16 +1,55 @@
 import { Lock, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { AddCashMovementModal } from './components/AddCashMovementModal'
+import { CashSessionHistory } from './components/CashSessionHistory'
 import { CloseCashSessionModal } from './components/CloseCashSessionModal'
 import { OpenCashSessionForm } from './components/OpenCashSessionForm'
 import type { CashSession } from './api'
 import { useCashMovements, useCashRegisters, useOpenCashSessions } from './hooks/useCashSessions'
+
+type Tab = 'caja' | 'historial'
 
 function formatDate(value: string) {
   return new Date(value).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' })
 }
 
 export function SalesPage() {
+  const [tab, setTab] = useState<Tab>('caja')
+  const { data: registers } = useCashRegisters()
+
+  return (
+    <div>
+      <div className="page-header">
+        <div>
+          <h1 className="core-page-title">Ventas</h1>
+          <p className="core-page-subtitle">Caja</p>
+        </div>
+      </div>
+
+      <div className="tabs" style={{ marginBottom: 16 }}>
+        <button
+          type="button"
+          className={`tab ${tab === 'caja' ? 'tab-active' : ''}`}
+          onClick={() => setTab('caja')}
+        >
+          Caja actual
+        </button>
+        <button
+          type="button"
+          className={`tab ${tab === 'historial' ? 'tab-active' : ''}`}
+          onClick={() => setTab('historial')}
+        >
+          Historial
+        </button>
+      </div>
+
+      {tab === 'caja' && <CurrentCashTab />}
+      {tab === 'historial' && <CashSessionHistory registers={registers ?? []} />}
+    </div>
+  )
+}
+
+function CurrentCashTab() {
   const { data: sessions, isLoading } = useOpenCashSessions()
   const { data: registers } = useCashRegisters()
   const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null)
@@ -33,13 +72,6 @@ export function SalesPage() {
 
   return (
     <div>
-      <div className="page-header">
-        <div>
-          <h1 className="core-page-title">Ventas</h1>
-          <p className="core-page-subtitle">Caja</p>
-        </div>
-      </div>
-
       {openSessions.length === 0 && <OpenCashSessionForm />}
 
       {openSessions.length > 0 && !selectedSession && (
