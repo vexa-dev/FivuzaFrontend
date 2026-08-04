@@ -1,21 +1,37 @@
 import { Lock, Plus } from 'lucide-react'
 import { useState } from 'react'
+import { useAuth } from '../auth/hooks/useAuth'
+import { useCategories } from '../inventory/hooks/useCategories'
+import { useProducts } from '../inventory/hooks/useProducts'
 import { AddCashMovementModal } from './components/AddCashMovementModal'
 import { CashSessionHistory } from './components/CashSessionHistory'
 import { CloseCashSessionModal } from './components/CloseCashSessionModal'
+import { CustomersTab } from './components/CustomersTab'
 import { OpenCashSessionForm } from './components/OpenCashSessionForm'
+import { PromotionsTab } from './components/PromotionsTab'
 import type { CashSession } from './api'
 import { useCashMovements, useCashRegisters, useOpenCashSessions } from './hooks/useCashSessions'
 
-type Tab = 'caja' | 'historial'
+type Tab = 'caja' | 'historial' | 'clientes' | 'promociones'
+
+const TABS: [Tab, string][] = [
+  ['caja', 'Caja actual'],
+  ['historial', 'Historial'],
+  ['clientes', 'Clientes'],
+  ['promociones', 'Promociones'],
+]
 
 function formatDate(value: string) {
   return new Date(value).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' })
 }
 
 export function SalesPage() {
+  const { hasPermission } = useAuth()
+  const canManage = hasPermission('SALES_MANAGE')
   const [tab, setTab] = useState<Tab>('caja')
   const { data: registers } = useCashRegisters()
+  const { data: categories } = useCategories()
+  const { data: products } = useProducts()
 
   return (
     <div>
@@ -27,24 +43,24 @@ export function SalesPage() {
       </div>
 
       <div className="tabs" style={{ marginBottom: 16 }}>
-        <button
-          type="button"
-          className={`tab ${tab === 'caja' ? 'tab-active' : ''}`}
-          onClick={() => setTab('caja')}
-        >
-          Caja actual
-        </button>
-        <button
-          type="button"
-          className={`tab ${tab === 'historial' ? 'tab-active' : ''}`}
-          onClick={() => setTab('historial')}
-        >
-          Historial
-        </button>
+        {TABS.map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            className={`tab ${tab === value ? 'tab-active' : ''}`}
+            onClick={() => setTab(value)}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
       {tab === 'caja' && <CurrentCashTab />}
       {tab === 'historial' && <CashSessionHistory registers={registers ?? []} />}
+      {tab === 'clientes' && <CustomersTab canManage={canManage} />}
+      {tab === 'promociones' && (
+        <PromotionsTab canManage={canManage} categories={categories ?? []} products={products ?? []} />
+      )}
     </div>
   )
 }
