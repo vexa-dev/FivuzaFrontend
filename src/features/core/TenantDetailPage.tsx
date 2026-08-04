@@ -59,7 +59,13 @@ function formatDate(value: string | null) {
   return new Date(value).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' })
 }
 
-const SETTINGS_TOGGLES: [keyof Omit<TenantSettingsRecord, 'id' | 'tenant' | 'updated_at'>, string][] = [
+const SETTINGS_TOGGLES: [
+  keyof Omit<
+    TenantSettingsRecord,
+    'id' | 'tenant' | 'updated_at' | 'cash_difference_alert_threshold'
+  >,
+  string,
+][] = [
   ['purchases_enabled', 'Compras'],
   ['variants_enabled', 'Variantes de producto'],
   ['multi_warehouse_enabled', 'Multi-almacén'],
@@ -444,6 +450,30 @@ function ModulesTab({ tenantId }: { tenantId: number }) {
             <span>{label}</span>
           </label>
         ))}
+
+        <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 14 }}>
+          <label htmlFor="cash-difference-threshold">
+            Umbral de alerta de diferencia de arqueo
+          </label>
+          <input
+            id="cash-difference-threshold"
+            inputMode="decimal"
+            defaultValue={settings.cash_difference_alert_threshold}
+            style={{ maxWidth: 160 }}
+            onBlur={(event) => {
+              const value = event.target.value.trim()
+              if (!value || value === settings.cash_difference_alert_threshold) return
+              updateSettings.mutate({
+                id: settings.id,
+                data: { cash_difference_alert_threshold: value },
+              })
+            }}
+          />
+          <p className="core-page-subtitle" style={{ margin: '4px 0 0' }}>
+            Si el arqueo de una sesión de caja supera este monto (en valor absoluto), se avisa
+            por correo a los administradores del tenant.
+          </p>
+        </div>
       </div>
     </div>
   )

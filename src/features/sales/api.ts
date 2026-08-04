@@ -35,8 +35,22 @@ export interface CashMovement {
   type: CashMovementType
   concept: CashMovementConcept
   amount: string
+  reason: string
+  receipt_url: string | null
   user: number
   created_at: string
+}
+
+export interface CashSessionDetail extends CashSession {
+  movements: CashMovement[]
+}
+
+export interface CashSessionFilters {
+  status?: 'OPEN' | 'CLOSED'
+  cash_register?: number
+  user?: number
+  opening_from?: string
+  opening_to?: string
 }
 
 export function fetchCashRegisters() {
@@ -45,10 +59,20 @@ export function fetchCashRegisters() {
   })
 }
 
-export function fetchCashSessions(filters: { status?: 'OPEN' | 'CLOSED' } = {}) {
+export function fetchCashSessions(filters: CashSessionFilters = {}) {
   const params = new URLSearchParams()
   if (filters.status) params.set('status', filters.status)
+  if (filters.cash_register) params.set('cash_register', String(filters.cash_register))
+  if (filters.user) params.set('user', String(filters.user))
+  if (filters.opening_from) params.set('opening_from', filters.opening_from)
+  if (filters.opening_to) params.set('opening_to', filters.opening_to)
   return tenantApiFetch<CashSession[]>(`/ventas/cash-sessions/?${params.toString()}`, {
+    token: getAccessToken(),
+  })
+}
+
+export function fetchCashSessionDetail(sessionId: number) {
+  return tenantApiFetch<CashSessionDetail>(`/ventas/cash-sessions/${sessionId}/`, {
     token: getAccessToken(),
   })
 }
@@ -84,10 +108,19 @@ export function createCashMovement(payload: {
   type: CashMovementType
   concept: CashMovementConcept
   amount: string
+  reason?: string
+  receipt_url?: string | null
 }) {
   return tenantApiFetch<CashMovement>('/ventas/cash-movements/', {
     method: 'POST',
     body: payload,
     token: getAccessToken(),
   })
+}
+
+export function requestCashMovementReceiptUploadUrl(contentType: string) {
+  return tenantApiFetch<{ upload_url: string; receipt_url: string }>(
+    '/ventas/cash-movements/upload-receipt-url/',
+    { method: 'POST', body: { content_type: contentType }, token: getAccessToken() },
+  )
 }
