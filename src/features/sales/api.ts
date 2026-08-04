@@ -124,3 +124,127 @@ export function requestCashMovementReceiptUploadUrl(contentType: string) {
     { method: 'POST', body: { content_type: contentType }, token: getAccessToken() },
   )
 }
+
+export type CustomerDocumentType = 'RUC' | 'DNI' | 'ANONIMO'
+
+export interface Customer {
+  id: number
+  document_type: CustomerDocumentType
+  document_number: string
+  name: string
+  phone: string
+  address: string
+  is_active: boolean
+  updated_at: string
+  created_at: string
+}
+
+export function fetchCustomers(search?: string) {
+  const params = new URLSearchParams()
+  if (search) params.set('search', search)
+  return tenantApiFetch<Customer[]>(`/ventas/customers/?${params.toString()}`, {
+    token: getAccessToken(),
+  })
+}
+
+export function createCustomer(data: Omit<Customer, 'id' | 'updated_at' | 'created_at'>) {
+  return tenantApiFetch<Customer>('/ventas/customers/', {
+    method: 'POST',
+    body: data,
+    token: getAccessToken(),
+  })
+}
+
+export function updateCustomer(id: number, data: Partial<Customer>) {
+  return tenantApiFetch<Customer>(`/ventas/customers/${id}/`, {
+    method: 'PATCH',
+    body: data,
+    token: getAccessToken(),
+  })
+}
+
+export function deleteCustomer(id: number) {
+  return tenantApiFetch<void>(`/ventas/customers/${id}/`, {
+    method: 'DELETE',
+    token: getAccessToken(),
+  })
+}
+
+export type PromotionType = 'PERCENTAGE' | 'FIXED_AMOUNT'
+
+export interface PromotionProduct {
+  id: number
+  promotion: number
+  variant: number | null
+  category: number | null
+}
+
+export interface Promotion {
+  id: number
+  name: string
+  type: PromotionType
+  value: string
+  start_date: string
+  end_date: string
+  is_active: boolean
+  targets: PromotionProduct[]
+  updated_at: string
+}
+
+export function fetchPromotions(search?: string) {
+  const params = new URLSearchParams()
+  if (search) params.set('search', search)
+  return tenantApiFetch<Promotion[]>(`/ventas/promotions/?${params.toString()}`, {
+    token: getAccessToken(),
+  })
+}
+
+export function fetchPromotion(id: number) {
+  return tenantApiFetch<Promotion>(`/ventas/promotions/${id}/`, {
+    token: getAccessToken(),
+  })
+}
+
+export function createPromotion(
+  data: Omit<Promotion, 'id' | 'targets' | 'updated_at'>,
+) {
+  return tenantApiFetch<Promotion>('/ventas/promotions/', {
+    method: 'POST',
+    body: data,
+    token: getAccessToken(),
+  })
+}
+
+export function updatePromotion(id: number, data: Partial<Promotion>) {
+  return tenantApiFetch<Promotion>(`/ventas/promotions/${id}/`, {
+    method: 'PATCH',
+    body: data,
+    token: getAccessToken(),
+  })
+}
+
+export function deletePromotion(id: number) {
+  return tenantApiFetch<void>(`/ventas/promotions/${id}/`, {
+    method: 'DELETE',
+    token: getAccessToken(),
+  })
+}
+
+export function addPromotionTarget(data: {
+  promotion: number
+  variant?: number
+  category?: number
+}) {
+  return tenantApiFetch<PromotionProduct>('/ventas/promotion-products/', {
+    method: 'POST',
+    body: data,
+    token: getAccessToken(),
+  })
+}
+
+export function removePromotionTarget(id: number) {
+  return tenantApiFetch<void>(`/ventas/promotion-products/${id}/`, {
+    method: 'DELETE',
+    token: getAccessToken(),
+  })
+}
