@@ -121,10 +121,10 @@ export function POSCartPanel({ cart, totals, dispatch, cashSessionId }: POSCartP
                     </div>
                   </td>
                   <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <button
                         type="button"
-                        className="btn btn-ghost btn-sm btn-icon"
+                        className="btn btn-ghost btn-icon pos-qty-btn"
                         aria-label={`Restar unidad de ${line.productName}`}
                         onClick={() =>
                           dispatch({
@@ -136,10 +136,10 @@ export function POSCartPanel({ cart, totals, dispatch, cashSessionId }: POSCartP
                       >
                         <Minus />
                       </button>
-                      <span style={{ minWidth: 24, textAlign: 'center' }}>{line.quantity}</span>
+                      <span className="pos-qty-value">{line.quantity}</span>
                       <button
                         type="button"
-                        className="btn btn-ghost btn-sm btn-icon"
+                        className="btn btn-ghost btn-icon pos-qty-btn"
                         aria-label={`Sumar unidad de ${line.productName}`}
                         onClick={() =>
                           dispatch({
@@ -159,7 +159,7 @@ export function POSCartPanel({ cart, totals, dispatch, cashSessionId }: POSCartP
                   <td>
                     <button
                       type="button"
-                      className="btn btn-danger-ghost btn-sm btn-icon"
+                      className="btn btn-danger-ghost btn-icon pos-remove-btn"
                       aria-label={`Quitar ${line.productName}`}
                       onClick={() => dispatch({ type: 'REMOVE_LINE', variantId: line.variantId })}
                     >
@@ -198,8 +198,7 @@ export function POSCartPanel({ cart, totals, dispatch, cashSessionId }: POSCartP
 
       <button
         type="button"
-        className="btn btn-primary"
-        style={{ fontSize: '1.05rem', padding: '12px' }}
+        className="btn btn-primary pos-checkout-btn"
         disabled={
           createSale.isPending ||
           cart.lines.length === 0 ||
@@ -271,7 +270,7 @@ function PaymentsBuilder({
           />
           <button
             type="button"
-            className="btn btn-danger-ghost btn-sm btn-icon"
+            className="btn btn-danger-ghost btn-icon pos-remove-btn"
             aria-label="Quitar pago"
             onClick={() => dispatch({ type: 'REMOVE_PAYMENT', index })}
           >

@@ -5,6 +5,7 @@ import type { POSCatalogItem } from '../api'
 import { useCart } from '../cart/useCart'
 import { useCashRegisters, useOpenCashSessions } from '../hooks/useCashSessions'
 import { usePOSCatalog } from '../hooks/usePOSCatalog'
+import './POS.css'
 import { POSCartPanel } from './POSCartPanel'
 
 function promotionBadge(item: POSCatalogItem): string | null {
@@ -61,8 +62,8 @@ export function POSTab() {
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.5fr) minmax(320px, 1fr)', gap: 16 }}>
-      <div className="card" style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div className="pos-layout">
+      <div className="card pos-catalog-panel">
         {openSessions.length > 1 && (
           <div>
             <label htmlFor="pos-session">Caja</label>
@@ -80,17 +81,14 @@ export function POSTab() {
           </div>
         )}
 
-        <div className="table-toolbar" style={{ padding: 0 }}>
-          <div className="search-input" style={{ maxWidth: 'none' }}>
-            <Search />
-            <input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Escanea un código de barras o busca por nombre/SKU..."
-              autoFocus
-              style={{ fontSize: '1.05rem', padding: '12px 12px 12px 34px' }}
-            />
-          </div>
+        <div className="pos-search-bar">
+          <Search />
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Escanea un código de barras o busca por nombre/SKU..."
+            autoFocus
+          />
         </div>
 
         {loadingCatalog && (
@@ -108,14 +106,7 @@ export function POSTab() {
           />
         )}
 
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
-            gap: 10,
-            overflowY: 'auto',
-          }}
-        >
+        <div className="pos-product-grid">
           {filtered.map((item) => {
             const badge = promotionBadge(item)
             const outOfStock = Number(item.stock) <= 0
@@ -123,16 +114,8 @@ export function POSTab() {
               <button
                 key={item.id}
                 type="button"
-                className="card"
+                className="card pos-product-card"
                 disabled={outOfStock}
-                style={{
-                  padding: 12,
-                  textAlign: 'left',
-                  cursor: outOfStock ? 'not-allowed' : 'pointer',
-                  opacity: outOfStock ? 0.5 : 1,
-                  position: 'relative',
-                  minHeight: 88,
-                }}
                 onClick={() => {
                   dispatch({
                     type: 'ADD_LINE',
@@ -146,23 +129,22 @@ export function POSTab() {
                   setSearch('')
                 }}
               >
-                {badge && (
-                  <span
-                    className="badge badge-success"
-                    style={{ position: 'absolute', top: 8, right: 8 }}
-                  >
-                    <Tag size={11} strokeWidth={2} />
-                    {badge}
-                  </span>
-                )}
-                <div className="core-table-strong">{item.product_name}</div>
-                <div className="core-page-subtitle" style={{ margin: '2px 0' }}>
-                  {item.sku}
+                <div className="pos-product-card-header">
+                  <div>
+                    <div className="pos-product-card-name">{item.product_name}</div>
+                    <div className="pos-product-card-sku">{item.sku}</div>
+                  </div>
+                  {badge && (
+                    <span className="badge badge-success pos-promo-badge">
+                      <Tag size={11} strokeWidth={2} />
+                      {badge}
+                    </span>
+                  )}
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                  <span style={{ fontWeight: 700 }}>S/ {item.price}</span>
-                  <span className="core-page-subtitle" style={{ margin: 0 }}>
-                    Stock: {Number(item.stock)}
+                <div className="pos-product-card-footer">
+                  <span className="pos-product-card-price">S/ {item.price}</span>
+                  <span className="pos-product-card-stock">
+                    {outOfStock ? 'Sin stock' : `Stock: ${Number(item.stock)}`}
                   </span>
                 </div>
               </button>
