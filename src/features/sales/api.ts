@@ -248,3 +248,93 @@ export function removePromotionTarget(id: number) {
     token: getAccessToken(),
   })
 }
+
+export type SalePaymentMethod = 'CASH' | 'CARD' | 'YAPE' | 'CREDIT_LEDGER' | 'BALANCE'
+
+export interface SaleDetail {
+  id: number
+  variant_id: number
+  product_name_snapshot: string
+  sku_snapshot: string
+  quantity: string
+  unit_price: string
+  discount_amount: string
+  subtotal: string
+}
+
+export interface SalePayment {
+  id: number
+  method: SalePaymentMethod
+  amount: string
+  created_at: string
+}
+
+export interface Sale {
+  id: number
+  invoice_number: string
+  customer: number
+  user: number
+  warehouse: number
+  cash_session: number
+  subtotal: string
+  discount_total: string
+  total: string
+  currency: string
+  payment_status: 'PAID' | 'PARTIAL' | 'UNPAID'
+  status: 'COMPLETED' | 'VOIDED' | 'CANCELLED'
+  sync_status: 'SYNCED' | 'OFFLINE_PENDING' | 'CONFLICT'
+  details: SaleDetail[]
+  payments: SalePayment[]
+  created_at: string
+}
+
+export interface SaleLineInput {
+  variant_id: number
+  quantity: string
+  discount_amount?: string
+}
+
+export interface SalePaymentInput {
+  method: SalePaymentMethod
+  amount: string
+}
+
+export interface SaleCreateInput {
+  customer_id: number
+  cash_session_id: number
+  client_side_uuid?: string
+  lines: SaleLineInput[]
+  payments: SalePaymentInput[]
+}
+
+export function createSale(data: SaleCreateInput) {
+  return tenantApiFetch<Sale>('/ventas/sales/', {
+    method: 'POST',
+    body: data,
+    token: getAccessToken(),
+  })
+}
+
+export function fetchSales(
+  filters: {
+    customer?: number
+    user?: number
+    cash_register?: number
+    date_from?: string
+    date_to?: string
+  } = {},
+) {
+  const params = new URLSearchParams()
+  for (const [key, value] of Object.entries(filters)) {
+    if (value !== undefined) params.set(key, String(value))
+  }
+  return tenantApiFetch<Sale[]>(`/ventas/sales/?${params.toString()}`, {
+    token: getAccessToken(),
+  })
+}
+
+export function fetchSale(id: number) {
+  return tenantApiFetch<Sale>(`/ventas/sales/${id}/`, {
+    token: getAccessToken(),
+  })
+}
