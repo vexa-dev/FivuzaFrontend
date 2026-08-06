@@ -9,6 +9,7 @@ export type CartAction =
   | { type: 'SET_LINE_DISCOUNT'; variantId: number; discountAmount: string | null }
   | { type: 'ADD_PAYMENT'; payment: CartPayment }
   | { type: 'UPDATE_PAYMENT_AMOUNT'; index: number; amount: string }
+  | { type: 'UPDATE_PAYMENT_METHOD'; index: number; method: CartPayment['method'] }
   | { type: 'REMOVE_PAYMENT'; index: number }
   | { type: 'CLEAR' }
 
@@ -74,6 +75,14 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
         ...state,
         payments: state.payments.map((payment, index) =>
           index === action.index ? { ...payment, amount: action.amount } : payment,
+        ),
+      }
+
+    case 'UPDATE_PAYMENT_METHOD':
+      return {
+        ...state,
+        payments: state.payments.map((payment, index) =>
+          index === action.index ? { ...payment, method: action.method } : payment,
         ),
       }
 

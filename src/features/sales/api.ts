@@ -338,3 +338,33 @@ export function fetchSale(id: number) {
     token: getAccessToken(),
   })
 }
+
+export interface POSPromotion {
+  id: number
+  name: string
+  type: 'PERCENTAGE' | 'FIXED_AMOUNT'
+  value: string
+}
+
+export interface POSCatalogItem {
+  id: number
+  sku: string
+  barcode: string | null
+  product_name: string
+  price: string
+  stock: string
+  promotion: POSPromotion | null
+}
+
+export function fetchPOSCatalog(warehouseId: number) {
+  return tenantApiFetch<POSCatalogItem[]>(`/ventas/pos/catalog/?warehouse=${warehouseId}`, {
+    token: getAccessToken(),
+  })
+}
+
+export function fetchPOSSearch(warehouseId: number, query: string) {
+  const params = new URLSearchParams({ warehouse: String(warehouseId), q: query })
+  return tenantApiFetch<POSCatalogItem[]>(`/ventas/pos/search/?${params.toString()}`, {
+    token: getAccessToken(),
+  })
+}

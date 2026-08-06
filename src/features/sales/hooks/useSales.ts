@@ -23,10 +23,12 @@ export function useCreateSale() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sales', 'sales'] })
       // Una venta descuenta stock y puede alimentar el arqueo de la sesion
-      // de caja abierta -invalida ambos caches para que el Sprint 16 (POS)
-      // no tenga que acordarse de hacerlo el mismo dia que arme la pantalla.
+      // de caja abierta -invalida los tres caches relacionados (incluido
+      // el catalogo del POS, que trae su propio stock/promocion por
+      // variante) en vez de esperar a que expire staleTime solo.
       queryClient.invalidateQueries({ queryKey: ['sales', 'cash-sessions'] })
       queryClient.invalidateQueries({ queryKey: ['products'] })
+      queryClient.invalidateQueries({ queryKey: ['sales', 'pos-catalog'] })
     },
   })
 }
