@@ -71,6 +71,7 @@
   padding: 14px 16px;
   border-bottom: 1px solid var(--border-subtle);
   color: var(--text-secondary);
+  transition: background 0.15s;
 }
 
 .core-table tr:last-child td {
@@ -78,7 +79,7 @@
 }
 
 .core-table tr:hover td {
-  background: var(--bg-surface-secondary);
+  background: var(--bg-surface-hover);
 }
 
 .core-table-strong {

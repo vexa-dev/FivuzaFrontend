@@ -45,7 +45,7 @@
 }
 
 .erp-sidebar-toggle:hover {
-  background: var(--bg-surface-secondary);
+  background: var(--bg-surface-hover);
   color: var(--text-primary);
 }
 
@@ -100,7 +100,7 @@
 }
 
 .erp-sidebar-link:hover {
-  background: var(--bg-surface-secondary);
+  background: var(--bg-surface-hover);
   color: var(--text-primary);
 }
 
@@ -193,7 +193,7 @@
 }
 
 .erp-mobile-menu-toggle:hover {
-  background: var(--bg-surface-secondary);
+  background: var(--bg-surface-hover);
 }
 
 /* Debajo de este ancho el sidebar fijo de 2 columnas ya no cabe -pasa a

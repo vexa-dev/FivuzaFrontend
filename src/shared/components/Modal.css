@@ -62,7 +62,7 @@
 }
 
 .modal-close:hover {
-  background: var(--bg-surface-secondary);
+  background: var(--bg-surface-hover);
   color: var(--text-primary);
 }
 
