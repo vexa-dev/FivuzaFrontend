@@ -8,13 +8,15 @@ import { CashSessionHistory } from './components/CashSessionHistory'
 import { CloseCashSessionModal } from './components/CloseCashSessionModal'
 import { CustomersTab } from './components/CustomersTab'
 import { OpenCashSessionForm } from './components/OpenCashSessionForm'
+import { POSTab } from './components/POSTab'
 import { PromotionsTab } from './components/PromotionsTab'
 import type { CashSession } from './api'
 import { useCashMovements, useCashRegisters, useOpenCashSessions } from './hooks/useCashSessions'
 
-type Tab = 'caja' | 'historial' | 'clientes' | 'promociones'
+type Tab = 'vender' | 'caja' | 'historial' | 'clientes' | 'promociones'
 
 const TABS: [Tab, string][] = [
+  ['vender', 'Vender'],
   ['caja', 'Caja actual'],
   ['historial', 'Historial'],
   ['clientes', 'Clientes'],
@@ -28,7 +30,7 @@ function formatDate(value: string) {
 export function SalesPage() {
   const { hasPermission } = useAuth()
   const canManage = hasPermission('SALES_MANAGE')
-  const [tab, setTab] = useState<Tab>('caja')
+  const [tab, setTab] = useState<Tab>('vender')
   const { data: registers } = useCashRegisters()
   const { data: categories } = useCategories()
   const { data: products } = useProducts()
@@ -55,6 +57,7 @@ export function SalesPage() {
         ))}
       </div>
 
+      {tab === 'vender' && <POSTab />}
       {tab === 'caja' && <CurrentCashTab />}
       {tab === 'historial' && <CashSessionHistory registers={registers ?? []} />}
       {tab === 'clientes' && <CustomersTab canManage={canManage} />}
