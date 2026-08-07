@@ -48,6 +48,7 @@ const InventoryPage = lazy(() =>
 )
 const SalesPage = lazy(() => import('./features/sales/SalesPage').then((m) => ({ default: m.SalesPage })))
 const UsersPage = lazy(() => import('./features/users/UsersPage').then((m) => ({ default: m.UsersPage })))
+const HRPage = lazy(() => import('./features/hr/HRPage').then((m) => ({ default: m.HRPage })))
 const ImpersonateLandingPage = lazy(() =>
   import('./features/auth/ImpersonateLandingPage').then((m) => ({
     default: m.ImpersonateLandingPage,
@@ -93,6 +94,9 @@ function App() {
                 <Route path="/ventas" element={<SalesPage />} />
                 <Route element={<TenantProtectedRoute requirePermission="USERS_MANAGE" />}>
                   <Route path="/usuarios" element={<UsersPage />} />
+                </Route>
+                <Route element={<TenantProtectedRoute requirePermission="HR_MANAGE" />}>
+                  <Route path="/rrhh" element={<HRPage />} />
                 </Route>
               </Route>
             </Route>

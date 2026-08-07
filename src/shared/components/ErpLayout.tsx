@@ -1,6 +1,7 @@
 import {
   ChevronsLeft,
   ChevronsRight,
+  Contact,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -23,6 +24,7 @@ const NAV_ITEMS = [
   { to: '/inventario', label: 'Inventario', icon: Package, requirePermission: 'INVENTORY_VIEW' },
   { to: '/ventas', label: 'Ventas', icon: ShoppingCart },
   { to: '/usuarios', label: 'Usuarios', icon: UsersIcon, requirePermission: 'USERS_MANAGE' },
+  { to: '/rrhh', label: 'RRHH', icon: Contact, requirePermission: 'HR_MANAGE' },
 ]
 
 export function ErpLayout() {
