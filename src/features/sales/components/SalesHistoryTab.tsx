@@ -1,8 +1,9 @@
-import { Receipt as ReceiptIcon, ReceiptText, Undo2, Ban } from 'lucide-react'
+import { Receipt as ReceiptIcon, ReceiptText, Undo2, Ban, CloudOff } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '../../auth/hooks/useAuth'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { Modal } from '../../../shared/components/Modal'
+import { useOnlineStatus } from '../../../shared/offline/useOnlineStatus'
 import type { Sale, SaleReturn } from '../api'
 import { useCustomers } from '../hooks/useCustomers'
 import { useSale, useSaleReceipt, useSales } from '../hooks/useSales'
@@ -24,6 +25,7 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
 }
 
 export function SalesHistoryTab() {
+  const isOnline = useOnlineStatus()
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [customerSearch, setCustomerSearch] = useState('')
@@ -113,16 +115,23 @@ export function SalesHistoryTab() {
       </div>
 
       <div className="card core-table-card">
-        {isLoading && (
+        {!isOnline && (
+          <EmptyState
+            icon={<CloudOff />}
+            title="El historial de ventas no está disponible sin conexión"
+            subtitle="Se puede seguir vendiendo offline; el historial se actualiza al reconectar."
+          />
+        )}
+        {isOnline && isLoading && (
           <div className="loading-row">
             <span className="spinner" />
             Cargando...
           </div>
         )}
-        {sales && sales.length === 0 && (
+        {isOnline && sales && sales.length === 0 && (
           <EmptyState icon={<ReceiptText />} title="No hay ventas para estos filtros" />
         )}
-        {sales && sales.length > 0 && (
+        {isOnline && sales && sales.length > 0 && (
           <table className="core-table">
             <thead>
               <tr>
