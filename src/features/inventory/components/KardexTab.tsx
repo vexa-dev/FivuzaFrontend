@@ -1,6 +1,7 @@
-import { History } from 'lucide-react'
+import { CloudOff, History } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { EmptyState } from '../../../shared/components/EmptyState'
+import { useOnlineStatus } from '../../../shared/offline/useOnlineStatus'
 import type { Product, Warehouse } from '../api'
 import { useInventoryMovements } from '../hooks/useStock'
 
@@ -17,6 +18,7 @@ const CONCEPT_LABELS: Record<string, string> = {
 }
 
 export function KardexTab({ products, warehouses }: KardexTabProps) {
+  const isOnline = useOnlineStatus()
   const [variantId, setVariantId] = useState<number | ''>('')
   const [warehouseId, setWarehouseId] = useState<number | ''>('')
   const [dateFrom, setDateFrom] = useState('')
@@ -98,20 +100,27 @@ export function KardexTab({ products, warehouses }: KardexTabProps) {
         </div>
       </div>
 
-      {isLoading && (
+      {!isOnline && (
+        <EmptyState
+          icon={<CloudOff />}
+          title="El Kardex no está disponible sin conexión"
+          subtitle="Se puede seguir vendiendo offline; el historial de movimientos se actualiza al reconectar."
+        />
+      )}
+      {isOnline && isLoading && (
         <div className="loading-row">
           <span className="spinner" />
           Cargando...
         </div>
       )}
-      {movements && movements.length === 0 && (
+      {isOnline && movements && movements.length === 0 && (
         <EmptyState
           icon={<History />}
           title="Sin movimientos"
           subtitle="Ajusta el stock de una variante para ver su historial aquí."
         />
       )}
-      {movements && movements.length > 0 && (
+      {isOnline && movements && movements.length > 0 && (
         <table className="core-table">
           <thead>
             <tr>

@@ -15,6 +15,11 @@
   font-weight: 600;
 }
 
+.offline-sync-badge-btn {
+  border: none;
+  cursor: pointer;
+}
+
 .offline-sync-badge-ok {
   background: var(--success-subtle-bg);
   color: var(--success);
