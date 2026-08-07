@@ -339,6 +339,63 @@ export function fetchSale(id: number) {
   })
 }
 
+export function voidSale(id: number, reason: string) {
+  return tenantApiFetch<Sale>(`/ventas/sales/${id}/void/`, {
+    method: 'POST',
+    body: { reason },
+    token: getAccessToken(),
+  })
+}
+
+export type RefundType = 'BALANCE' | 'CASH'
+
+export interface SaleReturnDetail {
+  id: number
+  sale_detail: number
+  quantity_returned: string
+  restock: boolean
+  subtotal: string
+}
+
+export interface SaleReturn {
+  id: number
+  sale: number
+  user: number
+  reason: string
+  total_refund_amount: string
+  refund_type: RefundType
+  details: SaleReturnDetail[]
+  created_at: string
+}
+
+export interface SaleReturnItemInput {
+  sale_detail_id: number
+  quantity_returned: string
+  restock?: boolean
+}
+
+export interface SaleReturnCreateInput {
+  sale_id: number
+  reason?: string
+  refund_type: RefundType
+  cash_session_id?: number
+  items: SaleReturnItemInput[]
+}
+
+export function createSaleReturn(data: SaleReturnCreateInput) {
+  return tenantApiFetch<SaleReturn>('/ventas/sale-returns/', {
+    method: 'POST',
+    body: data,
+    token: getAccessToken(),
+  })
+}
+
+export function fetchSaleReturns(saleId: number) {
+  return tenantApiFetch<SaleReturn[]>(`/ventas/sale-returns/?sale=${saleId}`, {
+    token: getAccessToken(),
+  })
+}
+
 export function fetchSaleReceipt(id: number, widthMm: 58 | 80 = 58) {
   return tenantApiFetchText(`/ventas/sales/${id}/receipt/?width_mm=${widthMm}`, getAccessToken())
 }
