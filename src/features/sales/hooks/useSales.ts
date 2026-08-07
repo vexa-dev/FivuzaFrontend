@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { createSale, fetchSale, fetchSales, type SaleCreateInput } from '../api'
+import { createSale, fetchSale, fetchSaleReceipt, fetchSales, type SaleCreateInput } from '../api'
 
 export function useSales(filters?: Parameters<typeof fetchSales>[0]) {
   return useQuery({
@@ -13,6 +13,17 @@ export function useSale(id: number | undefined) {
     queryKey: ['sales', 'sales', 'detail', id],
     queryFn: () => fetchSale(id as number),
     enabled: id !== undefined,
+  })
+}
+
+export function useSaleReceipt(id: number | undefined, widthMm: 58 | 80 = 58) {
+  return useQuery({
+    queryKey: ['sales', 'sales', 'receipt', id, widthMm],
+    queryFn: () => fetchSaleReceipt(id as number, widthMm),
+    enabled: id !== undefined,
+    // El ticket no cambia una vez emitido -evita reimprimir un round-trip
+    // innecesario si el cajero vuelve a abrir el mismo comprobante.
+    staleTime: Infinity,
   })
 }
 

@@ -75,6 +75,21 @@ export async function tenantApiFetchBlob(
 }
 
 /**
+ * Igual que tenantApiFetchBlob, pero para respuestas text/html (el ticket
+ * de venta de ReceiptService) en vez de un archivo descargable.
+ */
+export async function tenantApiFetchText(path: string, token: string | null): Promise<string> {
+  const headers: Record<string, string> = {}
+  if (token) headers.Authorization = `Bearer ${token}`
+
+  const response = await fetch(`${getTenantApiUrl()}${path}`, { headers })
+  if (!response.ok) {
+    throw new ApiError(response.status, null)
+  }
+  return response.text()
+}
+
+/**
  * Igual que rawFetch, pero si la respuesta es 401 (access token vencido) y
  * hay un refresh token disponible, intenta renovarlo UNA sola vez y repite
  * el request original -el usuario nunca ve un login inesperado solo porque

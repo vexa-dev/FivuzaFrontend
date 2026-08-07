@@ -1,5 +1,5 @@
 import { getAccessToken } from '../auth/hooks/session'
-import { tenantApiFetch } from '../../shared/utils/tenantApiClient'
+import { tenantApiFetch, tenantApiFetchText } from '../../shared/utils/tenantApiClient'
 
 export interface CashRegister {
   id: number
@@ -337,6 +337,10 @@ export function fetchSale(id: number) {
   return tenantApiFetch<Sale>(`/ventas/sales/${id}/`, {
     token: getAccessToken(),
   })
+}
+
+export function fetchSaleReceipt(id: number, widthMm: 58 | 80 = 58) {
+  return tenantApiFetchText(`/ventas/sales/${id}/receipt/?width_mm=${widthMm}`, getAccessToken())
 }
 
 export interface POSPromotion {

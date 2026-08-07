@@ -2,21 +2,15 @@ import { Minus, Plus, ShoppingCart, Trash2 } from 'lucide-react'
 import { useState, type Dispatch } from 'react'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { ApiError } from '../../../shared/utils/apiClient'
-import type { SalePaymentMethod } from '../api'
+import type { Sale } from '../api'
 import type { CartAction } from '../cart/cartReducer'
 import type { CartTotals } from '../cart/totals'
 import { toSaleCreateInput } from '../cart/useCart'
 import type { CartState } from '../cart/types'
 import { useCustomers } from '../hooks/useCustomers'
 import { useCreateSale } from '../hooks/useSales'
-
-const PAYMENT_METHODS: [SalePaymentMethod, string][] = [
-  ['CASH', 'Efectivo'],
-  ['CARD', 'Tarjeta'],
-  ['YAPE', 'Yape'],
-  ['CREDIT_LEDGER', 'Crédito (fiado)'],
-  ['BALANCE', 'Saldo a favor'],
-]
+import { CheckoutModal } from './CheckoutModal'
+import { PostSaleModal } from './PostSaleModal'
 
 interface POSCartPanelProps {
   cart: CartState
@@ -31,14 +25,25 @@ export function POSCartPanel({ cart, totals, dispatch, cashSessionId }: POSCartP
   const selectedCustomer = customers?.find((c) => c.id === cart.customerId)
   const createSale = useCreateSale()
   const [error, setError] = useState<string | null>(null)
-  const [lastSale, setLastSale] = useState<{ invoice: string; total: string } | null>(null)
+  const [showCheckout, setShowCheckout] = useState(false)
+  const [completedSale, setCompletedSale] = useState<Sale | null>(null)
 
-  const handleCheckout = () => {
+  const openCheckout = () => {
     setError(null)
     if (cashSessionId === undefined) {
       setError('No hay una sesión de caja abierta.')
       return
     }
+    if (cart.customerId === null) {
+      setError('Selecciona un cliente antes de cobrar.')
+      return
+    }
+    setShowCheckout(true)
+  }
+
+  const handleConfirm = () => {
+    setError(null)
+    if (cashSessionId === undefined) return
     const payload = toSaleCreateInput({ ...cart, cashSessionId })
     if (payload === null) {
       setError('Selecciona un cliente antes de cobrar.')
@@ -52,7 +57,8 @@ export function POSCartPanel({ cart, totals, dispatch, cashSessionId }: POSCartP
     createSale
       .mutateAsync(payload)
       .then((sale) => {
-        setLastSale({ invoice: sale.invoice_number, total: sale.total })
+        setShowCheckout(false)
+        setCompletedSale(sale)
         dispatch({ type: 'CLEAR' })
         dispatch({ type: 'SET_CUSTOMER', customerId: null })
         setCustomerSearch('')
@@ -182,109 +188,42 @@ export function POSCartPanel({ cart, totals, dispatch, cashSessionId }: POSCartP
         <dd style={{ fontWeight: 700, fontSize: '1.1rem' }}>S/ {totals.total.toFixed(2)}</dd>
       </dl>
 
-      <PaymentsBuilder cart={cart} totals={totals} dispatch={dispatch} />
-
       {error && (
         <p className="login-error" role="alert">
           {error}
         </p>
       )}
 
-      {lastSale && (
-        <p className="core-state-message" role="status">
-          Venta {lastSale.invoice} registrada por S/ {lastSale.total}.
-        </p>
-      )}
-
       <button
         type="button"
         className="btn btn-primary pos-checkout-btn"
-        disabled={
-          createSale.isPending ||
-          cart.lines.length === 0 ||
-          cashSessionId === undefined ||
-          cart.customerId === null
-        }
-        onClick={handleCheckout}
+        disabled={cart.lines.length === 0 || cashSessionId === undefined}
+        onClick={openCheckout}
       >
-        {createSale.isPending ? 'Cobrando...' : `Cobrar S/ ${totals.total.toFixed(2)}`}
+        {`Cobrar S/ ${totals.total.toFixed(2)}`}
       </button>
-    </div>
-  )
-}
 
-function PaymentsBuilder({
-  cart,
-  totals,
-  dispatch,
-}: {
-  cart: CartState
-  totals: CartTotals
-  dispatch: Dispatch<CartAction>
-}) {
-  return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <label style={{ margin: 0 }}>Pagos</label>
-        <button
-          type="button"
-          className="btn btn-ghost btn-sm"
-          onClick={() => dispatch({ type: 'ADD_PAYMENT', payment: { method: 'CASH', amount: '' } })}
-        >
-          <Plus size={14} strokeWidth={2} />
-          Agregar pago
-        </button>
-      </div>
-      {cart.payments.length === 0 && (
-        <p className="core-page-subtitle" style={{ margin: '4px 0 0' }}>
-          Agrega al menos un pago para cobrar.
-        </p>
+      {showCheckout && (
+        <CheckoutModal
+          cart={cart}
+          totals={totals}
+          error={error}
+          isSubmitting={createSale.isPending}
+          onAddPayment={(payment) => dispatch({ type: 'ADD_PAYMENT', payment })}
+          onUpdatePaymentAmount={(index, amount) =>
+            dispatch({ type: 'UPDATE_PAYMENT_AMOUNT', index, amount })
+          }
+          onUpdatePaymentMethod={(index, method) =>
+            dispatch({ type: 'UPDATE_PAYMENT_METHOD', index, method })
+          }
+          onRemovePayment={(index) => dispatch({ type: 'REMOVE_PAYMENT', index })}
+          onConfirm={handleConfirm}
+          onClose={() => setShowCheckout(false)}
+        />
       )}
-      {cart.payments.map((payment, index) => (
-        <div key={index} style={{ display: 'flex', gap: 6, marginTop: 6 }}>
-          <select
-            value={payment.method}
-            onChange={(event) =>
-              dispatch({
-                type: 'UPDATE_PAYMENT_METHOD',
-                index,
-                method: event.target.value as SalePaymentMethod,
-              })
-            }
-            style={{ flex: 1 }}
-          >
-            {PAYMENT_METHODS.map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </select>
-          <input
-            inputMode="decimal"
-            value={payment.amount}
-            onChange={(event) =>
-              dispatch({ type: 'UPDATE_PAYMENT_AMOUNT', index, amount: event.target.value })
-            }
-            placeholder="0.00"
-            style={{ width: 90 }}
-          />
-          <button
-            type="button"
-            className="btn btn-danger-ghost btn-icon pos-remove-btn"
-            aria-label="Quitar pago"
-            onClick={() => dispatch({ type: 'REMOVE_PAYMENT', index })}
-          >
-            <Trash2 />
-          </button>
-        </div>
-      ))}
-      {cart.payments.length > 0 && (
-        <p
-          className={`core-page-subtitle ${totals.paymentsMatchTotal ? '' : 'login-error'}`}
-          style={{ margin: '6px 0 0' }}
-        >
-          Pagado: S/ {totals.paymentsTotal.toFixed(2)} de S/ {totals.total.toFixed(2)}
-        </p>
+
+      {completedSale && (
+        <PostSaleModal sale={completedSale} onClose={() => setCompletedSale(null)} />
       )}
     </div>
   )

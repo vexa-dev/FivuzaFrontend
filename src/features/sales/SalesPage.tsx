@@ -10,15 +10,17 @@ import { CustomersTab } from './components/CustomersTab'
 import { OpenCashSessionForm } from './components/OpenCashSessionForm'
 import { POSTab } from './components/POSTab'
 import { PromotionsTab } from './components/PromotionsTab'
+import { SalesHistoryTab } from './components/SalesHistoryTab'
 import type { CashSession } from './api'
 import { useCashMovements, useCashRegisters, useOpenCashSessions } from './hooks/useCashSessions'
 
-type Tab = 'vender' | 'caja' | 'historial' | 'clientes' | 'promociones'
+type Tab = 'vender' | 'ventas' | 'caja' | 'historial' | 'clientes' | 'promociones'
 
 const TABS: [Tab, string][] = [
   ['vender', 'Vender'],
+  ['ventas', 'Ventas'],
   ['caja', 'Caja actual'],
-  ['historial', 'Historial'],
+  ['historial', 'Historial de caja'],
   ['clientes', 'Clientes'],
   ['promociones', 'Promociones'],
 ]
@@ -58,6 +60,7 @@ export function SalesPage() {
       </div>
 
       {tab === 'vender' && <POSTab />}
+      {tab === 'ventas' && <SalesHistoryTab />}
       {tab === 'caja' && <CurrentCashTab />}
       {tab === 'historial' && <CashSessionHistory registers={registers ?? []} />}
       {tab === 'clientes' && <CustomersTab canManage={canManage} />}
