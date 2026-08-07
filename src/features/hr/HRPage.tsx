@@ -4,15 +4,19 @@ import { useWarehouses } from '../inventory/hooks/useWarehouses'
 import { useUsers } from '../users/hooks/useUsers'
 import { AttendanceTab } from './components/AttendanceTab'
 import { EmployeesTab } from './components/EmployeesTab'
+import { PayrollTab } from './components/PayrollTab'
+import { ReportsTab } from './components/ReportsTab'
 import { SchedulesTab } from './components/SchedulesTab'
 import { useEmployees } from './hooks/useEmployees'
 
-type Tab = 'trabajadores' | 'horarios' | 'asistencia'
+type Tab = 'trabajadores' | 'horarios' | 'asistencia' | 'planilla' | 'reportes'
 
 const TABS: [Tab, string][] = [
   ['trabajadores', 'Trabajadores'],
   ['horarios', 'Horarios'],
   ['asistencia', 'Asistencia'],
+  ['planilla', 'Planilla'],
+  ['reportes', 'Reportes'],
 ]
 
 export function HRPage() {
@@ -26,7 +30,7 @@ export function HRPage() {
       <div className="page-header">
         <div>
           <h1 className="core-page-title">Recursos Humanos</h1>
-          <p className="core-page-subtitle">Trabajadores, horarios y asistencia</p>
+          <p className="core-page-subtitle">Trabajadores, horarios, asistencia y planilla</p>
         </div>
       </div>
 
@@ -50,6 +54,10 @@ export function HRPage() {
       {tab === 'horarios' && <SchedulesTab employees={employees ?? []} />}
 
       {tab === 'asistencia' && <AttendanceTab employees={employees ?? []} />}
+
+      {tab === 'planilla' && <PayrollTab employees={employees ?? []} />}
+
+      {tab === 'reportes' && <ReportsTab />}
     </div>
   )
 }
