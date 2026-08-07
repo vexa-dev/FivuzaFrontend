@@ -1,0 +1,67 @@
+.permission-toggle {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  border-radius: 10px;
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface-secondary);
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+
+.permission-toggle-thumb {
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-sm);
+  transition:
+    transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+    width 0.15s,
+    background 0.2s;
+}
+
+.permission-toggle-on {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.permission-toggle-on .permission-toggle-thumb {
+  transform: translateX(16px);
+  background: var(--text-on-primary);
+}
+
+.permission-toggle:hover:not(:disabled) {
+  border-color: var(--primary);
+}
+
+.permission-toggle:active:not(:disabled) .permission-toggle-thumb {
+  width: 19px;
+}
+
+.permission-toggle-on:active:not(:disabled) .permission-toggle-thumb {
+  transform: translateX(13px);
+}
+
+.permission-toggle:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.permission-toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .permission-toggle-thumb {
+    transition: background 0.2s;
+  }
+}

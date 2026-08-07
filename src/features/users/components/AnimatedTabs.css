@@ -1,0 +1,55 @@
+.animated-tabs {
+  position: relative;
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--bg-surface-secondary);
+  border-radius: var(--radius-sm);
+  width: fit-content;
+  margin-bottom: 20px;
+}
+
+.animated-tabs-slider {
+  position: absolute;
+  top: 4px;
+  left: 0;
+  height: calc(100% - 8px);
+  background: var(--bg-surface);
+  border-radius: 6px;
+  box-shadow: var(--shadow-sm);
+  transition:
+    transform 0.25s cubic-bezier(0.65, 0, 0.35, 1),
+    width 0.25s cubic-bezier(0.65, 0, 0.35, 1);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.animated-tab {
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-base);
+  font-weight: 500;
+  font-size: 0.8125rem;
+  padding: 7px 16px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.animated-tab:hover:not(.animated-tab-active) {
+  color: var(--text-primary);
+}
+
+.animated-tab-active {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animated-tabs-slider {
+    transition: none;
+  }
+}

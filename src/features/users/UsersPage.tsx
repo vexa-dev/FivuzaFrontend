@@ -1,15 +1,24 @@
 import { KeyRound, Pencil, Plus, Trash2, UsersRound } from 'lucide-react'
-import { useState } from 'react'
+import { useState, type CSSProperties } from 'react'
 import '../core/CorePage.css'
 import { EmptyState } from '../../shared/components/EmptyState'
-import { RolePermissionMatrix } from './components/RolePermissionMatrix'
+import { AnimatedTabs } from './components/AnimatedTabs'
+import { RolesManager } from './components/RolesManager'
+import { UserAvatar } from './components/UserAvatar'
 import { UserFormModal } from './components/UserFormModal'
 import { UserOverridesModal } from './components/UserOverridesModal'
+import { UsersTableSkeleton } from './components/UsersTableSkeleton'
 import type { TenantUserRecord } from './api'
 import { useRoles } from './hooks/useRoles'
 import { useDeleteUser, useUsers } from './hooks/useUsers'
+import './UsersPage.css'
 
 type Tab = 'usuarios' | 'roles'
+
+const TAB_OPTIONS: [Tab, string][] = [
+  ['usuarios', 'Usuarios'],
+  ['roles', 'Roles y permisos'],
+]
 
 export function UsersPage() {
   const [tab, setTab] = useState<Tab>('usuarios')
@@ -50,31 +59,11 @@ export function UsersPage() {
         )}
       </div>
 
-      <div className="tabs">
-        <button
-          type="button"
-          className={`tab ${tab === 'usuarios' ? 'tab-active' : ''}`}
-          onClick={() => setTab('usuarios')}
-        >
-          Usuarios
-        </button>
-        <button
-          type="button"
-          className={`tab ${tab === 'roles' ? 'tab-active' : ''}`}
-          onClick={() => setTab('roles')}
-        >
-          Roles y permisos
-        </button>
-      </div>
+      <AnimatedTabs value={tab} onChange={setTab} options={TAB_OPTIONS} />
 
       {tab === 'usuarios' && (
         <div className="card core-table-card">
-          {isLoading && (
-            <div className="loading-row">
-              <span className="spinner" />
-              Cargando...
-            </div>
-          )}
+          {isLoading && <UsersTableSkeleton />}
           {error && (
             <p className="core-state-message" role="alert">
               No se pudieron cargar los usuarios.
@@ -95,9 +84,18 @@ export function UsersPage() {
                 </tr>
               </thead>
               <tbody>
-                {users.map((user) => (
-                  <tr key={user.id}>
-                    <td className="core-table-strong">{user.email}</td>
+                {users.map((user, index) => (
+                  <tr
+                    key={user.id}
+                    className="user-row"
+                    style={{ '--row-index': index } as CSSProperties}
+                  >
+                    <td>
+                      <div className="user-row-cell">
+                        <UserAvatar email={user.email} seed={user.id} />
+                        <span className="core-table-strong">{user.email}</span>
+                      </div>
+                    </td>
                     <td>{roleName(user.role)}</td>
                     <td>
                       <span className={`badge ${user.is_active ? 'badge-success' : 'badge-neutral'}`}>
@@ -149,7 +147,7 @@ export function UsersPage() {
         </div>
       )}
 
-      {tab === 'roles' && <RolePermissionMatrix roles={roles ?? []} />}
+      {tab === 'roles' && <RolesManager roles={roles ?? []} />}
 
       {showForm && (
         <UserFormModal

@@ -1,0 +1,134 @@
+.user-avatar-primary {
+  background: var(--primary-subtle-bg);
+  color: var(--primary);
+}
+
+.user-avatar-success {
+  background: var(--success-subtle-bg);
+  color: var(--success);
+}
+
+.user-avatar-warning {
+  background: var(--warning-subtle-bg);
+  color: var(--warning);
+}
+
+.user-avatar-danger {
+  background: var(--danger-subtle-bg);
+  color: var(--danger);
+}
+
+.user-row-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Micro-interaccion en los botones de accion de fila -un leve "pop" al
+   pasar el mouse, en vez de solo cambiar de color. Acotado a esta pagina
+   por ahora (prueba antes de llevarlo a .btn-icon global). */
+.row-actions .btn-icon {
+  transition:
+    background 0.15s,
+    color 0.15s,
+    transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.row-actions .btn-icon:hover:not(:disabled) {
+  transform: scale(1.12);
+}
+
+.row-actions .btn-icon:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row-actions .btn-icon:hover:not(:disabled),
+  .row-actions .btn-icon:active:not(:disabled) {
+    transform: none;
+  }
+}
+
+/* Cada fila entra con un leve fade+slide, escalonada por su posicion (via
+   --row-index inline) -la tabla se siente "cargada de una vez" en lugar
+   de simplemente aparecer de golpe. Una sola pasada al montar, no se
+   repite en updates posteriores (key por usuario ya evita eso). */
+@keyframes user-row-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.user-row {
+  animation: user-row-in 0.25s ease backwards;
+  animation-delay: calc(var(--row-index, 0) * 40ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .user-row {
+    animation: none;
+  }
+}
+
+/* Skeleton de carga -reemplaza el spinner generico por barras que ya
+   insinuan la forma real de la tabla (email largo, rol corto, badge
+   redondeado, fecha media). */
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -120% 0;
+  }
+  100% {
+    background-position: 120% 0;
+  }
+}
+
+.skeleton-bar {
+  height: 12px;
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    var(--bg-surface-secondary) 25%,
+    var(--bg-surface-hover) 50%,
+    var(--bg-surface-secondary) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+.skeleton-row td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.skeleton-avatar-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.skeleton-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: linear-gradient(
+    90deg,
+    var(--bg-surface-secondary) 25%,
+    var(--bg-surface-hover) 50%,
+    var(--bg-surface-secondary) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-bar,
+  .skeleton-avatar {
+    animation: none;
+  }
+}
