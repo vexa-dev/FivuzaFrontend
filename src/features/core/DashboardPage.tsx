@@ -39,37 +39,30 @@ export function DashboardPage() {
 
       {data && (
         <>
-          <div className="summary-cards">
-            <div className="card summary-card">
-              <Building2 className="summary-card-icon" />
-              <div>
-                <span className="summary-card-value">
+          <div className="hero-stats-grid">
+            <div className="card hero-stat-card">
+              <DollarSign className="hero-stat-icon" />
+              <span className="hero-stat-label">MRR</span>
+              <span className="hero-stat-value">{formatCurrency(data.mrr)}</span>
+              <span className="hero-stat-caption">Ingreso mensual recurrente de la plataforma</span>
+            </div>
+            <div className="compact-stats-stack">
+              <div className="card compact-stat-row">
+                <Building2 />
+                <span className="compact-stat-label">Tenants totales</span>
+                <span className="compact-stat-value">
                   {Object.values(data.tenants_by_status).reduce((sum, n) => sum + n, 0)}
                 </span>
-                <span className="summary-card-label">Tenants totales</span>
               </div>
-            </div>
-            <div className="card summary-card">
-              <DollarSign className="summary-card-icon" />
-              <div>
-                <span className="summary-card-value">{formatCurrency(data.mrr)}</span>
-                <span className="summary-card-label">MRR</span>
+              <div className="card compact-stat-row">
+                <AlertTriangle />
+                <span className="compact-stat-label">Pagos pendientes</span>
+                <span className="compact-stat-value">{data.pending_payments_count}</span>
               </div>
-            </div>
-            <div className="card summary-card">
-              <AlertTriangle className="summary-card-icon" />
-              <div>
-                <span className="summary-card-value">{data.pending_payments_count}</span>
-                <span className="summary-card-label">Pagos pendientes</span>
-              </div>
-            </div>
-            <div className="card summary-card">
-              <Ban className="summary-card-icon" />
-              <div>
-                <span className="summary-card-value">
-                  {data.tenants_by_status.suspended ?? 0}
-                </span>
-                <span className="summary-card-label">Suspendidos</span>
+              <div className="card compact-stat-row">
+                <Ban />
+                <span className="compact-stat-label">Suspendidos</span>
+                <span className="compact-stat-value">{data.tenants_by_status.suspended ?? 0}</span>
               </div>
             </div>
           </div>

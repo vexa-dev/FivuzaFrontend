@@ -45,22 +45,22 @@
 }
 
 .erp-sidebar-toggle:hover {
-  background: var(--bg-surface-secondary);
+  background: var(--bg-surface-hover);
   color: var(--text-primary);
 }
 
 .erp-sidebar-nav {
   display: flex;
   flex-direction: column;
-  padding: 12px;
-  gap: 2px;
+  padding: 14px 12px;
+  gap: 3px;
 }
 
 .erp-sidebar-link {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 9px 12px;
+  gap: 11px;
+  padding: 10px 12px;
   border-radius: var(--radius-sm);
   color: var(--text-secondary);
   text-decoration: none;
@@ -100,7 +100,7 @@
 }
 
 .erp-sidebar-link:hover {
-  background: var(--bg-surface-secondary);
+  background: var(--bg-surface-hover);
   color: var(--text-primary);
 }
 
@@ -193,7 +193,7 @@
 }
 
 .erp-mobile-menu-toggle:hover {
-  background: var(--bg-surface-secondary);
+  background: var(--bg-surface-hover);
 }
 
 /* Debajo de este ancho el sidebar fijo de 2 columnas ya no cabe -pasa a

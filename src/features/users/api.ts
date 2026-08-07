@@ -59,6 +59,12 @@ export const fetchRoles = () => authed<Role[]>('/usuarios/roles/')
 export const createRole = (data: { name: string; description?: string }) =>
   authed<Role>('/usuarios/roles/', { method: 'POST', body: data })
 
+export const updateRole = (id: number, data: Partial<{ name: string; description: string }>) =>
+  authed<Role>(`/usuarios/roles/${id}/`, { method: 'PATCH', body: data })
+
+export const deleteRole = (id: number) =>
+  authed<void>(`/usuarios/roles/${id}/`, { method: 'DELETE' })
+
 export const fetchPermissions = () => authed<Permission[]>('/usuarios/permissions/')
 
 export const fetchRolePermissions = () =>

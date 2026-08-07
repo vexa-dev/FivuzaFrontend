@@ -1,0 +1,182 @@
+/* Pantalla POS ("Vender", Sprint 16-17): la pantalla de mayor uso e
+   intensidad tactil del sistema -objetivos de tap mas grandes que el resto
+   del ERP (WCAG 2.5.5 recomienda 44x44px minimo para objetivos tactiles;
+   aqui se aproxima a eso sin inflar tanto la fila del carrito que deje de
+   verse una lista densa). */
+
+.pos-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(340px, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.pos-catalog-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+/* Barra de busqueda propia -no reutiliza .table-toolbar/.search-input
+   (pensados para un buscador chico dentro de una tabla, max-width:280px)
+   porque en el POS es EL control principal de la pantalla, debe ocupar
+   todo el ancho disponible y ser mas grande para lectura rapida/escaneo. */
+.pos-search-bar {
+  position: relative;
+  display: flex;
+  width: 100%;
+}
+
+.pos-search-bar svg {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.pos-search-bar input {
+  width: 100%;
+  font-size: 1.05rem;
+  padding: 14px 14px 14px 44px;
+  border-radius: var(--radius-sm);
+}
+
+.pos-product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  overflow-y: auto;
+}
+
+.pos-product-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  text-align: left;
+  min-height: 108px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s,
+    transform 0.1s;
+}
+
+.pos-product-card:hover:not(:disabled) {
+  border-color: var(--primary);
+  box-shadow: var(--shadow-md);
+}
+
+.pos-product-card:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.pos-product-card:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.pos-product-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.pos-product-card-name {
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 0.875rem;
+  line-height: 1.3;
+}
+
+.pos-product-card-sku {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.pos-product-card-footer {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.pos-product-card-price {
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 1rem;
+  white-space: nowrap;
+}
+
+.pos-product-card-stock {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.pos-promo-badge {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+/* Stepper de cantidad del carrito. */
+.pos-qty-btn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.pos-qty-value {
+  min-width: 26px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 0.9375rem;
+  color: var(--text-primary);
+}
+
+.pos-remove-btn {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.pos-checkout-btn {
+  font-size: 1.05rem;
+  padding: 14px;
+}
+
+/* Tablet en horizontal (ej. iPad 1024px, Convenciones §5.3): el catalogo
+   gana proporcion frente al carrito y las tarjetas de producto crecen un
+   poco -mas espacio para tocar con el dedo sin perder densidad. */
+@media (min-width: 900px) {
+  .pos-product-grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
+}
+
+/* Tablet en horizontal (~860-1280px, ej. iPad 1024px): el carrito no
+   necesita tanto ancho como en desktop -darle mas proporcion al catalogo
+   evita que quede una sola columna de productos apretada contra el carrito. */
+@media (min-width: 861px) and (max-width: 1280px) {
+  .pos-layout {
+    grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr);
+  }
+}
+
+/* Bajo este ancho el panel de catalogo y el carrito ya no caben lado a
+   lado -se apilan, con el carrito primero (es lo que el cajero necesita
+   confirmar antes de seguir agregando productos en una pantalla angosta). */
+@media (max-width: 860px) {
+  .pos-layout {
+    grid-template-columns: 1fr;
+  }
+}

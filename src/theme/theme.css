@@ -50,7 +50,8 @@
   --bg-app: #e9eef3;
   --bg-surface: #ffffff;
   --bg-surface-secondary: #dce6ec;
-  --border-subtle: #dce6ec;
+  --bg-surface-hover: #f2f6f9;
+  --border-subtle: #d3e0e8;
   --border-default: #c3d2db;
   --text-primary: var(--color-neutral-900);
   --text-secondary: var(--color-neutral-600);
@@ -66,21 +67,34 @@
   --danger: var(--color-danger-600);
   --danger-subtle-bg: var(--color-danger-100);
 
-  --shadow-sm: 0 1px 2px rgba(14, 32, 43, 0.06);
-  --shadow-md: 0 4px 16px rgba(14, 32, 43, 0.08);
-  --shadow-lg: 0 12px 32px rgba(14, 32, 43, 0.12);
+  /* Dos capas cada una (contacto + ambiente): una sola sombra ancha se lee
+     plana, el par da la sensacion de elevacion real sin subir la opacidad
+     tanto que se note "sucia" sobre blanco. */
+  --shadow-sm:
+    0 1px 2px rgba(14, 32, 43, 0.04),
+    0 1px 1px rgba(14, 32, 43, 0.06);
+  --shadow-md:
+    0 6px 16px rgba(14, 32, 43, 0.07),
+    0 2px 6px rgba(14, 32, 43, 0.05);
+  --shadow-lg:
+    0 16px 40px rgba(14, 32, 43, 0.12),
+    0 4px 12px rgba(14, 32, 43, 0.08);
 }
 
 [data-theme='dark'] {
   /* Superficies desacopladas de la escala --color-neutral-9/800 original:
      esos tonos se leian verdosos/teal contra un bg-app casi negro. Esta
      familia comparte el mismo azul frio en todos los pasos (fondo, borde,
-     texto) en vez de ir cada uno con un tinte distinto. */
-  --bg-app: #04090c;
-  --bg-surface: #0a1420;
-  --bg-surface-secondary: #102132;
-  --border-subtle: #102132;
-  --border-default: #1b3247;
+     texto) en vez de ir cada uno con un tinte distinto.
+     bg-app vs bg-surface separados un paso mas que la version anterior
+     (#04090c/#0a1420 quedaban casi identicos en luminancia -las cards se
+     perdian contra el fondo de pagina, sin jerarquia de superficie real). */
+  --bg-app: #050a0f;
+  --bg-surface: #0e1b29;
+  --bg-surface-secondary: #16283a;
+  --bg-surface-hover: #1b3247;
+  --border-subtle: #1c3145;
+  --border-default: #28455f;
   --text-primary: #edf2f6;
   --text-secondary: #a3b6c2;
   --text-muted: #5e7686;
@@ -95,9 +109,15 @@
   --danger: var(--color-danger-400);
   --danger-subtle-bg: var(--color-danger-900);
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.35);
-  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.45);
+  --shadow-sm:
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    0 1px 1px rgba(0, 0, 0, 0.3);
+  --shadow-md:
+    0 6px 20px rgba(0, 0, 0, 0.4),
+    0 2px 6px rgba(0, 0, 0, 0.3);
+  --shadow-lg:
+    0 20px 48px rgba(0, 0, 0, 0.5),
+    0 6px 16px rgba(0, 0, 0, 0.35);
 }
 
 * {
@@ -108,7 +128,31 @@ body {
   margin: 0;
   background: var(--bg-app);
   color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
   transition:
     background 0.2s,
     color 0.2s;
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
+/* Los controles de formulario NO heredan tipografia/color del documento
+   por defecto (UA stylesheet) -sin esto, cualquier <button class="card">
+   (tarjeta de producto del POS, summary-card de "Caja actual", etc.) pierde
+   var(--text-primary) y cae al color de boton del sistema operativo, que en
+   tema oscuro se lee casi negro sobre una card oscura -ilegible. */
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  letter-spacing: inherit;
 }

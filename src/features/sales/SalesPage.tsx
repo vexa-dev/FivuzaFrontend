@@ -100,7 +100,6 @@ function CurrentCashTab() {
               key={session.id}
               type="button"
               className="card summary-card"
-              style={{ cursor: 'pointer', textAlign: 'left', border: 'none' }}
               onClick={() => setSelectedSessionId(session.id)}
             >
               <div>
