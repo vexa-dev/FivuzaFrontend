@@ -1,0 +1,26 @@
+.receipt-preview {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  display: flex;
+  justify-content: center;
+  overflow-x: auto;
+}
+
+.receipt-preview .receipt {
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.receipt-preview .receipt p {
+  margin: 2px 0;
+  white-space: pre;
+}
+
+.receipt-preview .receipt hr {
+  border: none;
+  border-top: 1px dashed var(--border-default);
+  margin: 6px 0;
+}
