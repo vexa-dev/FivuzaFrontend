@@ -207,6 +207,7 @@ export function POSCartPanel({ cart, totals, dispatch, cashSessionId }: POSCartP
         <CheckoutModal
           cart={cart}
           totals={totals}
+          customer={selectedCustomer}
           error={error}
           isSubmitting={createSale.isPending}
           onAddPayment={(payment) => dispatch({ type: 'ADD_PAYMENT', payment })}

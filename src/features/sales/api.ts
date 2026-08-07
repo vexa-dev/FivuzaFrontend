@@ -135,9 +135,20 @@ export interface Customer {
   phone: string
   address: string
   is_active: boolean
+  // null = sin limite configurado (Sprint 19, Ficha de Producto §5.1).
+  credit_limit: string | null
+  current_debt: string
+  current_balance: string
+  oldest_unpaid_debt_at: string | null
   updated_at: string
   created_at: string
 }
+
+const CUSTOMER_COMPUTED_FIELDS = [
+  'current_debt',
+  'current_balance',
+  'oldest_unpaid_debt_at',
+] as const
 
 export function fetchCustomers(search?: string) {
   const params = new URLSearchParams()
@@ -147,7 +158,12 @@ export function fetchCustomers(search?: string) {
   })
 }
 
-export function createCustomer(data: Omit<Customer, 'id' | 'updated_at' | 'created_at'>) {
+export function createCustomer(
+  data: Omit<
+    Customer,
+    'id' | (typeof CUSTOMER_COMPUTED_FIELDS)[number] | 'updated_at' | 'created_at'
+  >,
+) {
   return tenantApiFetch<Customer>('/ventas/customers/', {
     method: 'POST',
     body: data,
@@ -168,6 +184,54 @@ export function deleteCustomer(id: number) {
     method: 'DELETE',
     token: getAccessToken(),
   })
+}
+
+export interface CustomerDebtLedgerEntry {
+  id: number
+  customer: number
+  sale: number | null
+  type: 'DEBIT' | 'CREDIT'
+  amount: string
+  currency: string
+  description: string
+  created_at: string
+}
+
+export interface CustomerBalanceLedgerEntry {
+  id: number
+  customer: number
+  sale: number | null
+  sale_return: number | null
+  type: 'CREDIT' | 'DEBIT'
+  amount: string
+  currency: string
+  description: string
+  created_at: string
+}
+
+export function fetchCustomerDebtLedger(customerId: number) {
+  return tenantApiFetch<CustomerDebtLedgerEntry[]>(
+    `/ventas/customer-debt-ledger/?customer=${customerId}`,
+    { token: getAccessToken() },
+  )
+}
+
+export function fetchCustomerBalanceLedger(customerId: number) {
+  return tenantApiFetch<CustomerBalanceLedgerEntry[]>(
+    `/ventas/customer-balance-ledger/?customer=${customerId}`,
+    { token: getAccessToken() },
+  )
+}
+
+export function registerDebtPayment(data: {
+  customer_id: number
+  amount: string
+  description?: string
+}) {
+  return tenantApiFetch<{ id: number; type: string; amount: string; customer_current_debt: string }>(
+    '/ventas/customer-debt-ledger/register-payment/',
+    { method: 'POST', body: data, token: getAccessToken() },
+  )
 }
 
 export type PromotionType = 'PERCENTAGE' | 'FIXED_AMOUNT'

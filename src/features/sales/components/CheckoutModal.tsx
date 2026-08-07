@@ -1,7 +1,7 @@
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, TriangleAlert } from 'lucide-react'
 import { useState } from 'react'
 import { Modal } from '../../../shared/components/Modal'
-import type { SalePaymentMethod } from '../api'
+import type { Customer, SalePaymentMethod } from '../api'
 import type { CartPayment, CartState } from '../cart/types'
 import type { CartTotals } from '../cart/totals'
 
@@ -16,6 +16,7 @@ const PAYMENT_METHODS: [SalePaymentMethod, string][] = [
 interface CheckoutModalProps {
   cart: CartState
   totals: CartTotals
+  customer: Customer | undefined
   error: string | null
   isSubmitting: boolean
   onAddPayment: (payment: CartPayment) => void
@@ -36,6 +37,7 @@ interface CheckoutModalProps {
 export function CheckoutModal({
   cart,
   totals,
+  customer,
   error,
   isSubmitting,
   onAddPayment,
@@ -136,6 +138,13 @@ export function CheckoutModal({
                     Vuelto: S/ {change.toFixed(2)}
                   </p>
                 )}
+
+                {payment.method === 'CREDIT_LEDGER' && (
+                  <CreditWarning customer={customer} paymentAmount={payment.amount} />
+                )}
+                {payment.method === 'BALANCE' && (
+                  <BalanceWarning customer={customer} paymentAmount={payment.amount} />
+                )}
               </div>
             )
           })}
@@ -166,5 +175,66 @@ export function CheckoutModal({
         </button>
       </div>
     </Modal>
+  )
+}
+
+/** Advertencia visible (Sprint 19): el limite real lo valida el backend
+ * (CREDIT_LIMIT_EXCEEDED) -esto es solo un heads-up para el cajero antes de
+ * confirmar, mismo criterio que paymentsMatchTotal (vista previa, no fuente
+ * de verdad). */
+function CreditWarning({
+  customer,
+  paymentAmount,
+}: {
+  customer: Customer | undefined
+  paymentAmount: string
+}) {
+  if (!customer) {
+    return (
+      <p className="core-page-subtitle" style={{ margin: 0 }}>
+        Selecciona un cliente para vender a crédito.
+      </p>
+    )
+  }
+
+  const currentDebt = Number(customer.current_debt)
+  const projectedDebt = currentDebt + Number(paymentAmount || 0)
+  const creditLimit = customer.credit_limit === null ? null : Number(customer.credit_limit)
+  const exceedsLimit = creditLimit !== null && projectedDebt > creditLimit
+
+  return (
+    <p
+      className="core-page-subtitle"
+      style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 6, color: exceedsLimit ? 'var(--danger)' : undefined }}
+    >
+      {exceedsLimit && <TriangleAlert size={14} strokeWidth={2} />}
+      Deuda actual: S/ {customer.current_debt}
+      {creditLimit !== null && ` · Límite: S/ ${customer.credit_limit}`}
+      {exceedsLimit && ' · Supera el límite de crédito'}
+    </p>
+  )
+}
+
+function BalanceWarning({
+  customer,
+  paymentAmount,
+}: {
+  customer: Customer | undefined
+  paymentAmount: string
+}) {
+  if (!customer) return null
+
+  const currentBalance = Number(customer.current_balance)
+  const insufficient = Number(paymentAmount || 0) > currentBalance
+
+  return (
+    <p
+      className="core-page-subtitle"
+      style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 6, color: insufficient ? 'var(--danger)' : undefined }}
+    >
+      {insufficient && <TriangleAlert size={14} strokeWidth={2} />}
+      Saldo a favor disponible: S/ {customer.current_balance}
+      {insufficient && ' · Insuficiente'}
+    </p>
   )
 }

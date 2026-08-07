@@ -22,6 +22,7 @@ export function CustomerFormModal({ editingCustomer, onClose }: CustomerFormModa
   const [name, setName] = useState(editingCustomer?.name ?? '')
   const [phone, setPhone] = useState(editingCustomer?.phone ?? '')
   const [address, setAddress] = useState(editingCustomer?.address ?? '')
+  const [creditLimit, setCreditLimit] = useState(editingCustomer?.credit_limit ?? '')
   const [error, setError] = useState<string | null>(null)
 
   const createCustomer = useCreateCustomer()
@@ -43,6 +44,7 @@ export function CustomerFormModal({ editingCustomer, onClose }: CustomerFormModa
       phone,
       address,
       is_active: true,
+      credit_limit: creditLimit.trim() === '' ? null : creditLimit,
     }
     const action = editingCustomer
       ? updateCustomer.mutateAsync({ id: editingCustomer.id, data })
@@ -99,6 +101,17 @@ export function CustomerFormModal({ editingCustomer, onClose }: CustomerFormModa
             id="customer-address"
             value={address}
             onChange={(event) => setAddress(event.target.value)}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="customer-credit-limit">Límite de crédito (opcional)</label>
+          <input
+            id="customer-credit-limit"
+            inputMode="decimal"
+            value={creditLimit ?? ''}
+            onChange={(event) => setCreditLimit(event.target.value)}
+            placeholder="Sin límite"
           />
         </div>
 
