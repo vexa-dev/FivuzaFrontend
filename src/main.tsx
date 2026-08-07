@@ -27,6 +27,15 @@ if (sentryDsn) {
   })
 }
 
+// Solo en produccion (Sprint 20): en dev el service worker pelea con el
+// HMR de Vite -cachea respuestas que HMR espera frescas- sin aportar nada,
+// ya que el objetivo (POS instalable/usable offline) es de la build real.
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {})
+  })
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ThemeProvider>

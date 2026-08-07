@@ -1,6 +1,7 @@
 import { Minus, Plus, ShoppingCart, Trash2 } from 'lucide-react'
 import { useState, type Dispatch } from 'react'
 import { EmptyState } from '../../../shared/components/EmptyState'
+import { offlineDB } from '../../../shared/offline/db'
 import { ApiError } from '../../../shared/utils/apiClient'
 import type { Sale } from '../api'
 import type { CartAction } from '../cart/cartReducer'
@@ -10,6 +11,7 @@ import type { CartState } from '../cart/types'
 import { useCustomers } from '../hooks/useCustomers'
 import { useCreateSale } from '../hooks/useSales'
 import { CheckoutModal } from './CheckoutModal'
+import { OfflineSaleQueuedModal } from './OfflineSaleQueuedModal'
 import { PostSaleModal } from './PostSaleModal'
 
 interface POSCartPanelProps {
@@ -27,6 +29,7 @@ export function POSCartPanel({ cart, totals, dispatch, cashSessionId }: POSCartP
   const [error, setError] = useState<string | null>(null)
   const [showCheckout, setShowCheckout] = useState(false)
   const [completedSale, setCompletedSale] = useState<Sale | null>(null)
+  const [queuedOfflineTotal, setQueuedOfflineTotal] = useState<string | null>(null)
 
   const openCheckout = () => {
     setError(null)
@@ -54,19 +57,51 @@ export function POSCartPanel({ cart, totals, dispatch, cashSessionId }: POSCartP
       return
     }
 
-    createSale
-      .mutateAsync(payload)
-      .then((sale) => {
-        setShowCheckout(false)
-        setCompletedSale(sale)
-        dispatch({ type: 'CLEAR' })
-        dispatch({ type: 'SET_CUSTOMER', customerId: null })
-        setCustomerSearch('')
+    // Generado siempre, incluso cuando hay conexion -es la misma clave de
+    // idempotencia que /ventas/sales/sync/ usa si esta venta termina
+    // encolandose (Sprint 20, API Spec §4.2).
+    const clientSideUuid = crypto.randomUUID()
+    const payloadWithUuid = { ...payload, client_side_uuid: clientSideUuid }
+
+    const finishWithSale = (sale: Sale) => {
+      setShowCheckout(false)
+      setCompletedSale(sale)
+      dispatch({ type: 'CLEAR' })
+      dispatch({ type: 'SET_CUSTOMER', customerId: null })
+      setCustomerSearch('')
+    }
+
+    const queueOffline = async () => {
+      await offlineDB.pendingSales.add({
+        clientSideUuid,
+        customerId: payload.customer_id,
+        cashSessionId: payload.cash_session_id,
+        lines: payload.lines,
+        payments: payload.payments,
+        total: totals.total.toFixed(2),
+        createdAt: new Date().toISOString(),
+        status: 'PENDING',
       })
+      setShowCheckout(false)
+      setQueuedOfflineTotal(totals.total.toFixed(2))
+      dispatch({ type: 'CLEAR' })
+      dispatch({ type: 'SET_CUSTOMER', customerId: null })
+      setCustomerSearch('')
+    }
+
+    createSale
+      .mutateAsync(payloadWithUuid)
+      .then(finishWithSale)
       .catch((err: unknown) => {
-        const body =
-          err instanceof ApiError ? (err.body as { error?: { message?: string } }) : null
-        setError(body?.error?.message ?? 'No se pudo registrar la venta.')
+        if (err instanceof ApiError) {
+          const body = err.body as { error?: { message?: string } }
+          setError(body?.error?.message ?? 'No se pudo registrar la venta.')
+          return
+        }
+        // No es un error de la API (ej. TypeError: Failed to fetch) -no hay
+        // conexion. La venta ya se cobro en la caja fisica; se encola en
+        // vez de perderse (Sprint 20, Definicion de Hecho).
+        queueOffline()
       })
   }
 
@@ -225,6 +260,13 @@ export function POSCartPanel({ cart, totals, dispatch, cashSessionId }: POSCartP
 
       {completedSale && (
         <PostSaleModal sale={completedSale} onClose={() => setCompletedSale(null)} />
+      )}
+
+      {queuedOfflineTotal !== null && (
+        <OfflineSaleQueuedModal
+          total={queuedOfflineTotal}
+          onClose={() => setQueuedOfflineTotal(null)}
+        />
       )}
     </div>
   )

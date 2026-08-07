@@ -6,6 +6,7 @@ import { useCart } from '../cart/useCart'
 import { useCashRegisters, useOpenCashSessions } from '../hooks/useCashSessions'
 import { usePOSCatalog } from '../hooks/usePOSCatalog'
 import './POS.css'
+import { OfflineSyncStatus } from './OfflineSyncStatus'
 import { POSCartPanel } from './POSCartPanel'
 
 function promotionBadge(item: POSCatalogItem): string | null {
@@ -64,6 +65,8 @@ export function POSTab() {
   return (
     <div className="pos-layout">
       <div className="card pos-catalog-panel">
+        <OfflineSyncStatus />
+
         {openSessions.length > 1 && (
           <div>
             <label htmlFor="pos-session">Caja</label>
