@@ -1,4 +1,13 @@
-import { LayoutDashboard, LogOut, Menu, Package, ShoppingCart, Users as UsersIcon } from 'lucide-react'
+import {
+  ChevronsLeft,
+  ChevronsRight,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  Package,
+  ShoppingCart,
+  Users as UsersIcon,
+} from 'lucide-react'
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../../features/auth/hooks/useAuth'
@@ -46,7 +55,7 @@ export function ErpLayout() {
             onClick={() => setCollapsed((value) => !value)}
             aria-label={collapsed ? 'Expandir menú' : 'Colapsar menú'}
           >
-            {collapsed ? '»' : '«'}
+            {collapsed ? <ChevronsRight size={14} strokeWidth={2.5} /> : <ChevronsLeft size={14} strokeWidth={2.5} />}
           </button>
         </div>
 

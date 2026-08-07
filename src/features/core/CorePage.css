@@ -120,6 +120,92 @@
   color: var(--text-secondary);
 }
 
+/* Reemplaza la fila de 4 cards identicas del Resumen: la cifra que de
+   verdad importa a diario (MRR) gana peso propio, el resto queda como
+   dato de apoyo compacto al lado -jerarquia real en vez de una grilla
+   pareja donde todo pesa lo mismo. */
+.hero-stats-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.hero-stat-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  padding: 28px 32px;
+}
+
+.hero-stat-icon {
+  width: 22px;
+  height: 22px;
+  color: var(--primary);
+  margin-bottom: 4px;
+}
+
+.hero-stat-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.hero-stat-value {
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.1;
+}
+
+.hero-stat-caption {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.compact-stats-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.compact-stat-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  flex: 1;
+}
+
+.compact-stat-row svg {
+  width: 18px;
+  height: 18px;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.compact-stat-label {
+  flex: 1;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.compact-stat-value {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+@media (max-width: 640px) {
+  .hero-stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .summary-section-title {
   font-size: 0.9375rem;
   font-weight: 700;
