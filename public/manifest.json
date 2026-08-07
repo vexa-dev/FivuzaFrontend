@@ -1,0 +1,18 @@
+{
+  "name": "Fivuza — Panel interno",
+  "short_name": "Fivuza",
+  "description": "ERP para negocios de barrio: ventas, inventario, caja y más.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0E202B",
+  "theme_color": "#0E202B",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

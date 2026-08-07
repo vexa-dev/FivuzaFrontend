@@ -1,0 +1,54 @@
+.offline-sync-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.offline-sync-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.offline-sync-badge-ok {
+  background: var(--success-subtle-bg);
+  color: var(--success);
+}
+
+.offline-sync-badge-warning {
+  background: var(--warning-subtle-bg);
+  color: var(--warning);
+}
+
+.offline-sync-badge-offline {
+  background: var(--danger-subtle-bg);
+  color: var(--danger);
+}
+
+.offline-sync-pending {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.offline-sync-failed {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.offline-sync-spin {
+  animation: offline-sync-spin 0.8s linear infinite;
+}
+
+@keyframes offline-sync-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

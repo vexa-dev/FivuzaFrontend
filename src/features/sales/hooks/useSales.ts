@@ -38,6 +38,13 @@ export function useCreateSale() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (data: SaleCreateInput) => createSale(data),
+    // Sprint 20: con el networkMode por defecto ('online'), React Query
+    // PAUSA la mutacion cuando navigator.onLine es false -mutateAsync ni
+    // siquiera intenta el fetch, se queda "pending" para siempre en vez de
+    // rechazar. 'always' es el modo documentado para apps offline-first:
+    // deja que el fetch real falle (o no) y sea POSCartPanel quien decida
+    // que hacer con ese fallo -encolar en Dexie, en este caso.
+    networkMode: 'always',
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sales', 'sales'] })
       // Una venta descuenta stock y puede alimentar el arqueo de la sesion

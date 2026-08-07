@@ -379,6 +379,40 @@ export function createSale(data: SaleCreateInput) {
   })
 }
 
+export interface SaleSyncItemInput {
+  client_side_uuid: string
+  customer_id: number
+  cash_session_id: number
+  lines: SaleLineInput[]
+  payments: SalePaymentInput[]
+}
+
+export interface SaleSyncedResult {
+  client_side_uuid: string
+  status: 'CREATED' | 'DUPLICATE_IGNORED' | 'FAILED'
+  sale_id?: number
+  error?: unknown
+}
+
+export interface SaleSyncConflict {
+  client_side_uuid: string
+  variant_id: number
+  oversell_flag: true
+}
+
+export interface SaleSyncResponse {
+  synced: SaleSyncedResult[]
+  conflicts: SaleSyncConflict[]
+}
+
+export function syncSales(sales: SaleSyncItemInput[]) {
+  return tenantApiFetch<SaleSyncResponse>('/ventas/sales/sync/', {
+    method: 'POST',
+    body: { sales },
+    token: getAccessToken(),
+  })
+}
+
 export function fetchSales(
   filters: {
     customer?: number
