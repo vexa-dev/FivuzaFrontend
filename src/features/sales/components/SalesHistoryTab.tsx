@@ -1,11 +1,15 @@
-import { Receipt as ReceiptIcon, ReceiptText } from 'lucide-react'
+import { Receipt as ReceiptIcon, ReceiptText, Undo2, Ban } from 'lucide-react'
 import { useState } from 'react'
+import { useAuth } from '../../auth/hooks/useAuth'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { Modal } from '../../../shared/components/Modal'
-import type { Sale } from '../api'
+import type { Sale, SaleReturn } from '../api'
 import { useCustomers } from '../hooks/useCustomers'
 import { useSale, useSaleReceipt, useSales } from '../hooks/useSales'
+import { useSaleReturns } from '../hooks/useSaleReturns'
 import { ReceiptView } from './ReceiptView'
+import { ReturnSaleModal } from './ReturnSaleModal'
+import { VoidSaleModal } from './VoidSaleModal'
 
 function formatDate(value: string) {
   return new Date(value).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' })
@@ -137,10 +141,10 @@ export function SalesHistoryTab() {
                   <td>S/ {sale.total}</td>
                   <td>
                     <span
-                      className={`badge ${sale.status === 'COMPLETED' ? 'badge-success' : 'badge-neutral'}`}
+                      className={`badge ${sale.status === 'COMPLETED' ? 'badge-success' : sale.status === 'VOIDED' ? 'badge-danger' : 'badge-neutral'}`}
                     >
                       <span className="dot" />
-                      {sale.status}
+                      {sale.status === 'VOIDED' ? 'ANULADA' : sale.status}
                     </span>
                   </td>
                   <td>
@@ -168,8 +172,15 @@ export function SalesHistoryTab() {
 }
 
 function SaleDetailModal({ saleId, onClose }: { saleId: number; onClose: () => void }) {
+  const { hasPermission } = useAuth()
   const { data: sale, isLoading } = useSale(saleId)
   const { data: receiptHtml, isLoading: loadingReceipt } = useSaleReceipt(saleId)
+  const { data: returns } = useSaleReturns(saleId)
+  const [showVoid, setShowVoid] = useState(false)
+  const [showReturn, setShowReturn] = useState(false)
+
+  const canVoid = hasPermission('SALES_VOID')
+  const canReturn = hasPermission('SALES_RETURN')
 
   return (
     <Modal title={sale ? sale.invoice_number : 'Detalle de venta'} onClose={onClose}>
@@ -179,20 +190,79 @@ function SaleDetailModal({ saleId, onClose }: { saleId: number; onClose: () => v
           Cargando...
         </div>
       )}
-      {sale && <SaleDetailBody sale={sale} />}
-      <div style={{ marginTop: 16 }}>
-        <ReceiptView html={receiptHtml} isLoading={loadingReceipt} />
-      </div>
+      {sale && (
+        <>
+          <SaleDetailBody sale={sale} returns={returns ?? []} />
+
+          {sale.status === 'COMPLETED' && (canVoid || canReturn) && (
+            <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
+              {canReturn && (
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => setShowReturn(true)}
+                >
+                  <Undo2 size={14} strokeWidth={2} />
+                  Registrar devolución
+                </button>
+              )}
+              {canVoid && (
+                <button
+                  type="button"
+                  className="btn btn-danger-ghost btn-sm"
+                  onClick={() => setShowVoid(true)}
+                >
+                  <Ban size={14} strokeWidth={2} />
+                  Anular venta
+                </button>
+              )}
+            </div>
+          )}
+
+          <div style={{ marginTop: 16 }}>
+            <ReceiptView html={receiptHtml} isLoading={loadingReceipt} />
+          </div>
+
+          {showVoid && (
+            <VoidSaleModal
+              sale={sale}
+              onClose={() => setShowVoid(false)}
+              onVoided={() => setShowVoid(false)}
+            />
+          )}
+          {showReturn && (
+            <ReturnSaleModal
+              sale={sale}
+              onClose={() => setShowReturn(false)}
+              onReturned={() => setShowReturn(false)}
+            />
+          )}
+        </>
+      )}
     </Modal>
   )
 }
 
-function SaleDetailBody({ sale }: { sale: Sale }) {
+function SaleDetailBody({ sale, returns }: { sale: Sale; returns: SaleReturn[] }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      <p className="core-page-subtitle" style={{ margin: 0 }}>
-        {formatDate(sale.created_at)}
-      </p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <p className="core-page-subtitle" style={{ margin: 0 }}>
+          {formatDate(sale.created_at)}
+        </p>
+        {sale.status === 'VOIDED' && (
+          <span className="badge badge-danger">
+            <span className="dot" />
+            ANULADA
+          </span>
+        )}
+        {returns.length > 0 && (
+          <span className="badge badge-warning">
+            <span className="dot" />
+            {returns.length === 1 ? '1 devolución' : `${returns.length} devoluciones`}
+          </span>
+        )}
+      </div>
       <table className="core-table">
         <thead>
           <tr>
@@ -229,6 +299,19 @@ function SaleDetailBody({ sale }: { sale: Sale }) {
             .map((payment) => `${PAYMENT_METHOD_LABELS[payment.method] ?? payment.method}: S/ ${payment.amount}`)
             .join(' · ')}
         </dd>
+        {returns.length > 0 && (
+          <>
+            <dt>Devuelto</dt>
+            <dd>
+              {returns
+                .map(
+                  (sr) =>
+                    `S/ ${sr.total_refund_amount} (${sr.refund_type === 'CASH' ? 'efectivo' : 'saldo a favor'})`,
+                )
+                .join(' · ')}
+            </dd>
+          </>
+        )}
       </dl>
     </div>
   )
