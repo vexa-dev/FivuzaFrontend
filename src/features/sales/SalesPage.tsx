@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useAuth } from '../auth/hooks/useAuth'
 import { useCategories } from '../inventory/hooks/useCategories'
 import { useProducts } from '../inventory/hooks/useProducts'
+import { useWarehouses } from '../inventory/hooks/useWarehouses'
 import { AddCashMovementModal } from './components/AddCashMovementModal'
 import { CashSessionHistory } from './components/CashSessionHistory'
 import { CloseCashSessionModal } from './components/CloseCashSessionModal'
@@ -11,11 +12,22 @@ import { CustomersTab } from './components/CustomersTab'
 import { OpenCashSessionForm } from './components/OpenCashSessionForm'
 import { POSTab } from './components/POSTab'
 import { PromotionsTab } from './components/PromotionsTab'
+import { QuotesTab } from './components/QuotesTab'
+import { ReservationsTab } from './components/ReservationsTab'
 import { SalesHistoryTab } from './components/SalesHistoryTab'
 import type { CashSession } from './api'
 import { useCashMovements, useCashRegisters, useOpenCashSessions } from './hooks/useCashSessions'
 
-type Tab = 'vender' | 'ventas' | 'caja' | 'historial' | 'clientes' | 'cobranzas' | 'promociones'
+type Tab =
+  | 'vender'
+  | 'ventas'
+  | 'caja'
+  | 'historial'
+  | 'clientes'
+  | 'cobranzas'
+  | 'promociones'
+  | 'apartados'
+  | 'cotizaciones'
 
 const TABS: [Tab, string][] = [
   ['vender', 'Vender'],
@@ -25,6 +37,8 @@ const TABS: [Tab, string][] = [
   ['clientes', 'Clientes'],
   ['cobranzas', 'Cobranzas'],
   ['promociones', 'Promociones'],
+  ['apartados', 'Apartados'],
+  ['cotizaciones', 'Cotizaciones'],
 ]
 
 function formatDate(value: string) {
@@ -38,6 +52,7 @@ export function SalesPage() {
   const { data: registers } = useCashRegisters()
   const { data: categories } = useCategories()
   const { data: products } = useProducts()
+  const { data: warehouses } = useWarehouses()
 
   return (
     <div>
@@ -70,6 +85,10 @@ export function SalesPage() {
       {tab === 'promociones' && (
         <PromotionsTab canManage={canManage} categories={categories ?? []} products={products ?? []} />
       )}
+      {tab === 'apartados' && (
+        <ReservationsTab products={products ?? []} warehouses={warehouses ?? []} />
+      )}
+      {tab === 'cotizaciones' && <QuotesTab products={products ?? []} />}
     </div>
   )
 }

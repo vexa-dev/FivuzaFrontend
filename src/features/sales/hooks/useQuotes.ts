@@ -1,0 +1,66 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  convertQuote,
+  createQuote,
+  fetchQuoteDocument,
+  fetchQuotes,
+  markQuoteAccepted,
+  markQuoteRejected,
+  markQuoteSent,
+} from '../api'
+
+export function useQuotes(params?: { customer?: number; status?: string }) {
+  return useQuery({
+    queryKey: ['quotes', params?.customer ?? '', params?.status ?? ''],
+    queryFn: () => fetchQuotes(params),
+  })
+}
+
+export function useCreateQuote() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: createQuote,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['quotes'] }),
+  })
+}
+
+export function useMarkQuoteSent() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: markQuoteSent,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['quotes'] }),
+  })
+}
+
+export function useMarkQuoteAccepted() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: markQuoteAccepted,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['quotes'] }),
+  })
+}
+
+export function useMarkQuoteRejected() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: markQuoteRejected,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['quotes'] }),
+  })
+}
+
+export function useQuoteDocument(quoteId: number | undefined) {
+  return useQuery({
+    queryKey: ['quotes', 'document', quoteId],
+    queryFn: () => fetchQuoteDocument(quoteId as number),
+    enabled: quoteId !== undefined,
+  })
+}
+
+export function useConvertQuote() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Parameters<typeof convertQuote>[1] }) =>
+      convertQuote(id, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['quotes'] }),
+  })
+}
