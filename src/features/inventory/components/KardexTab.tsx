@@ -1,8 +1,14 @@
 import { CloudOff, History } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { EmptyState } from '../../../shared/components/EmptyState'
+import { ExportButtons } from '../../../shared/components/ExportButtons'
 import { useOnlineStatus } from '../../../shared/offline/useOnlineStatus'
-import type { Product, Warehouse } from '../api'
+import {
+  downloadLowStockReport,
+  downloadStockValuationReport,
+  type Product,
+  type Warehouse,
+} from '../api'
 import { useInventoryMovements } from '../hooks/useStock'
 
 interface KardexTabProps {
@@ -98,6 +104,31 @@ export function KardexTab({ products, warehouses }: KardexTabProps) {
             onChange={(event) => setDateTo(event.target.value)}
           />
         </div>
+      </div>
+
+      <div
+        style={{
+          display: 'flex',
+          gap: 10,
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          padding: '10px 16px 0',
+        }}
+      >
+        <span className="core-page-subtitle" style={{ margin: 0 }}>
+          Valorización de stock:
+        </span>
+        <ExportButtons
+          filename="valorizacion_stock"
+          onDownload={(format) => downloadStockValuationReport(format, warehouseId || undefined)}
+        />
+        <span className="core-page-subtitle" style={{ margin: 0 }}>
+          Stock bajo mínimo:
+        </span>
+        <ExportButtons
+          filename="stock_bajo_minimo"
+          onDownload={(format) => downloadLowStockReport(format)}
+        />
       </div>
 
       {!isOnline && (

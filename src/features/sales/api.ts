@@ -1,5 +1,9 @@
 import { getAccessToken } from '../auth/hooks/session'
-import { tenantApiFetch, tenantApiFetchText } from '../../shared/utils/tenantApiClient'
+import {
+  tenantApiFetch,
+  tenantApiFetchBlob,
+  tenantApiFetchText,
+} from '../../shared/utils/tenantApiClient'
 
 export interface CashRegister {
   id: number
@@ -526,4 +530,35 @@ export function fetchPOSSearch(warehouseId: number, query: string) {
   return tenantApiFetch<POSCatalogItem[]>(`/ventas/pos/search/?${params.toString()}`, {
     token: getAccessToken(),
   })
+}
+
+// Reportes exportables (Sprint 24/25, API Spec §4.16)
+export function downloadSalesReport(
+  params: { date_from: string; date_to: string },
+  format: 'csv' | 'xlsx',
+) {
+  const query = new URLSearchParams({ ...params, export: format })
+  return tenantApiFetchBlob(`/ventas/reports/sales/?${query.toString()}`, getAccessToken())
+}
+
+export function downloadCashSessionReport(
+  params: { date_from: string; date_to: string },
+  format: 'csv' | 'xlsx',
+) {
+  const query = new URLSearchParams({ ...params, export: format })
+  return tenantApiFetchBlob(
+    `/ventas/reports/cash-sessions/?${query.toString()}`,
+    getAccessToken(),
+  )
+}
+
+export function downloadCashMovementReport(
+  params: { date_from: string; date_to: string },
+  format: 'csv' | 'xlsx',
+) {
+  const query = new URLSearchParams({ ...params, export: format })
+  return tenantApiFetchBlob(
+    `/ventas/reports/cash-movements/?${query.toString()}`,
+    getAccessToken(),
+  )
 }

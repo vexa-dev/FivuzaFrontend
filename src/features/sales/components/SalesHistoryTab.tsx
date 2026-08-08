@@ -2,9 +2,10 @@ import { Receipt as ReceiptIcon, ReceiptText, Undo2, Ban, CloudOff } from 'lucid
 import { useState } from 'react'
 import { useAuth } from '../../auth/hooks/useAuth'
 import { EmptyState } from '../../../shared/components/EmptyState'
+import { ExportButtons } from '../../../shared/components/ExportButtons'
 import { Modal } from '../../../shared/components/Modal'
 import { useOnlineStatus } from '../../../shared/offline/useOnlineStatus'
-import type { Sale, SaleReturn } from '../api'
+import { downloadSalesReport, type Sale, type SaleReturn } from '../api'
 import { useCustomers } from '../hooks/useCustomers'
 import { useSale, useSaleReceipt, useSales } from '../hooks/useSales'
 import { useSaleReturns } from '../hooks/useSaleReturns'
@@ -110,6 +111,12 @@ export function SalesHistoryTab() {
             >
               Limpiar filtros
             </button>
+          )}
+          {dateFrom && dateTo && (
+            <ExportButtons
+              filename={`ventas_${dateFrom}_a_${dateTo}`}
+              onDownload={(format) => downloadSalesReport({ date_from: dateFrom, date_to: dateTo }, format)}
+            />
           )}
         </div>
       </div>
