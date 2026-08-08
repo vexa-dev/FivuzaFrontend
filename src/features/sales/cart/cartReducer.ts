@@ -1,9 +1,13 @@
+import { resolveTierUnitPrice } from './pricing'
 import type { CartLine, CartPayment, CartState } from './types'
 
 export type CartAction =
   | { type: 'SET_CUSTOMER'; customerId: number | null }
   | { type: 'SET_CASH_SESSION'; cashSessionId: number | null }
-  | { type: 'ADD_LINE'; line: Omit<CartLine, 'quantity' | 'discountAmount'> & { quantity?: string } }
+  | {
+      type: 'ADD_LINE'
+      line: Omit<CartLine, 'quantity' | 'discountAmount' | 'unitPrice'> & { quantity?: string }
+    }
   | { type: 'REMOVE_LINE'; variantId: number }
   | { type: 'SET_LINE_QUANTITY'; variantId: number; quantity: string }
   | { type: 'SET_LINE_DISCOUNT'; variantId: number; discountAmount: string | null }
@@ -13,9 +17,14 @@ export type CartAction =
   | { type: 'REMOVE_PAYMENT'; index: number }
   | { type: 'CLEAR' }
 
+function withResolvedPrice(line: CartLine): CartLine {
+  const { unitPrice } = resolveTierUnitPrice(line.basePrice, line.pricingTiers, line.quantity)
+  return { ...line, unitPrice }
+}
+
 function upsertLine(lines: CartLine[], newLine: CartLine): CartLine[] {
   const existingIndex = lines.findIndex((line) => line.variantId === newLine.variantId)
-  if (existingIndex === -1) return [...lines, newLine]
+  if (existingIndex === -1) return [...lines, withResolvedPrice(newLine)]
 
   // Escanear/agregar el mismo producto dos veces suma cantidad en vez de
   // duplicar la línea -es el comportamiento esperado de un lector de
@@ -23,7 +32,10 @@ function upsertLine(lines: CartLine[], newLine: CartLine): CartLine[] {
   // Sprint 16).
   return lines.map((line, index) =>
     index === existingIndex
-      ? { ...line, quantity: String(Number(line.quantity) + Number(newLine.quantity)) }
+      ? withResolvedPrice({
+          ...line,
+          quantity: String(Number(line.quantity) + Number(newLine.quantity)),
+        })
       : line,
   )
 }
@@ -43,6 +55,7 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
           ...action.line,
           quantity: action.line.quantity ?? '1',
           discountAmount: null,
+          unitPrice: action.line.basePrice,
         }),
       }
 
@@ -53,7 +66,9 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
       return {
         ...state,
         lines: state.lines.map((line) =>
-          line.variantId === action.variantId ? { ...line, quantity: action.quantity } : line,
+          line.variantId === action.variantId
+            ? withResolvedPrice({ ...line, quantity: action.quantity })
+            : line,
         ),
       }
 

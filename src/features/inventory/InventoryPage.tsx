@@ -10,6 +10,7 @@ import { ProductDetailModal } from './components/ProductDetailModal'
 import { ProductFormModal } from './components/ProductFormModal'
 import { PurchaseOrdersTab } from './components/PurchaseOrdersTab'
 import { StockAdjustTab } from './components/StockAdjustTab'
+import { StockTransferTab } from './components/StockTransferTab'
 import { SupplierFormModal } from './components/SupplierFormModal'
 import { TaxRatesTab } from './components/TaxRatesTab'
 import { WarehouseFormModal } from './components/WarehouseFormModal'
@@ -25,6 +26,7 @@ type Tab =
   | 'proveedores'
   | 'almacenes'
   | 'stock'
+  | 'traslados'
   | 'kardex'
   | 'compras'
   | 'impuestos'
@@ -36,6 +38,7 @@ const TABS: [Tab, string][] = [
   ['proveedores', 'Proveedores'],
   ['almacenes', 'Almacenes'],
   ['stock', 'Ajustar stock'],
+  ['traslados', 'Traslado de stock'],
   ['kardex', 'Kardex'],
   ['compras', 'Compras'],
   ['impuestos', 'Impuestos'],
@@ -98,6 +101,7 @@ export function InventoryPage() {
         {TABS.filter(
           ([value]) =>
             (!['stock', 'importar'].includes(value) || canManage) &&
+            (value !== 'traslados' || (canManage && (warehouses?.length ?? 0) > 1)) &&
             (!['compras', 'impuestos'].includes(value) || canManagePurchases),
         ).map(([value, label]) => (
           <button
@@ -393,6 +397,10 @@ export function InventoryPage() {
 
       {tab === 'stock' && canManage && (
         <StockAdjustTab products={allProducts ?? []} warehouses={warehouses ?? []} />
+      )}
+
+      {tab === 'traslados' && canManage && (
+        <StockTransferTab products={allProducts ?? []} warehouses={warehouses ?? []} />
       )}
 
       {tab === 'kardex' && (

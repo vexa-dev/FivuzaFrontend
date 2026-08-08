@@ -6,20 +6,25 @@ describe('cartReducer', () => {
   it('agrega una línea nueva con cantidad 1 por defecto', () => {
     const state = cartReducer(emptyCart, {
       type: 'ADD_LINE',
-      line: { variantId: 1, sku: 'SKU-1', productName: 'Camiseta', unitPrice: '20.00' },
+      line: { variantId: 1, sku: 'SKU-1', productName: 'Camiseta', basePrice: '20.00', pricingTiers: [] },
     })
     expect(state.lines).toHaveLength(1)
-    expect(state.lines[0]).toMatchObject({ variantId: 1, quantity: '1', discountAmount: null })
+    expect(state.lines[0]).toMatchObject({
+      variantId: 1,
+      quantity: '1',
+      discountAmount: null,
+      unitPrice: '20.00',
+    })
   })
 
   it('sumar la misma variante dos veces acumula cantidad en vez de duplicar la línea', () => {
     let state = cartReducer(emptyCart, {
       type: 'ADD_LINE',
-      line: { variantId: 1, sku: 'SKU-1', productName: 'Camiseta', unitPrice: '20.00' },
+      line: { variantId: 1, sku: 'SKU-1', productName: 'Camiseta', basePrice: '20.00', pricingTiers: [] },
     })
     state = cartReducer(state, {
       type: 'ADD_LINE',
-      line: { variantId: 1, sku: 'SKU-1', productName: 'Camiseta', unitPrice: '20.00' },
+      line: { variantId: 1, sku: 'SKU-1', productName: 'Camiseta', basePrice: '20.00', pricingTiers: [] },
     })
 
     expect(state.lines).toHaveLength(1)
@@ -29,11 +34,11 @@ describe('cartReducer', () => {
   it('SET_LINE_QUANTITY actualiza solo la línea indicada', () => {
     let state = cartReducer(emptyCart, {
       type: 'ADD_LINE',
-      line: { variantId: 1, sku: 'SKU-1', productName: 'Camiseta', unitPrice: '20.00' },
+      line: { variantId: 1, sku: 'SKU-1', productName: 'Camiseta', basePrice: '20.00', pricingTiers: [] },
     })
     state = cartReducer(state, {
       type: 'ADD_LINE',
-      line: { variantId: 2, sku: 'SKU-2', productName: 'Pantalón', unitPrice: '50.00' },
+      line: { variantId: 2, sku: 'SKU-2', productName: 'Pantalón', basePrice: '50.00', pricingTiers: [] },
     })
     state = cartReducer(state, { type: 'SET_LINE_QUANTITY', variantId: 2, quantity: '3' })
 
@@ -44,7 +49,7 @@ describe('cartReducer', () => {
   it('REMOVE_LINE quita solo la variante indicada', () => {
     let state = cartReducer(emptyCart, {
       type: 'ADD_LINE',
-      line: { variantId: 1, sku: 'SKU-1', productName: 'Camiseta', unitPrice: '20.00' },
+      line: { variantId: 1, sku: 'SKU-1', productName: 'Camiseta', basePrice: '20.00', pricingTiers: [] },
     })
     state = cartReducer(state, { type: 'REMOVE_LINE', variantId: 1 })
     expect(state.lines).toHaveLength(0)
@@ -74,7 +79,7 @@ describe('cartReducer', () => {
     state = cartReducer(state, { type: 'SET_CASH_SESSION', cashSessionId: 3 })
     state = cartReducer(state, {
       type: 'ADD_LINE',
-      line: { variantId: 1, sku: 'SKU-1', productName: 'Camiseta', unitPrice: '20.00' },
+      line: { variantId: 1, sku: 'SKU-1', productName: 'Camiseta', basePrice: '20.00', pricingTiers: [] },
     })
     state = cartReducer(state, { type: 'CLEAR' })
 
@@ -83,12 +88,58 @@ describe('cartReducer', () => {
     expect(state.customerId).toBe(7)
     expect(state.cashSessionId).toBe(3)
   })
+
+  it('un tramo por volumen se aplica al agregar cuando la cantidad inicial ya lo alcanza', () => {
+    const state = cartReducer(emptyCart, {
+      type: 'ADD_LINE',
+      line: {
+        variantId: 1,
+        sku: 'SKU-1',
+        productName: 'Camiseta',
+        basePrice: '20.00',
+        pricingTiers: [{ min_quantity: '12', unit_price: '15.00' }],
+        quantity: '12',
+      },
+    })
+    expect(state.lines[0].unitPrice).toBe('15.00')
+  })
+
+  it('SET_LINE_QUANTITY resuelve el tramo al cruzar el umbral y lo revierte al bajar', () => {
+    let state = cartReducer(emptyCart, {
+      type: 'ADD_LINE',
+      line: {
+        variantId: 1,
+        sku: 'SKU-1',
+        productName: 'Camiseta',
+        basePrice: '20.00',
+        pricingTiers: [{ min_quantity: '12', unit_price: '15.00' }],
+      },
+    })
+    expect(state.lines[0].unitPrice).toBe('20.00')
+
+    state = cartReducer(state, { type: 'SET_LINE_QUANTITY', variantId: 1, quantity: '12' })
+    expect(state.lines[0].unitPrice).toBe('15.00')
+
+    state = cartReducer(state, { type: 'SET_LINE_QUANTITY', variantId: 1, quantity: '5' })
+    expect(state.lines[0].unitPrice).toBe('20.00')
+  })
 })
 
 describe('computeCartTotals', () => {
   it('calcula subtotal/total sin descuentos ni pagos', () => {
     const totals = computeCartTotals(
-      [{ variantId: 1, sku: 'SKU-1', productName: 'Camiseta', unitPrice: '20.00', quantity: '2', discountAmount: null }],
+      [
+        {
+          variantId: 1,
+          sku: 'SKU-1',
+          productName: 'Camiseta',
+          basePrice: '20.00',
+          pricingTiers: [],
+          unitPrice: '20.00',
+          quantity: '2',
+          discountAmount: null,
+        },
+      ],
       [],
     )
     expect(totals.subtotal).toBe(40)
@@ -104,6 +155,8 @@ describe('computeCartTotals', () => {
           variantId: 1,
           sku: 'SKU-1',
           productName: 'Camiseta',
+          basePrice: '100.00',
+          pricingTiers: [],
           unitPrice: '100.00',
           quantity: '1',
           discountAmount: '10.00',
@@ -118,7 +171,16 @@ describe('computeCartTotals', () => {
 
   it('paymentsMatchTotal es true solo cuando la suma de pagos mixtos cuadra con el total', () => {
     const lines = [
-      { variantId: 1, sku: 'SKU-1', productName: 'Camiseta', unitPrice: '30.00', quantity: '1', discountAmount: null },
+      {
+        variantId: 1,
+        sku: 'SKU-1',
+        productName: 'Camiseta',
+        basePrice: '30.00',
+        pricingTiers: [],
+        unitPrice: '30.00',
+        quantity: '1',
+        discountAmount: null,
+      },
     ]
     const matching = computeCartTotals(lines, [
       { method: 'CASH', amount: '20.00' },
@@ -137,6 +199,8 @@ describe('computeCartTotals', () => {
           variantId: 1,
           sku: 'SKU-1',
           productName: 'Camiseta',
+          basePrice: '50.00',
+          pricingTiers: [],
           unitPrice: '50.00',
           quantity: '1',
           discountAmount: null,

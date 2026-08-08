@@ -86,6 +86,13 @@ export interface InventoryMovement {
   created_at: string
 }
 
+export interface VolumePricingTier {
+  id: number
+  variant: number
+  min_quantity: string
+  unit_price: string
+}
+
 export interface LowStockVariant {
   id: number
   sku: string
@@ -224,6 +231,31 @@ export const adjustStock = (data: {
 
 export const fetchLowStockVariants = () =>
   authed<LowStockVariant[]>('/inventario/stock/low-stock/')
+
+// Traslado de stock entre almacenes (Sprint 26)
+export const transferStock = (data: {
+  variant: number
+  from_warehouse: number
+  to_warehouse: number
+  quantity: string
+}) =>
+  authed<{ out_movement: InventoryMovement; in_movement: InventoryMovement }>(
+    '/inventario/stock/transfer/',
+    { method: 'POST', body: data },
+  )
+
+// Precios por volumen (Sprint 26, Ficha de Producto §5.1)
+export const fetchVolumePricingTiers = (variantId: number) =>
+  authed<VolumePricingTier[]>(`/inventario/volume-pricing-tiers/?variant=${variantId}`)
+
+export const createVolumePricingTier = (data: {
+  variant: number
+  min_quantity: string
+  unit_price: string
+}) => authed<VolumePricingTier>('/inventario/volume-pricing-tiers/', { method: 'POST', body: data })
+
+export const deleteVolumePricingTier = (id: number) =>
+  authed<void>(`/inventario/volume-pricing-tiers/${id}/`, { method: 'DELETE' })
 
 // Reportes exportables (Sprint 24/25, API Spec §4.16)
 export const downloadLowStockReport = (format: 'csv' | 'xlsx') =>
