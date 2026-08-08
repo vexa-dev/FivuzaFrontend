@@ -569,3 +569,149 @@ export function downloadCashMovementReport(
     getAccessToken(),
   )
 }
+
+// Apartados/reservas de stock (Sprint 28, Ficha de Producto §5.2)
+export interface ProductReservation {
+  id: number
+  customer: number
+  variant: number
+  warehouse: number
+  quantity: string
+  expires_at: string
+  status: 'ACTIVE' | 'CONVERTED' | 'EXPIRED' | 'CANCELLED'
+  sale: number | null
+  user: number
+  created_at: string
+}
+
+export function fetchReservations(params?: { customer?: number; status?: string }) {
+  const query = new URLSearchParams()
+  if (params?.customer) query.set('customer', String(params.customer))
+  if (params?.status) query.set('status', params.status)
+  const qs = query.toString()
+  return tenantApiFetch<ProductReservation[]>(`/ventas/reservations/${qs ? `?${qs}` : ''}`, {
+    token: getAccessToken(),
+  })
+}
+
+export function createReservation(data: {
+  customer_id: number
+  variant_id: number
+  warehouse_id: number
+  quantity: string
+  expires_at: string
+}) {
+  return tenantApiFetch<ProductReservation>('/ventas/reservations/', {
+    method: 'POST',
+    body: data,
+    token: getAccessToken(),
+  })
+}
+
+export function convertReservation(
+  id: number,
+  data: { cash_session_id: number; payments: SalePaymentInput[] },
+) {
+  return tenantApiFetch<Sale>(`/ventas/reservations/${id}/convert/`, {
+    method: 'POST',
+    body: data,
+    token: getAccessToken(),
+  })
+}
+
+export function cancelReservation(id: number) {
+  return tenantApiFetch<ProductReservation>(`/ventas/reservations/${id}/cancel/`, {
+    method: 'POST',
+    token: getAccessToken(),
+  })
+}
+
+// Cotizaciones/presupuestos (Sprint 28, Ficha de Producto §5.2)
+export interface QuoteDetail {
+  id: number
+  variant_id: number
+  product_name_snapshot: string
+  sku_snapshot: string
+  quantity: string
+  unit_price: string
+  discount_amount: string
+  subtotal: string
+}
+
+export interface Quote {
+  id: number
+  customer: number
+  user: number
+  status: 'DRAFT' | 'SENT' | 'ACCEPTED' | 'EXPIRED' | 'REJECTED'
+  valid_until: string
+  subtotal: string
+  discount_total: string
+  total: string
+  sale: number | null
+  details: QuoteDetail[]
+  created_at: string
+}
+
+export interface QuoteLineInput {
+  variant_id: number
+  quantity: string
+  discount_amount?: string
+}
+
+export function fetchQuotes(params?: { customer?: number; status?: string }) {
+  const query = new URLSearchParams()
+  if (params?.customer) query.set('customer', String(params.customer))
+  if (params?.status) query.set('status', params.status)
+  const qs = query.toString()
+  return tenantApiFetch<Quote[]>(`/ventas/quotes/${qs ? `?${qs}` : ''}`, {
+    token: getAccessToken(),
+  })
+}
+
+export function createQuote(data: {
+  customer_id: number
+  valid_until: string
+  lines: QuoteLineInput[]
+}) {
+  return tenantApiFetch<Quote>('/ventas/quotes/', {
+    method: 'POST',
+    body: data,
+    token: getAccessToken(),
+  })
+}
+
+export function markQuoteSent(id: number) {
+  return tenantApiFetch<Quote>(`/ventas/quotes/${id}/mark-sent/`, {
+    method: 'POST',
+    token: getAccessToken(),
+  })
+}
+
+export function markQuoteAccepted(id: number) {
+  return tenantApiFetch<Quote>(`/ventas/quotes/${id}/mark-accepted/`, {
+    method: 'POST',
+    token: getAccessToken(),
+  })
+}
+
+export function markQuoteRejected(id: number) {
+  return tenantApiFetch<Quote>(`/ventas/quotes/${id}/mark-rejected/`, {
+    method: 'POST',
+    token: getAccessToken(),
+  })
+}
+
+export function convertQuote(
+  id: number,
+  data: { cash_session_id: number; payments: SalePaymentInput[] },
+) {
+  return tenantApiFetch<Sale>(`/ventas/quotes/${id}/convert/`, {
+    method: 'POST',
+    body: data,
+    token: getAccessToken(),
+  })
+}
+
+export function fetchQuoteDocument(id: number) {
+  return tenantApiFetchText(`/ventas/quotes/${id}/document/`, getAccessToken())
+}
