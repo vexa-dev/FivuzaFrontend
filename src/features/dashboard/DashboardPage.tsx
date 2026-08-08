@@ -2,19 +2,27 @@ import {
   AlertTriangle,
   CalendarDays,
   CalendarRange,
+  Clock,
   Percent,
+  Settings,
   ShoppingCart,
   TrendingDown,
   TrendingUp,
+  Wallet,
   Wifi,
   WifiOff,
 } from 'lucide-react'
+import { useState } from 'react'
 import '../core/CorePage.css'
 import { EmptyState } from '../../shared/components/EmptyState'
+import { useAuth } from '../auth/hooks/useAuth'
 import { KpiCard } from './components/KpiCard'
 import { PaymentMethodChart } from './components/PaymentMethodChart'
 import { SalesByDayChart } from './components/SalesByDayChart'
+import { WidgetSettingsModal } from './components/WidgetSettingsModal'
+import { useAttendanceToday, useOpenCashSessionsCount } from './hooks/useDashboardExtras'
 import { useDashboardMetrics } from './hooks/useDashboardMetrics'
+import { useWidgetVisibility } from './hooks/useWidgetVisibility'
 
 function formatCurrency(value: string) {
   return `S/ ${Number(value).toFixed(2)}`
@@ -22,6 +30,20 @@ function formatCurrency(value: string) {
 
 export function DashboardPage() {
   const { data, isLoading, isConnected } = useDashboardMetrics()
+  const { isVisible } = useWidgetVisibility()
+  const { hasPermission } = useAuth()
+  const [showSettings, setShowSettings] = useState(false)
+
+  const canSeeAttendance = hasPermission('HR_MANAGE')
+  const { count: openCashSessions } = useOpenCashSessionsCount()
+  const { data: attendanceToday } = useAttendanceToday(canSeeAttendance)
+
+  const attendanceSummary = attendanceToday
+    ? {
+        onTime: attendanceToday.reduce((sum, row) => sum + row.on_time_count, 0),
+        late: attendanceToday.reduce((sum, row) => sum + row.late_count, 0),
+      }
+    : null
 
   return (
     <div>
@@ -30,25 +52,35 @@ export function DashboardPage() {
           <h1 className="core-page-title">Dashboard</h1>
           <p className="core-page-subtitle">Métricas del negocio en tiempo real</p>
         </div>
-        <span
-          className={`badge ${isConnected ? 'badge-success' : 'badge-neutral'}`}
-          title={
-            isConnected
-              ? 'Conectado por WebSocket -las ventas se reflejan al instante'
-              : 'Sin conexión en tiempo real -actualizando cada 30 segundos'
-          }
-        >
-          <span className="dot" />
-          {isConnected ? (
-            <>
-              <Wifi size={13} /> En vivo
-            </>
-          ) : (
-            <>
-              <WifiOff size={13} /> Actualizando cada 30s
-            </>
-          )}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span
+            className={`badge ${isConnected ? 'badge-success' : 'badge-neutral'}`}
+            title={
+              isConnected
+                ? 'Conectado por WebSocket -las ventas se reflejan al instante'
+                : 'Sin conexión en tiempo real -actualizando cada 30 segundos'
+            }
+          >
+            <span className="dot" />
+            {isConnected ? (
+              <>
+                <Wifi size={13} /> En vivo
+              </>
+            ) : (
+              <>
+                <WifiOff size={13} /> Actualizando cada 30s
+              </>
+            )}
+          </span>
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm btn-icon"
+            aria-label="Personalizar dashboard"
+            onClick={() => setShowSettings(true)}
+          >
+            <Settings size={16} />
+          </button>
+        </div>
       </div>
 
       {isLoading && (
@@ -67,12 +99,14 @@ export function DashboardPage() {
               gap: 12,
             }}
           >
-            <KpiCard
-              icon={<CalendarDays size={18} />}
-              label="Ventas de hoy"
-              value={formatCurrency(data.today.total_sales)}
-              subtitle={`${data.today.total_transactions} venta(s)`}
-            />
+            {isVisible('SALES_TODAY') && (
+              <KpiCard
+                icon={<CalendarDays size={18} />}
+                label="Ventas de hoy"
+                value={formatCurrency(data.today.total_sales)}
+                subtitle={`${data.today.total_transactions} venta(s)`}
+              />
+            )}
             <KpiCard
               icon={<CalendarRange size={18} />}
               label="Ventas del mes"
@@ -93,15 +127,39 @@ export function DashboardPage() {
               }
               subtitle={`${formatCurrency(data.gross_margin.gross_margin)} de margen`}
             />
-            <KpiCard
-              icon={<AlertTriangle size={18} />}
-              label="Stock crítico"
-              value={String(data.critical_stock_count)}
-              subtitle="variante(s) bajo su mínimo"
-            />
+            {isVisible('LOW_STOCK') && (
+              <KpiCard
+                icon={<AlertTriangle size={18} />}
+                label="Stock crítico"
+                value={String(data.critical_stock_count)}
+                subtitle="variante(s) bajo su mínimo"
+              />
+            )}
+            {isVisible('CASH_STATUS') && (
+              <KpiCard
+                icon={<Wallet size={18} />}
+                label="Cajas abiertas"
+                value={String(openCashSessions)}
+                subtitle="sesión(es) de caja en curso"
+              />
+            )}
+            {isVisible('ATTENDANCE_TODAY') && canSeeAttendance && attendanceSummary && (
+              <KpiCard
+                icon={<Clock size={18} />}
+                label="Asistencia de hoy"
+                value={`${attendanceSummary.onTime} a tiempo`}
+                subtitle={`${attendanceSummary.late} tarde`}
+              />
+            )}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16 }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+              gap: 16,
+            }}
+          >
             <div className="card" style={{ padding: 16 }}>
               <h3 style={{ marginTop: 0 }}>Ventas por día (últimos 30 días)</h3>
               <SalesByDayChart data={data.month.by_day} />
@@ -112,33 +170,37 @@ export function DashboardPage() {
             </div>
           </div>
 
-          <div className="card core-table-card">
-            <div style={{ padding: '12px 16px 0' }}>
-              <h3 style={{ marginTop: 0 }}>Productos más vendidos (30 días)</h3>
+          {isVisible('TOP_PRODUCTS') && (
+            <div className="card core-table-card">
+              <div style={{ padding: '12px 16px 0' }}>
+                <h3 style={{ marginTop: 0 }}>Productos más vendidos (30 días)</h3>
+              </div>
+              {data.top_products.length === 0 ? (
+                <EmptyState icon={<ShoppingCart />} title="Sin ventas en este periodo" />
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table className="core-table">
+                    <thead>
+                      <tr>
+                        <th>Producto</th>
+                        <th>Cantidad vendida</th>
+                        <th>Ingresos</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.top_products.map((product) => (
+                        <tr key={product.product_name}>
+                          <td className="core-table-strong">{product.product_name}</td>
+                          <td>{product.quantity_sold}</td>
+                          <td>{formatCurrency(product.revenue)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
-            {data.top_products.length === 0 ? (
-              <EmptyState icon={<ShoppingCart />} title="Sin ventas en este periodo" />
-            ) : (
-              <table className="core-table">
-                <thead>
-                  <tr>
-                    <th>Producto</th>
-                    <th>Cantidad vendida</th>
-                    <th>Ingresos</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.top_products.map((product) => (
-                    <tr key={product.product_name}>
-                      <td className="core-table-strong">{product.product_name}</td>
-                      <td>{product.quantity_sold}</td>
-                      <td>{formatCurrency(product.revenue)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
+          )}
 
           <div className="card" style={{ padding: 16, display: 'flex', gap: 24, flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -155,6 +217,8 @@ export function DashboardPage() {
           </div>
         </div>
       )}
+
+      {showSettings && <WidgetSettingsModal onClose={() => setShowSettings(false)} />}
     </div>
   )
 }

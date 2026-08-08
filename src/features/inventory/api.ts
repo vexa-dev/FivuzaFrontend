@@ -225,6 +225,19 @@ export const adjustStock = (data: {
 export const fetchLowStockVariants = () =>
   authed<LowStockVariant[]>('/inventario/stock/low-stock/')
 
+// Reportes exportables (Sprint 24/25, API Spec §4.16)
+export const downloadLowStockReport = (format: 'csv' | 'xlsx') =>
+  tenantApiFetchBlob(`/inventario/stock/low-stock/?export=${format}`, getAccessToken())
+
+export const downloadStockValuationReport = (format: 'csv' | 'xlsx', warehouseId?: number) => {
+  const params = new URLSearchParams({ export: format })
+  if (warehouseId) params.set('warehouse', String(warehouseId))
+  return tenantApiFetchBlob(
+    `/inventario/reports/stock-valuation/?${params.toString()}`,
+    getAccessToken(),
+  )
+}
+
 // Impuestos
 export interface TaxRate {
   id: number

@@ -1,6 +1,12 @@
 import { useState } from 'react'
+import { ExportButtons } from '../../../shared/components/ExportButtons'
 import { Modal } from '../../../shared/components/Modal'
-import type { CashRegister, CashSessionFilters } from '../api'
+import {
+  downloadCashMovementReport,
+  downloadCashSessionReport,
+  type CashRegister,
+  type CashSessionFilters,
+} from '../api'
 import { useCashSessionDetail, useCashSessionHistory } from '../hooks/useCashSessions'
 
 function formatDate(value: string | null) {
@@ -91,6 +97,34 @@ export function CashSessionHistory({ registers }: { registers: CashRegister[] })
               }
             />
           </div>
+          {filters.opening_from && filters.opening_to && (
+            <>
+              <span className="core-page-subtitle" style={{ margin: 0 }}>
+                Sesiones:
+              </span>
+              <ExportButtons
+                filename={`sesiones_caja_${filters.opening_from}_a_${filters.opening_to}`}
+                onDownload={(format) =>
+                  downloadCashSessionReport(
+                    { date_from: filters.opening_from!, date_to: filters.opening_to! },
+                    format,
+                  )
+                }
+              />
+              <span className="core-page-subtitle" style={{ margin: 0 }}>
+                Movimientos:
+              </span>
+              <ExportButtons
+                filename={`movimientos_caja_${filters.opening_from}_a_${filters.opening_to}`}
+                onDownload={(format) =>
+                  downloadCashMovementReport(
+                    { date_from: filters.opening_from!, date_to: filters.opening_to! },
+                    format,
+                  )
+                }
+              />
+            </>
+          )}
         </div>
       </div>
 
