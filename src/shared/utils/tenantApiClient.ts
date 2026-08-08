@@ -14,6 +14,17 @@ function getTenantApiUrl(): string {
   return `${protocol}//${hostname}:${API_PORT}/api/v1`
 }
 
+/**
+ * Igual que getTenantApiUrl, pero para el WebSocket del dashboard (Sprint
+ * 24, TRD §2.5) -mismo host/puerto que la API REST (Daphne sirve ambos
+ * protocolos en el mismo proceso), solo cambia el esquema http(s) -> ws(s).
+ */
+export function getTenantWebSocketUrl(path: string): string {
+  const { protocol, hostname } = window.location
+  const wsProtocol = protocol === 'https:' ? 'wss:' : 'ws:'
+  return `${wsProtocol}//${hostname}:${API_PORT}${path}`
+}
+
 interface RequestOptions {
   method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
   body?: unknown
