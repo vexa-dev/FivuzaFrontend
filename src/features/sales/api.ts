@@ -519,6 +519,7 @@ export interface POSCatalogItem {
   sku: string
   barcode: string | null
   product_name: string
+  unit_of_measure: 'UND' | 'KG'
   price: string
   stock: string
   promotion: POSPromotion | null

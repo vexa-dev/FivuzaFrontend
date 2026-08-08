@@ -6,6 +6,7 @@ import { useAuth } from '../auth/hooks/useAuth'
 import { CatalogImportTab } from './components/CatalogImportTab'
 import { CategoryFormModal } from './components/CategoryFormModal'
 import { KardexTab } from './components/KardexTab'
+import { LabelsPrintTab } from './components/LabelsPrintTab'
 import { ProductDetailModal } from './components/ProductDetailModal'
 import { ProductFormModal } from './components/ProductFormModal'
 import { PurchaseOrdersTab } from './components/PurchaseOrdersTab'
@@ -31,6 +32,7 @@ type Tab =
   | 'compras'
   | 'impuestos'
   | 'importar'
+  | 'etiquetas'
 
 const TABS: [Tab, string][] = [
   ['productos', 'Productos'],
@@ -43,6 +45,7 @@ const TABS: [Tab, string][] = [
   ['compras', 'Compras'],
   ['impuestos', 'Impuestos'],
   ['importar', 'Importar catálogo'],
+  ['etiquetas', 'Imprimir etiquetas'],
 ]
 
 function LoadingRow() {
@@ -100,7 +103,7 @@ export function InventoryPage() {
       <div className="tabs">
         {TABS.filter(
           ([value]) =>
-            (!['stock', 'importar'].includes(value) || canManage) &&
+            (!['stock', 'importar', 'etiquetas'].includes(value) || canManage) &&
             (value !== 'traslados' || (canManage && (warehouses?.length ?? 0) > 1)) &&
             (!['compras', 'impuestos'].includes(value) || canManagePurchases),
         ).map(([value, label]) => (
@@ -421,6 +424,8 @@ export function InventoryPage() {
       )}
 
       {tab === 'importar' && canManage && <CatalogImportTab />}
+
+      {tab === 'etiquetas' && canManage && <LabelsPrintTab products={allProducts ?? []} />}
 
       {showProductForm && (
         <ProductFormModal

@@ -1,4 +1,4 @@
-import { Minus, Plus, ShoppingCart, Tag, Trash2 } from 'lucide-react'
+import { Minus, Plus, Scale, ShoppingCart, Tag, Trash2 } from 'lucide-react'
 import { useState, type Dispatch } from 'react'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { offlineDB } from '../../../shared/offline/db'
@@ -10,6 +10,7 @@ import type { CartTotals } from '../cart/totals'
 import { toSaleCreateInput } from '../cart/useCart'
 import type { CartState } from '../cart/types'
 import { useCustomers } from '../hooks/useCustomers'
+import { useSerialScale } from '../hooks/useSerialScale'
 import { useCreateSale } from '../hooks/useSales'
 import { CheckoutModal } from './CheckoutModal'
 import { OfflineSaleQueuedModal } from './OfflineSaleQueuedModal'
@@ -27,6 +28,8 @@ export function POSCartPanel({ cart, totals, dispatch, cashSessionId }: POSCartP
   const { data: customers } = useCustomers(customerSearch)
   const selectedCustomer = customers?.find((c) => c.id === cart.customerId)
   const createSale = useCreateSale()
+  const scale = useSerialScale()
+  const hasWeighableLines = cart.lines.some((line) => line.unitOfMeasure === 'KG')
   const [error, setError] = useState<string | null>(null)
   const [showCheckout, setShowCheckout] = useState(false)
   const [completedSale, setCompletedSale] = useState<Sale | null>(null)
@@ -140,6 +143,31 @@ export function POSCartPanel({ cart, totals, dispatch, cashSessionId }: POSCartP
         )}
       </div>
 
+      {hasWeighableLines && (
+        <div
+          className="core-page-subtitle"
+          style={{ display: 'flex', alignItems: 'center', gap: 8, margin: 0 }}
+        >
+          <Scale size={14} strokeWidth={2} />
+          {scale.isConnected ? (
+            <>
+              Balanza conectada
+              {scale.weight && <strong style={{ color: 'var(--text-primary)' }}>· {scale.weight} kg</strong>}
+              <button type="button" className="btn btn-ghost btn-sm" onClick={scale.disconnect}>
+                Desconectar
+              </button>
+            </>
+          ) : scale.isSupported ? (
+            <button type="button" className="btn btn-ghost btn-sm" onClick={scale.connect}>
+              Conectar balanza
+            </button>
+          ) : (
+            <span>Balanza no soportada en este navegador -ingresa el peso manualmente.</span>
+          )}
+          {scale.error && <span className="login-error">{scale.error}</span>}
+        </div>
+      )}
+
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
         {cart.lines.length === 0 ? (
           <EmptyState icon={<ShoppingCart />} title="El carrito está vacío" subtitle="Busca o escanea un producto para agregarlo." />
@@ -175,37 +203,73 @@ export function POSCartPanel({ cart, totals, dispatch, cashSessionId }: POSCartP
                     )}
                   </td>
                   <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <button
-                        type="button"
-                        className="btn btn-ghost btn-icon pos-qty-btn"
-                        aria-label={`Restar unidad de ${line.productName}`}
-                        onClick={() =>
-                          dispatch({
-                            type: 'SET_LINE_QUANTITY',
-                            variantId: line.variantId,
-                            quantity: String(Math.max(1, Number(line.quantity) - 1)),
-                          })
-                        }
-                      >
-                        <Minus />
-                      </button>
-                      <span className="pos-qty-value">{line.quantity}</span>
-                      <button
-                        type="button"
-                        className="btn btn-ghost btn-icon pos-qty-btn"
-                        aria-label={`Sumar unidad de ${line.productName}`}
-                        onClick={() =>
-                          dispatch({
-                            type: 'SET_LINE_QUANTITY',
-                            variantId: line.variantId,
-                            quantity: String(Number(line.quantity) + 1),
-                          })
-                        }
-                      >
-                        <Plus />
-                      </button>
-                    </div>
+                    {line.unitOfMeasure === 'KG' ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <input
+                          value={line.quantity}
+                          onChange={(event) =>
+                            dispatch({
+                              type: 'SET_LINE_QUANTITY',
+                              variantId: line.variantId,
+                              quantity: event.target.value,
+                            })
+                          }
+                          inputMode="decimal"
+                          aria-label={`Peso de ${line.productName} en kg`}
+                          style={{ width: 70 }}
+                        />
+                        <span className="core-page-subtitle" style={{ margin: 0 }}>kg</span>
+                        {scale.isConnected && scale.weight && (
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-sm btn-icon"
+                            aria-label={`Leer peso de la balanza para ${line.productName}`}
+                            title="Leer balanza"
+                            onClick={() =>
+                              dispatch({
+                                type: 'SET_LINE_QUANTITY',
+                                variantId: line.variantId,
+                                quantity: scale.weight as string,
+                              })
+                            }
+                          >
+                            <Scale />
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-icon pos-qty-btn"
+                          aria-label={`Restar unidad de ${line.productName}`}
+                          onClick={() =>
+                            dispatch({
+                              type: 'SET_LINE_QUANTITY',
+                              variantId: line.variantId,
+                              quantity: String(Math.max(1, Number(line.quantity) - 1)),
+                            })
+                          }
+                        >
+                          <Minus />
+                        </button>
+                        <span className="pos-qty-value">{line.quantity}</span>
+                        <button
+                          type="button"
+                          className="btn btn-ghost btn-icon pos-qty-btn"
+                          aria-label={`Sumar unidad de ${line.productName}`}
+                          onClick={() =>
+                            dispatch({
+                              type: 'SET_LINE_QUANTITY',
+                              variantId: line.variantId,
+                              quantity: String(Number(line.quantity) + 1),
+                            })
+                          }
+                        >
+                          <Plus />
+                        </button>
+                      </div>
+                    )}
                   </td>
                   <td className="core-table-strong">
                     S/ {(Number(line.unitPrice) * Number(line.quantity)).toFixed(2)}

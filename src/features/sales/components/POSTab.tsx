@@ -128,6 +128,7 @@ export function POSTab() {
                       productName: item.product_name,
                       basePrice: item.price,
                       pricingTiers: item.pricing_tiers,
+                      unitOfMeasure: item.unit_of_measure,
                     },
                   })
                   setSearch('')

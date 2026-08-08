@@ -101,6 +101,31 @@ export async function tenantApiFetchText(path: string, token: string | null): Pr
 }
 
 /**
+ * Igual que tenantApiFetchText, pero para endpoints que arman el HTML a
+ * partir de un body (ej. la hoja de etiquetas de código de barras, Sprint
+ * 27) -tenantApiFetchText solo sirve para GET.
+ */
+export async function tenantApiFetchTextPost(
+  path: string,
+  token: string | null,
+  body: unknown,
+): Promise<string> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (token) headers.Authorization = `Bearer ${token}`
+
+  const response = await fetch(`${getTenantApiUrl()}${path}`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body),
+  })
+  if (!response.ok) {
+    const data = await response.json().catch(() => null)
+    throw new ApiError(response.status, data)
+  }
+  return response.text()
+}
+
+/**
  * Igual que rawFetch, pero si la respuesta es 401 (access token vencido) y
  * hay un refresh token disponible, intenta renovarlo UNA sola vez y repite
  * el request original -el usuario nunca ve un login inesperado solo porque
