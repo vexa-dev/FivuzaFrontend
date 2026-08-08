@@ -1,5 +1,5 @@
 import { getAccessToken } from '../auth/hooks/session'
-import { tenantApiFetch } from '../../shared/utils/tenantApiClient'
+import { tenantApiFetch, tenantApiFetchBlob } from '../../shared/utils/tenantApiClient'
 
 export interface Employee {
   id: number
@@ -46,6 +46,30 @@ export interface EmployeeAttendance {
   notes: string | null
   worked_hours: string | null
   created_at: string
+}
+
+export interface EmployeePayroll {
+  id: number
+  employee: number
+  period_start: string
+  period_end: string
+  base_salary: string
+  bonuses: string
+  deductions: string
+  net_amount: string
+  status: 'PENDING' | 'PAID'
+  payment_date: string | null
+  created_at: string
+}
+
+export interface AttendanceReportRow {
+  employee_id: number
+  full_name: string
+  on_time_count: number
+  late_count: number
+  absence_justified_count: number
+  absence_unjustified_count: number
+  total_worked_hours: string
 }
 
 function authed<T>(path: string, init: Parameters<typeof tenantApiFetch>[1] = {}) {
@@ -107,3 +131,54 @@ export const clockOut = (id: number) =>
   authed<{ id: number; check_out: string }>(`/usuarios/employee-attendance/${id}/clock-out/`, {
     method: 'POST',
   })
+
+// Planilla
+export const fetchPayroll = (employeeId?: number) =>
+  authed<EmployeePayroll[]>(
+    `/usuarios/employee-payroll/${employeeId ? `?employee=${employeeId}` : ''}`,
+  )
+
+export const generatePayroll = (data: {
+  employee_id: number
+  period_start: string
+  period_end: string
+  bonuses?: string
+  deductions?: string
+}) => authed<EmployeePayroll>('/usuarios/employee-payroll/generate/', { method: 'POST', body: data })
+
+export const markPayrollPaid = (id: number, paymentDate?: string) =>
+  authed<EmployeePayroll>(`/usuarios/employee-payroll/${id}/mark-paid/`, {
+    method: 'POST',
+    body: paymentDate ? { payment_date: paymentDate } : {},
+  })
+
+// Reportes
+export const fetchAttendanceReport = (params: { date_from: string; date_to: string; employee?: number }) => {
+  const query = new URLSearchParams({ date_from: params.date_from, date_to: params.date_to })
+  if (params.employee) query.set('employee', String(params.employee))
+  return authed<AttendanceReportRow[]>(`/usuarios/reports/attendance/?${query.toString()}`)
+}
+
+export const downloadAttendanceReport = (
+  params: { date_from: string; date_to: string; employee?: number },
+  format: 'csv' | 'xlsx',
+) => {
+  const query = new URLSearchParams({ date_from: params.date_from, date_to: params.date_to, export: format })
+  if (params.employee) query.set('employee', String(params.employee))
+  return tenantApiFetchBlob(`/usuarios/reports/attendance/?${query.toString()}`, getAccessToken())
+}
+
+export const fetchPayrollCostReport = (params: { period_start: string; period_end: string }) => {
+  const query = new URLSearchParams(params)
+  return authed<{ total_net_amount: string; rows: Record<string, string>[] }>(
+    `/usuarios/reports/payroll-cost/?${query.toString()}`,
+  )
+}
+
+export const downloadPayrollCostReport = (
+  params: { period_start: string; period_end: string },
+  format: 'csv' | 'xlsx',
+) => {
+  const query = new URLSearchParams({ ...params, export: format })
+  return tenantApiFetchBlob(`/usuarios/reports/payroll-cost/?${query.toString()}`, getAccessToken())
+}
