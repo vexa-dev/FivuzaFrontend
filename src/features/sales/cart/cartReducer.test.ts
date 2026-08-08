@@ -6,7 +6,14 @@ describe('cartReducer', () => {
   it('agrega una línea nueva con cantidad 1 por defecto', () => {
     const state = cartReducer(emptyCart, {
       type: 'ADD_LINE',
-      line: { variantId: 1, sku: 'SKU-1', productName: 'Camiseta', basePrice: '20.00', pricingTiers: [] },
+      line: {
+        variantId: 1,
+        sku: 'SKU-1',
+        productName: 'Camiseta',
+        basePrice: '20.00',
+        pricingTiers: [],
+        unitOfMeasure: 'UND',
+      },
     })
     expect(state.lines).toHaveLength(1)
     expect(state.lines[0]).toMatchObject({
@@ -20,11 +27,25 @@ describe('cartReducer', () => {
   it('sumar la misma variante dos veces acumula cantidad en vez de duplicar la línea', () => {
     let state = cartReducer(emptyCart, {
       type: 'ADD_LINE',
-      line: { variantId: 1, sku: 'SKU-1', productName: 'Camiseta', basePrice: '20.00', pricingTiers: [] },
+      line: {
+        variantId: 1,
+        sku: 'SKU-1',
+        productName: 'Camiseta',
+        basePrice: '20.00',
+        pricingTiers: [],
+        unitOfMeasure: 'UND',
+      },
     })
     state = cartReducer(state, {
       type: 'ADD_LINE',
-      line: { variantId: 1, sku: 'SKU-1', productName: 'Camiseta', basePrice: '20.00', pricingTiers: [] },
+      line: {
+        variantId: 1,
+        sku: 'SKU-1',
+        productName: 'Camiseta',
+        basePrice: '20.00',
+        pricingTiers: [],
+        unitOfMeasure: 'UND',
+      },
     })
 
     expect(state.lines).toHaveLength(1)
@@ -34,11 +55,25 @@ describe('cartReducer', () => {
   it('SET_LINE_QUANTITY actualiza solo la línea indicada', () => {
     let state = cartReducer(emptyCart, {
       type: 'ADD_LINE',
-      line: { variantId: 1, sku: 'SKU-1', productName: 'Camiseta', basePrice: '20.00', pricingTiers: [] },
+      line: {
+        variantId: 1,
+        sku: 'SKU-1',
+        productName: 'Camiseta',
+        basePrice: '20.00',
+        pricingTiers: [],
+        unitOfMeasure: 'UND',
+      },
     })
     state = cartReducer(state, {
       type: 'ADD_LINE',
-      line: { variantId: 2, sku: 'SKU-2', productName: 'Pantalón', basePrice: '50.00', pricingTiers: [] },
+      line: {
+        variantId: 2,
+        sku: 'SKU-2',
+        productName: 'Pantalón',
+        basePrice: '50.00',
+        pricingTiers: [],
+        unitOfMeasure: 'UND',
+      },
     })
     state = cartReducer(state, { type: 'SET_LINE_QUANTITY', variantId: 2, quantity: '3' })
 
@@ -49,7 +84,14 @@ describe('cartReducer', () => {
   it('REMOVE_LINE quita solo la variante indicada', () => {
     let state = cartReducer(emptyCart, {
       type: 'ADD_LINE',
-      line: { variantId: 1, sku: 'SKU-1', productName: 'Camiseta', basePrice: '20.00', pricingTiers: [] },
+      line: {
+        variantId: 1,
+        sku: 'SKU-1',
+        productName: 'Camiseta',
+        basePrice: '20.00',
+        pricingTiers: [],
+        unitOfMeasure: 'UND',
+      },
     })
     state = cartReducer(state, { type: 'REMOVE_LINE', variantId: 1 })
     expect(state.lines).toHaveLength(0)
@@ -79,7 +121,14 @@ describe('cartReducer', () => {
     state = cartReducer(state, { type: 'SET_CASH_SESSION', cashSessionId: 3 })
     state = cartReducer(state, {
       type: 'ADD_LINE',
-      line: { variantId: 1, sku: 'SKU-1', productName: 'Camiseta', basePrice: '20.00', pricingTiers: [] },
+      line: {
+        variantId: 1,
+        sku: 'SKU-1',
+        productName: 'Camiseta',
+        basePrice: '20.00',
+        pricingTiers: [],
+        unitOfMeasure: 'UND',
+      },
     })
     state = cartReducer(state, { type: 'CLEAR' })
 
@@ -98,6 +147,7 @@ describe('cartReducer', () => {
         productName: 'Camiseta',
         basePrice: '20.00',
         pricingTiers: [{ min_quantity: '12', unit_price: '15.00' }],
+        unitOfMeasure: 'UND',
         quantity: '12',
       },
     })
@@ -113,6 +163,7 @@ describe('cartReducer', () => {
         productName: 'Camiseta',
         basePrice: '20.00',
         pricingTiers: [{ min_quantity: '12', unit_price: '15.00' }],
+        unitOfMeasure: 'UND',
       },
     })
     expect(state.lines[0].unitPrice).toBe('20.00')
@@ -135,6 +186,7 @@ describe('computeCartTotals', () => {
           productName: 'Camiseta',
           basePrice: '20.00',
           pricingTiers: [],
+          unitOfMeasure: 'UND',
           unitPrice: '20.00',
           quantity: '2',
           discountAmount: null,
@@ -157,6 +209,7 @@ describe('computeCartTotals', () => {
           productName: 'Camiseta',
           basePrice: '100.00',
           pricingTiers: [],
+          unitOfMeasure: 'UND',
           unitPrice: '100.00',
           quantity: '1',
           discountAmount: '10.00',
@@ -177,6 +230,7 @@ describe('computeCartTotals', () => {
         productName: 'Camiseta',
         basePrice: '30.00',
         pricingTiers: [],
+        unitOfMeasure: 'UND' as const,
         unitPrice: '30.00',
         quantity: '1',
         discountAmount: null,
@@ -201,6 +255,7 @@ describe('computeCartTotals', () => {
           productName: 'Camiseta',
           basePrice: '50.00',
           pricingTiers: [],
+          unitOfMeasure: 'UND',
           unitPrice: '50.00',
           quantity: '1',
           discountAmount: null,

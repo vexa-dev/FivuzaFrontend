@@ -1,5 +1,9 @@
 import { getAccessToken } from '../auth/hooks/session'
-import { tenantApiFetch, tenantApiFetchBlob } from '../../shared/utils/tenantApiClient'
+import {
+  tenantApiFetch,
+  tenantApiFetchBlob,
+  tenantApiFetchTextPost,
+} from '../../shared/utils/tenantApiClient'
 
 export interface Warehouse {
   id: number
@@ -366,3 +370,17 @@ export const importCatalog = (file: File) => {
     body: formData,
   })
 }
+
+// Etiquetas de código de barras (Sprint 27, Ficha de Producto §5.1)
+export type LabelSize = '40x25' | '50x30'
+
+export const printLabels = (data: {
+  items: { variant_id: number; quantity: number }[]
+  size: LabelSize
+}) => tenantApiFetchTextPost('/inventario/labels/print/', getAccessToken(), data)
+
+export const downloadVariantBarcode = (variantId: number, format: 'png' | 'svg' = 'svg') =>
+  tenantApiFetchBlob(
+    `/inventario/product-variants/${variantId}/barcode/?img=${format}`,
+    getAccessToken(),
+  )

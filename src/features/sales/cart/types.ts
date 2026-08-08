@@ -7,6 +7,9 @@ export interface CartLine {
   // Precio base del catalogo, sin tramos por volumen (ProductVariant.price).
   basePrice: string
   pricingTiers: POSPricingTier[]
+  // Sprint 27: si es 'KG', el panel del carrito reemplaza los botones +/-
+  // por la lectura de la balanza (o el campo manual de respaldo).
+  unitOfMeasure: 'UND' | 'KG'
   // Precio efectivo ya resuelto para la cantidad actual (base o de tramo,
   // ver cart/pricing.ts) -es lo que totals.ts usa para la vista previa.
   unitPrice: string
