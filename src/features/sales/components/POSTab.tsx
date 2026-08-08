@@ -126,7 +126,8 @@ export function POSTab() {
                       variantId: item.id,
                       sku: item.sku,
                       productName: item.product_name,
-                      unitPrice: item.price,
+                      basePrice: item.price,
+                      pricingTiers: item.pricing_tiers,
                     },
                   })
                   setSearch('')

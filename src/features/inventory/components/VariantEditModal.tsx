@@ -1,7 +1,13 @@
+import { Trash2 } from 'lucide-react'
 import { useState, type ChangeEvent, type FormEvent } from 'react'
 import { Modal } from '../../../shared/components/Modal'
 import { requestVariantImageUploadUrl, type ProductVariant } from '../api'
 import { useUpdateVariant } from '../hooks/useProducts'
+import {
+  useCreateVolumePricingTier,
+  useDeleteVolumePricingTier,
+  useVolumePricingTiers,
+} from '../hooks/useVolumePricingTiers'
 
 interface VariantEditModalProps {
   variant: ProductVariant
@@ -21,6 +27,32 @@ export function VariantEditModal({ variant, onClose }: VariantEditModalProps) {
   const [error, setError] = useState<string | null>(null)
 
   const updateVariant = useUpdateVariant()
+
+  const { data: pricingTiers } = useVolumePricingTiers(variant.id)
+  const createTier = useCreateVolumePricingTier(variant.id)
+  const deleteTier = useDeleteVolumePricingTier(variant.id)
+  const [tierMinQuantity, setTierMinQuantity] = useState('')
+  const [tierUnitPrice, setTierUnitPrice] = useState('')
+  const [tierError, setTierError] = useState<string | null>(null)
+
+  const handleAddTier = () => {
+    setTierError(null)
+    if (!tierMinQuantity || !tierUnitPrice) {
+      setTierError('Indica la cantidad mínima y el precio del tramo.')
+      return
+    }
+    createTier
+      .mutateAsync({
+        variant: variant.id,
+        min_quantity: tierMinQuantity,
+        unit_price: tierUnitPrice,
+      })
+      .then(() => {
+        setTierMinQuantity('')
+        setTierUnitPrice('')
+      })
+      .catch(() => setTierError('No se pudo agregar el tramo (¿ya existe uno con esa cantidad?).'))
+  }
 
   const handleImageChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -153,6 +185,76 @@ export function VariantEditModal({ variant, onClose }: VariantEditModalProps) {
           {updateVariant.isPending ? 'Guardando...' : 'Guardar'}
         </button>
       </form>
+
+      <div style={{ borderTop: '1px solid var(--border-subtle)', marginTop: 16, paddingTop: 12 }}>
+        <p className="core-page-subtitle" style={{ margin: '0 0 8px' }}>
+          Precios por volumen (mayoreo)
+        </p>
+
+        {pricingTiers && pricingTiers.length === 0 && (
+          <p className="core-state-message">Sin tramos configurados.</p>
+        )}
+        {pricingTiers && pricingTiers.length > 0 && (
+          <ul style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: 0, margin: 0 }}>
+            {pricingTiers
+              .slice()
+              .sort((a, b) => Number(a.min_quantity) - Number(b.min_quantity))
+              .map((tier) => (
+                <li
+                  key={tier.id}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    listStyle: 'none',
+                  }}
+                >
+                  <span>
+                    Desde {tier.min_quantity} unidades → S/ {tier.unit_price}
+                  </span>
+                  <button
+                    type="button"
+                    className="btn btn-danger-ghost btn-sm btn-icon"
+                    aria-label="Quitar tramo"
+                    onClick={() => deleteTier.mutate(tier.id)}
+                  >
+                    <Trash2 />
+                  </button>
+                </li>
+              ))}
+          </ul>
+        )}
+
+        <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+          <input
+            value={tierMinQuantity}
+            onChange={(event) => setTierMinQuantity(event.target.value)}
+            inputMode="decimal"
+            placeholder="Cantidad mínima"
+            style={{ flex: 1 }}
+          />
+          <input
+            value={tierUnitPrice}
+            onChange={(event) => setTierUnitPrice(event.target.value)}
+            inputMode="decimal"
+            placeholder="Precio unitario"
+            style={{ flex: 1 }}
+          />
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={handleAddTier}
+            disabled={createTier.isPending}
+          >
+            Agregar
+          </button>
+        </div>
+        {tierError && (
+          <p className="login-error" role="alert" style={{ marginTop: 8 }}>
+            {tierError}
+          </p>
+        )}
+      </div>
     </Modal>
   )
 }

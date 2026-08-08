@@ -509,6 +509,11 @@ export interface POSPromotion {
   value: string
 }
 
+export interface POSPricingTier {
+  min_quantity: string
+  unit_price: string
+}
+
 export interface POSCatalogItem {
   id: number
   sku: string
@@ -517,6 +522,7 @@ export interface POSCatalogItem {
   price: string
   stock: string
   promotion: POSPromotion | null
+  pricing_tiers: POSPricingTier[]
 }
 
 export function fetchPOSCatalog(warehouseId: number) {

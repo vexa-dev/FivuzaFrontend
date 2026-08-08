@@ -1,5 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { adjustStock, fetchInventoryMovements, fetchLowStockVariants, fetchStock } from '../api'
+import {
+  adjustStock,
+  fetchInventoryMovements,
+  fetchLowStockVariants,
+  fetchStock,
+  transferStock,
+} from '../api'
 
 export function useStock(params?: { variant?: number; warehouse?: number }) {
   return useQuery({
@@ -31,6 +37,18 @@ export function useAdjustStock() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: adjustStock,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['stock'] })
+      queryClient.invalidateQueries({ queryKey: ['inventory-movements'] })
+      queryClient.invalidateQueries({ queryKey: ['low-stock-variants'] })
+    },
+  })
+}
+
+export function useTransferStock() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: transferStock,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stock'] })
       queryClient.invalidateQueries({ queryKey: ['inventory-movements'] })

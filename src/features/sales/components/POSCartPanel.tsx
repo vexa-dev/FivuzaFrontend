@@ -1,10 +1,11 @@
-import { Minus, Plus, ShoppingCart, Trash2 } from 'lucide-react'
+import { Minus, Plus, ShoppingCart, Tag, Trash2 } from 'lucide-react'
 import { useState, type Dispatch } from 'react'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { offlineDB } from '../../../shared/offline/db'
 import { ApiError } from '../../../shared/utils/apiClient'
 import type { Sale } from '../api'
 import type { CartAction } from '../cart/cartReducer'
+import { resolveTierUnitPrice } from '../cart/pricing'
 import type { CartTotals } from '../cart/totals'
 import { toSaleCreateInput } from '../cart/useCart'
 import type { CartState } from '../cart/types'
@@ -153,13 +154,25 @@ export function POSCartPanel({ cart, totals, dispatch, cashSessionId }: POSCartP
               </tr>
             </thead>
             <tbody>
-              {cart.lines.map((line) => (
+              {cart.lines.map((line) => {
+                const { appliedTier } = resolveTierUnitPrice(
+                  line.basePrice,
+                  line.pricingTiers,
+                  line.quantity,
+                )
+                return (
                 <tr key={line.variantId}>
                   <td>
                     <div className="core-table-strong">{line.productName}</div>
                     <div className="core-page-subtitle" style={{ margin: 0 }}>
                       {line.sku} · S/ {line.unitPrice}
                     </div>
+                    {appliedTier && (
+                      <span className="badge badge-success pos-promo-badge" style={{ marginTop: 4 }}>
+                        <Tag size={11} strokeWidth={2} />
+                        Precio mayorista aplicado
+                      </span>
+                    )}
                   </td>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -208,7 +221,8 @@ export function POSCartPanel({ cart, totals, dispatch, cashSessionId }: POSCartP
                     </button>
                   </td>
                 </tr>
-              ))}
+                )
+              })}
             </tbody>
           </table>
         )}
