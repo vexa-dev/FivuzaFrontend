@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Modal } from '../../../shared/components/Modal'
 import { ApiError } from '../../../shared/utils/apiClient'
+import { formatQuantity } from '../../../shared/utils/format'
 import type { RefundType, Sale } from '../api'
 import { useOpenCashSessions } from '../hooks/useCashSessions'
 import { useCreateSaleReturn, useSaleReturns } from '../hooks/useSaleReturns'
@@ -94,8 +95,8 @@ export function ReturnSaleModal({ sale, onClose, onReturned }: ReturnSaleModalPr
                       {detail.sku_snapshot}
                     </div>
                   </td>
-                  <td>{detail.quantity}</td>
-                  <td>{available}</td>
+                  <td>{formatQuantity(detail.quantity)}</td>
+                  <td>{formatQuantity(available)}</td>
                   <td>
                     <input
                       inputMode="decimal"

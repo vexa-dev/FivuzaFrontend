@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Modal } from '../../../shared/components/Modal'
 import { ApiError } from '../../../shared/utils/apiClient'
+import { formatCurrency } from '../../../shared/utils/format'
 import type { Customer } from '../api'
 import { useCustomerBalanceLedger, useCustomerDebtLedger, useRegisterDebtPayment } from '../hooks/useCreditLedger'
 
@@ -40,7 +41,7 @@ export function AccountStatementModal({ customer, onClose }: AccountStatementMod
       { customer_id: customer.id, amount, description },
       {
         onSuccess: (result) => {
-          setSuccess(`Abono registrado. Nueva deuda: S/ ${result.customer_current_debt}`)
+          setSuccess(`Abono registrado. Nueva deuda: ${formatCurrency(result.customer_current_debt)}`)
           setAmount('')
           setDescription('')
         },
@@ -58,12 +59,14 @@ export function AccountStatementModal({ customer, onClose }: AccountStatementMod
         <dl className="detail-grid">
           <dt>Deuda actual</dt>
           <dd style={{ fontWeight: 700, color: currentDebt > 0 ? 'var(--danger)' : undefined }}>
-            S/ {customer.current_debt}
+            {formatCurrency(customer.current_debt)}
           </dd>
           <dt>Saldo a favor</dt>
-          <dd style={{ fontWeight: 700 }}>S/ {customer.current_balance}</dd>
+          <dd style={{ fontWeight: 700 }}>{formatCurrency(customer.current_balance)}</dd>
           <dt>Límite de crédito</dt>
-          <dd>{customer.credit_limit === null ? 'Sin límite' : `S/ ${customer.credit_limit}`}</dd>
+          <dd>
+            {customer.credit_limit === null ? 'Sin límite' : formatCurrency(customer.credit_limit)}
+          </dd>
         </dl>
 
         {currentDebt > 0 && (
@@ -133,7 +136,7 @@ export function AccountStatementModal({ customer, onClose }: AccountStatementMod
                         {entry.type === 'DEBIT' ? 'Cargo' : 'Abono'}
                       </span>
                     </td>
-                    <td>S/ {entry.amount}</td>
+                    <td>{formatCurrency(entry.amount)}</td>
                     <td>{entry.description || '—'}</td>
                   </tr>
                 ))}
@@ -170,7 +173,7 @@ export function AccountStatementModal({ customer, onClose }: AccountStatementMod
                         {entry.type === 'CREDIT' ? 'Generado' : 'Usado'}
                       </span>
                     </td>
-                    <td>S/ {entry.amount}</td>
+                    <td>{formatCurrency(entry.amount)}</td>
                     <td>{entry.description || '—'}</td>
                   </tr>
                 ))}

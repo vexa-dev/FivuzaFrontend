@@ -1,6 +1,7 @@
 import { Pencil, Plus, Receipt, Search, Trash2, Users } from 'lucide-react'
 import { useState } from 'react'
 import { EmptyState } from '../../../shared/components/EmptyState'
+import { formatCurrency } from '../../../shared/utils/format'
 import type { Customer } from '../api'
 import { useCustomers, useDeleteCustomer } from '../hooks/useCustomers'
 import { AccountStatementModal } from './AccountStatementModal'
@@ -74,7 +75,7 @@ export function CustomersTab({ canManage }: { canManage: boolean }) {
                   {Number(customer.current_debt) > 0 ? (
                     <span className="badge badge-danger">
                       <span className="dot" />
-                      S/ {customer.current_debt}
+                      {formatCurrency(customer.current_debt)}
                     </span>
                   ) : (
                     '—'

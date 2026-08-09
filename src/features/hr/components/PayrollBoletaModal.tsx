@@ -1,6 +1,7 @@
 import { Printer } from 'lucide-react'
 import { Modal } from '../../../shared/components/Modal'
 import { printHtml } from '../../../shared/utils/printHtml'
+import { formatCurrency } from '../../../shared/utils/format'
 import type { Employee, EmployeePayroll } from '../api'
 
 interface PayrollBoletaModalProps {
@@ -37,11 +38,11 @@ function buildBoletaHtml(payroll: EmployeePayroll, employee: Employee | undefine
       <p><strong>Cargo:</strong> ${employee?.position ?? '—'}</p>
       <p><strong>Tipo de sueldo:</strong> ${employee ? SALARY_TYPE_LABELS[employee.salary_type] : '—'}</p>
       <hr />
-      <p>Sueldo base: S/ ${payroll.base_salary}</p>
-      <p>Bonos: S/ ${payroll.bonuses}</p>
-      <p>Descuentos: S/ ${payroll.deductions}</p>
+      <p>Sueldo base: ${formatCurrency(payroll.base_salary)}</p>
+      <p>Bonos: ${formatCurrency(payroll.bonuses)}</p>
+      <p>Descuentos: ${formatCurrency(payroll.deductions)}</p>
       <hr />
-      <p style="font-size: 1.1em;"><strong>Neto a pagar: S/ ${payroll.net_amount}</strong></p>
+      <p style="font-size: 1.1em;"><strong>Neto a pagar: ${formatCurrency(payroll.net_amount)}</strong></p>
       <p><strong>Estado:</strong> ${payroll.status === 'PAID' ? 'PAGADO' : 'PENDIENTE'}</p>
       ${payroll.payment_date ? `<p><strong>Fecha de pago:</strong> ${formatDate(payroll.payment_date)}</p>` : ''}
     </div>

@@ -1,6 +1,7 @@
 import { Pencil, Plus, Tags, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { EmptyState } from '../../../shared/components/EmptyState'
+import { formatCurrency } from '../../../shared/utils/format'
 import type { Category, Product } from '../../inventory/api'
 import type { Promotion } from '../api'
 import { useDeletePromotion, usePromotions } from '../hooks/usePromotions'
@@ -73,7 +74,9 @@ export function PromotionsTab({
               <tr key={promotion.id}>
                 <td className="core-table-strong">{promotion.name}</td>
                 <td>
-                  {promotion.type === 'PERCENTAGE' ? `${promotion.value}%` : `S/ ${promotion.value}`}
+                  {promotion.type === 'PERCENTAGE'
+                    ? `${Number(promotion.value)}%`
+                    : formatCurrency(promotion.value)}
                 </td>
                 <td>
                   {formatDate(promotion.start_date)} — {formatDate(promotion.end_date)}

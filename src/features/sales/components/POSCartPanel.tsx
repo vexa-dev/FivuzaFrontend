@@ -3,6 +3,7 @@ import { useState, type Dispatch } from 'react'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { offlineDB } from '../../../shared/offline/db'
 import { ApiError } from '../../../shared/utils/apiClient'
+import { formatCurrency, formatQuantity } from '../../../shared/utils/format'
 import type { Sale } from '../api'
 import type { CartAction } from '../cart/cartReducer'
 import { resolveTierUnitPrice } from '../cart/pricing'
@@ -152,7 +153,11 @@ export function POSCartPanel({ cart, totals, dispatch, cashSessionId }: POSCartP
           {scale.isConnected ? (
             <>
               Balanza conectada
-              {scale.weight && <strong style={{ color: 'var(--text-primary)' }}>· {scale.weight} kg</strong>}
+              {scale.weight && (
+                <strong style={{ color: 'var(--text-primary)' }}>
+                  · {formatQuantity(scale.weight)} kg
+                </strong>
+              )}
               <button type="button" className="btn btn-ghost btn-sm" onClick={scale.disconnect}>
                 Desconectar
               </button>
@@ -193,7 +198,7 @@ export function POSCartPanel({ cart, totals, dispatch, cashSessionId }: POSCartP
                   <td>
                     <div className="core-table-strong">{line.productName}</div>
                     <div className="core-page-subtitle" style={{ margin: 0 }}>
-                      {line.sku} · S/ {line.unitPrice}
+                      {line.sku} · {formatCurrency(line.unitPrice)}
                     </div>
                     {appliedTier && (
                       <span className="badge badge-success pos-promo-badge" style={{ marginTop: 4 }}>
@@ -253,7 +258,7 @@ export function POSCartPanel({ cart, totals, dispatch, cashSessionId }: POSCartP
                         >
                           <Minus />
                         </button>
-                        <span className="pos-qty-value">{line.quantity}</span>
+                        <span className="pos-qty-value">{formatQuantity(line.quantity)}</span>
                         <button
                           type="button"
                           className="btn btn-ghost btn-icon pos-qty-btn"

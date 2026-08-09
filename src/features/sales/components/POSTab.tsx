@@ -1,6 +1,7 @@
 import { PackageSearch, Search, Tag } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { EmptyState } from '../../../shared/components/EmptyState'
+import { formatCurrency, formatQuantity } from '../../../shared/utils/format'
 import type { POSCatalogItem } from '../api'
 import { useCart } from '../cart/useCart'
 import { useCashRegisters, useOpenCashSessions } from '../hooks/useCashSessions'
@@ -147,9 +148,9 @@ export function POSTab() {
                   )}
                 </div>
                 <div className="pos-product-card-footer">
-                  <span className="pos-product-card-price">S/ {item.price}</span>
+                  <span className="pos-product-card-price">{formatCurrency(item.price)}</span>
                   <span className="pos-product-card-stock">
-                    {outOfStock ? 'Sin stock' : `Stock: ${Number(item.stock)}`}
+                    {outOfStock ? 'Sin stock' : `Stock: ${formatQuantity(item.stock)}`}
                   </span>
                 </div>
               </button>

@@ -1,6 +1,7 @@
 import { Pencil, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Modal } from '../../../shared/components/Modal'
+import { formatCurrency } from '../../../shared/utils/format'
 import type { Product, ProductVariant } from '../api'
 import { useDeleteVariant } from '../hooks/useProducts'
 import { VariantEditModal } from './VariantEditModal'
@@ -34,8 +35,8 @@ export function ProductDetailModal({ product, canManage, onClose }: ProductDetai
               <tr key={variant.id}>
                 <td className="core-table-strong">{variant.sku}</td>
                 <td>{variant.barcode ?? '—'}</td>
-                <td>{variant.cost}</td>
-                <td>{variant.price}</td>
+                <td>{formatCurrency(variant.cost)}</td>
+                <td>{formatCurrency(variant.price)}</td>
                 <td>{variant.is_default ? '✓' : ''}</td>
                 {canManage && (
                   <td>

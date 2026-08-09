@@ -1,6 +1,7 @@
 import { Package, Plus } from 'lucide-react'
 import { useState } from 'react'
 import { EmptyState } from '../../shared/components/EmptyState'
+import { formatCurrency } from '../../shared/utils/format'
 import { useAuth } from './hooks/useAuth'
 import { useAllPlans } from './hooks/usePlansAdmin'
 import type { Plan } from './api'
@@ -55,9 +56,9 @@ export function PlansPage() {
                   <td className="core-table-strong">{plan.code}</td>
                   <td>{plan.name}</td>
                   <td>{plan.max_users}</td>
-                  <td>S/ {plan.price_monthly}</td>
-                  <td>S/ {plan.price_semiannual}</td>
-                  <td>S/ {plan.price_annual}</td>
+                  <td>{formatCurrency(plan.price_monthly)}</td>
+                  <td>{formatCurrency(plan.price_semiannual)}</td>
+                  <td>{formatCurrency(plan.price_annual)}</td>
                   <td>
                     <span className={`badge ${plan.is_active ? 'badge-success' : 'badge-neutral'}`}>
                       <span className="dot" />

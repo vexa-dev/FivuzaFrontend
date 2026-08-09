@@ -1,6 +1,7 @@
 import { PackageCheck, Plus, ShoppingBag } from 'lucide-react'
 import { useState } from 'react'
 import { EmptyState } from '../../../shared/components/EmptyState'
+import { formatCurrency } from '../../../shared/utils/format'
 import type { Product, Supplier, Warehouse } from '../api'
 import { usePurchaseOrders, useReceivePurchaseOrder } from '../hooks/usePurchaseOrders'
 import { PurchaseOrderFormModal } from './PurchaseOrderFormModal'
@@ -80,7 +81,7 @@ export function PurchaseOrdersTab({
               <tr key={order.id}>
                 <td className="core-table-strong">{supplierName(order.supplier)}</td>
                 <td>{warehouseName(order.warehouse)}</td>
-                <td>{order.total}</td>
+                <td>{formatCurrency(order.total)}</td>
                 <td>
                   <span className={`badge ${STATUS_BADGE[order.status]}`}>
                     <span className="dot" />

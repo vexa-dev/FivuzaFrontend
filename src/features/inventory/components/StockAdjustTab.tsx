@@ -1,6 +1,7 @@
 import { PackageCheck } from 'lucide-react'
 import { useMemo, useState, type FormEvent } from 'react'
 import { ApiError } from '../../../shared/utils/apiClient'
+import { formatQuantity } from '../../../shared/utils/format'
 import type { Product, Warehouse } from '../api'
 import { useAdjustStock, useStock } from '../hooks/useStock'
 
@@ -120,7 +121,8 @@ export function StockAdjustTab({ products, warehouses }: StockAdjustTabProps) {
 
         {variantId && warehouseId && (
           <p className="core-page-subtitle" style={{ margin: 0 }}>
-            Cantidad en sistema: <strong style={{ color: 'var(--text-primary)' }}>{systemQuantity}</strong>
+            Cantidad en sistema:{' '}
+            <strong style={{ color: 'var(--text-primary)' }}>{formatQuantity(systemQuantity)}</strong>
           </p>
         )}
 

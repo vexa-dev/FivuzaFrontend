@@ -2,6 +2,7 @@ import { Ban, PackageSearch, ShoppingCart } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { ApiError } from '../../../shared/utils/apiClient'
+import { formatQuantity } from '../../../shared/utils/format'
 import type { Product } from '../../inventory/api'
 import type { ProductReservation } from '../api'
 import { useCustomers } from '../hooks/useCustomers'
@@ -109,7 +110,7 @@ export function ReservationsTab({ products, warehouses }: ReservationsTabProps) 
                   <td>{customerName(reservation.customer)}</td>
                   <td>{variantLabel(reservation.variant)}</td>
                   <td>{warehouseName(reservation.warehouse)}</td>
-                  <td>{reservation.quantity}</td>
+                  <td>{formatQuantity(reservation.quantity)}</td>
                   <td>{formatDate(reservation.expires_at)}</td>
                   <td>
                     <span className={`badge ${STATUS_BADGE[reservation.status]}`}>

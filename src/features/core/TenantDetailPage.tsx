@@ -222,7 +222,7 @@ function SubscriptionTab({ tenantId }: { tenantId: number }) {
           <dd>{currentSubscription.status}</dd>
           <dt>Precio pagado</dt>
           <dd>
-            {currentSubscription.currency} {currentSubscription.price_paid}
+            {currentSubscription.currency} {Number(currentSubscription.price_paid).toFixed(2)}
           </dd>
           <dt>Vigente desde</dt>
           <dd>{formatDate(currentSubscription.starts_at)}</dd>
@@ -261,7 +261,7 @@ function SubscriptionTab({ tenantId }: { tenantId: number }) {
               {payments.map((payment) => (
                 <tr key={payment.id}>
                   <td className="core-table-strong">
-                    {payment.currency} {payment.amount}
+                    {payment.currency} {Number(payment.amount).toFixed(2)}
                   </td>
                   <td>{payment.payment_method}</td>
                   <td>

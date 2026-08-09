@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ExportButtons } from '../../../shared/components/ExportButtons'
 import { Modal } from '../../../shared/components/Modal'
+import { formatCurrency } from '../../../shared/utils/format'
 import {
   downloadCashMovementReport,
   downloadCashSessionReport,
@@ -22,7 +23,7 @@ function differenceBadge(difference: string | null) {
     <span className={`badge ${variant}`}>
       <span className="dot" />
       {value > 0 ? '+' : ''}
-      {difference}
+      {value.toFixed(2)}
     </span>
   )
 }
@@ -212,14 +213,22 @@ function CashSessionDetailModal({
             <dd>{registerName(session.cash_register)}</dd>
             <dt>Apertura</dt>
             <dd>
-              {formatDate(session.opening_at)} · S/ {session.opening_amount}
+              {formatDate(session.opening_at)} · {formatCurrency(session.opening_amount)}
             </dd>
             <dt>Cierre</dt>
             <dd>{formatDate(session.closing_at)}</dd>
             <dt>Esperado</dt>
-            <dd>{session.expected_closing_amount ?? '—'}</dd>
+            <dd>
+              {session.expected_closing_amount !== null
+                ? formatCurrency(session.expected_closing_amount)
+                : '—'}
+            </dd>
             <dt>Contado</dt>
-            <dd>{session.counted_closing_amount ?? '—'}</dd>
+            <dd>
+              {session.counted_closing_amount !== null
+                ? formatCurrency(session.counted_closing_amount)
+                : '—'}
+            </dd>
             <dt>Diferencia</dt>
             <dd>{differenceBadge(session.difference) ?? '—'}</dd>
             {session.notes && (
@@ -259,7 +268,7 @@ function CashSessionDetailModal({
                         </span>
                       </td>
                       <td>{movement.concept}</td>
-                      <td className="core-table-strong">S/ {movement.amount}</td>
+                      <td className="core-table-strong">{formatCurrency(movement.amount)}</td>
                       <td>{movement.reason || '—'}</td>
                       <td>
                         {movement.receipt_url ? (

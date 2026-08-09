@@ -2,6 +2,7 @@ import { FileText, Plus, ShoppingCart, Trash2 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { ApiError } from '../../../shared/utils/apiClient'
+import { formatCurrency } from '../../../shared/utils/format'
 import type { Product } from '../../inventory/api'
 import type { Quote, QuoteLineInput } from '../api'
 import { useCustomers } from '../hooks/useCustomers'
@@ -100,7 +101,7 @@ export function QuotesTab({ products }: QuotesTabProps) {
                 <tr key={quote.id}>
                   <td>{customerName(quote.customer)}</td>
                   <td>{formatDate(quote.valid_until)}</td>
-                  <td className="core-table-strong">S/ {quote.total}</td>
+                  <td className="core-table-strong">{formatCurrency(quote.total)}</td>
                   <td>
                     <span className={`badge ${STATUS_BADGE[quote.status]}`}>
                       <span className="dot" />
