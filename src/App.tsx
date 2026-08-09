@@ -49,6 +49,9 @@ const InventoryPage = lazy(() =>
 const SalesPage = lazy(() => import('./features/sales/SalesPage').then((m) => ({ default: m.SalesPage })))
 const UsersPage = lazy(() => import('./features/users/UsersPage').then((m) => ({ default: m.UsersPage })))
 const HRPage = lazy(() => import('./features/hr/HRPage').then((m) => ({ default: m.HRPage })))
+const GimnasioPage = lazy(() =>
+  import('./features/gimnasio/GimnasioPage').then((m) => ({ default: m.GimnasioPage })),
+)
 const ImpersonateLandingPage = lazy(() =>
   import('./features/auth/ImpersonateLandingPage').then((m) => ({
     default: m.ImpersonateLandingPage,
@@ -97,6 +100,9 @@ function App() {
                 </Route>
                 <Route element={<TenantProtectedRoute requirePermission="HR_MANAGE" />}>
                   <Route path="/rrhh" element={<HRPage />} />
+                </Route>
+                <Route element={<TenantProtectedRoute requirePermission="GYM_MANAGE" />}>
+                  <Route path="/gimnasio" element={<GimnasioPage />} />
                 </Route>
               </Route>
             </Route>
