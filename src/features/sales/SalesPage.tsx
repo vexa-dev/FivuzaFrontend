@@ -15,6 +15,7 @@ import { PromotionsTab } from './components/PromotionsTab'
 import { QuotesTab } from './components/QuotesTab'
 import { ReservationsTab } from './components/ReservationsTab'
 import { SalesHistoryTab } from './components/SalesHistoryTab'
+import { formatCurrency } from '../../shared/utils/format'
 import type { CashSession } from './api'
 import { useCashMovements, useCashRegisters, useOpenCashSessions } from './hooks/useCashSessions'
 
@@ -130,7 +131,7 @@ function CurrentCashTab() {
               <div>
                 <span className="summary-card-value">{registerName(session.cash_register)}</span>
                 <span className="summary-card-label">
-                  Abierta {formatDate(session.opening_at)} · S/ {session.opening_amount}
+                  Abierta {formatDate(session.opening_at)} · {formatCurrency(session.opening_amount)}
                 </span>
               </div>
             </button>
@@ -200,7 +201,8 @@ function CashSessionDetail({
               {registerName}
             </h2>
             <p className="core-state-message" style={{ margin: '4px 0 0' }}>
-              Abierta {formatDate(session.opening_at)} · Monto inicial S/ {session.opening_amount}
+              Abierta {formatDate(session.opening_at)} · Monto inicial{' '}
+              {formatCurrency(session.opening_amount)}
             </p>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
@@ -256,7 +258,7 @@ function CashSessionDetail({
                     </span>
                   </td>
                   <td>{movement.concept}</td>
-                  <td className="core-table-strong">S/ {movement.amount}</td>
+                  <td className="core-table-strong">{formatCurrency(movement.amount)}</td>
                   <td>{formatDate(movement.created_at)}</td>
                 </tr>
               ))}

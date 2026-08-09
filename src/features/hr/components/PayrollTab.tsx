@@ -1,6 +1,7 @@
 import { Plus, Receipt } from 'lucide-react'
 import { useState } from 'react'
 import { EmptyState } from '../../../shared/components/EmptyState'
+import { formatCurrency } from '../../../shared/utils/format'
 import type { Employee } from '../api'
 import { useMarkPayrollPaid, usePayroll } from '../hooks/usePayroll'
 import { PayrollBoletaModal } from './PayrollBoletaModal'
@@ -67,7 +68,7 @@ export function PayrollTab({ employees }: PayrollTabProps) {
                 <td>
                   {formatDate(row.period_start)} – {formatDate(row.period_end)}
                 </td>
-                <td className="core-table-strong">S/ {row.net_amount}</td>
+                <td className="core-table-strong">{formatCurrency(row.net_amount)}</td>
                 <td>
                   <span className={`badge ${row.status === 'PAID' ? 'badge-success' : 'badge-neutral'}`}>
                     <span className="dot" />

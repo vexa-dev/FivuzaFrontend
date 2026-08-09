@@ -1,6 +1,7 @@
 import { HandCoins, Receipt } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { EmptyState } from '../../../shared/components/EmptyState'
+import { formatCurrency } from '../../../shared/utils/format'
 import type { Customer } from '../api'
 import { useCustomers } from '../hooks/useCustomers'
 import { AccountStatementModal } from './AccountStatementModal'
@@ -74,7 +75,7 @@ export function CollectionsTab() {
                 <td>
                   <span className="badge badge-danger">
                     <span className="dot" />
-                    S/ {customer.current_debt}
+                    {formatCurrency(customer.current_debt)}
                   </span>
                 </td>
                 <td>

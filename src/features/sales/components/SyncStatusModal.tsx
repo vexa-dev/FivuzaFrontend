@@ -1,6 +1,7 @@
 import { AlertTriangle, Clock, RefreshCw } from 'lucide-react'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { Modal } from '../../../shared/components/Modal'
+import { formatCurrency } from '../../../shared/utils/format'
 import { useOfflineSync } from '../hooks/useOfflineSync'
 
 function formatDateTime(value: string) {
@@ -59,7 +60,7 @@ export function SyncStatusModal({ onClose }: { onClose: () => void }) {
                 {pendingSales.map((sale) => (
                   <tr key={sale.clientSideUuid}>
                     <td>{formatDateTime(sale.createdAt)}</td>
-                    <td>S/ {sale.total}</td>
+                    <td>{formatCurrency(sale.total)}</td>
                     <td>
                       <span className="badge badge-neutral">
                         <span className="dot" />
@@ -103,7 +104,7 @@ export function SyncStatusModal({ onClose }: { onClose: () => void }) {
                 {failedSales.map((sale) => (
                   <tr key={sale.clientSideUuid}>
                     <td>{formatDateTime(sale.createdAt)}</td>
-                    <td>S/ {sale.total}</td>
+                    <td>{formatCurrency(sale.total)}</td>
                     <td>
                       <span
                         style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: 'var(--danger)' }}

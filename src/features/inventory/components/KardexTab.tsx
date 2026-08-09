@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { ExportButtons } from '../../../shared/components/ExportButtons'
 import { useOnlineStatus } from '../../../shared/offline/useOnlineStatus'
+import { formatQuantity } from '../../../shared/utils/format'
 import {
   downloadLowStockReport,
   downloadStockValuationReport,
@@ -176,8 +177,8 @@ export function KardexTab({ products, warehouses }: KardexTabProps) {
                     {movement.type === 'IN' ? 'Entrada' : 'Salida'}
                   </span>
                 </td>
-                <td>{movement.quantity}</td>
-                <td className="core-table-strong">{movement.resulting_balance}</td>
+                <td>{formatQuantity(movement.quantity)}</td>
+                <td className="core-table-strong">{formatQuantity(movement.resulting_balance)}</td>
                 <td>{CONCEPT_LABELS[movement.concept] ?? movement.concept}</td>
               </tr>
             ))}

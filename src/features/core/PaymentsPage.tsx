@@ -106,7 +106,7 @@ export function PaymentsPage() {
                       )}
                     </td>
                     <td>
-                      {payment.currency} {payment.amount}
+                      {payment.currency} {Number(payment.amount).toFixed(2)}
                     </td>
                     <td>{payment.payment_method}</td>
                     <td>

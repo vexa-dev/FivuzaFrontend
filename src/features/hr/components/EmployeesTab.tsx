@@ -1,6 +1,7 @@
 import { Pencil, Plus, Trash2, UserRound } from 'lucide-react'
 import { useState } from 'react'
 import { EmptyState } from '../../../shared/components/EmptyState'
+import { formatCurrency } from '../../../shared/utils/format'
 import type { TenantUserRecord } from '../../users/api'
 import type { Employee } from '../api'
 import { useDeleteEmployee, useEmployees } from '../hooks/useEmployees'
@@ -83,7 +84,7 @@ export function EmployeesTab({ warehouses, users }: EmployeesTabProps) {
                 <td>{employee.position}</td>
                 <td>{warehouseName(employee.warehouse)}</td>
                 <td>
-                  S/ {employee.salary_amount} ({SALARY_TYPE_LABELS[employee.salary_type]})
+                  {formatCurrency(employee.salary_amount)} ({SALARY_TYPE_LABELS[employee.salary_type]})
                 </td>
                 <td>{userEmail(employee.user) ?? <span className="core-page-subtitle">Sin acceso</span>}</td>
                 <td>

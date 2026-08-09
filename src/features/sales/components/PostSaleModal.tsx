@@ -1,5 +1,6 @@
 import { CheckCircle2 } from 'lucide-react'
 import { Modal } from '../../../shared/components/Modal'
+import { formatCurrency } from '../../../shared/utils/format'
 import type { Sale } from '../api'
 import { useSaleReceipt } from '../hooks/useSales'
 import { ReceiptView } from './ReceiptView'
@@ -23,7 +24,7 @@ export function PostSaleModal({ sale, onClose }: PostSaleModalProps) {
           <div>
             <div className="core-table-strong">{sale.invoice_number}</div>
             <p className="core-page-subtitle" style={{ margin: 0 }}>
-              Total cobrado: S/ {sale.total}
+              Total cobrado: {formatCurrency(sale.total)}
             </p>
           </div>
         </div>

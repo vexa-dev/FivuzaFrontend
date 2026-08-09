@@ -1,6 +1,7 @@
 import { Trash2 } from 'lucide-react'
 import { useState, type ChangeEvent, type FormEvent } from 'react'
 import { Modal } from '../../../shared/components/Modal'
+import { formatCurrency, formatQuantity } from '../../../shared/utils/format'
 import { requestVariantImageUploadUrl, type ProductVariant } from '../api'
 import { useUpdateVariant } from '../hooks/useProducts'
 import {
@@ -210,7 +211,7 @@ export function VariantEditModal({ variant, onClose }: VariantEditModalProps) {
                   }}
                 >
                   <span>
-                    Desde {tier.min_quantity} unidades → S/ {tier.unit_price}
+                    Desde {formatQuantity(tier.min_quantity)} unidades → {formatCurrency(tier.unit_price)}
                   </span>
                   <button
                     type="button"

@@ -5,6 +5,7 @@ import { EmptyState } from '../../../shared/components/EmptyState'
 import { ExportButtons } from '../../../shared/components/ExportButtons'
 import { Modal } from '../../../shared/components/Modal'
 import { useOnlineStatus } from '../../../shared/offline/useOnlineStatus'
+import { formatCurrency, formatQuantity } from '../../../shared/utils/format'
 import { downloadSalesReport, type Sale, type SaleReturn } from '../api'
 import { useCustomers } from '../hooks/useCustomers'
 import { useSale, useSaleReceipt, useSales } from '../hooks/useSales'
@@ -154,7 +155,7 @@ export function SalesHistoryTab() {
                 <tr key={sale.id}>
                   <td className="core-table-strong">{sale.invoice_number}</td>
                   <td>{formatDate(sale.created_at)}</td>
-                  <td>S/ {sale.total}</td>
+                  <td>{formatCurrency(sale.total)}</td>
                   <td>
                     <span
                       className={`badge ${sale.status === 'COMPLETED' ? 'badge-success' : sale.status === 'VOIDED' ? 'badge-danger' : 'badge-neutral'}`}
@@ -296,23 +297,26 @@ function SaleDetailBody({ sale, returns }: { sale: Sale; returns: SaleReturn[] }
                   {detail.sku_snapshot}
                 </div>
               </td>
-              <td>{detail.quantity}</td>
-              <td>S/ {detail.subtotal}</td>
+              <td>{formatQuantity(detail.quantity)}</td>
+              <td>{formatCurrency(detail.subtotal)}</td>
             </tr>
           ))}
         </tbody>
       </table>
       <dl className="detail-grid">
         <dt>Subtotal</dt>
-        <dd>S/ {sale.subtotal}</dd>
+        <dd>{formatCurrency(sale.subtotal)}</dd>
         <dt>Descuento</dt>
-        <dd>S/ {sale.discount_total}</dd>
+        <dd>{formatCurrency(sale.discount_total)}</dd>
         <dt>Total</dt>
-        <dd style={{ fontWeight: 700 }}>S/ {sale.total}</dd>
+        <dd style={{ fontWeight: 700 }}>{formatCurrency(sale.total)}</dd>
         <dt>Pagos</dt>
         <dd>
           {sale.payments
-            .map((payment) => `${PAYMENT_METHOD_LABELS[payment.method] ?? payment.method}: S/ ${payment.amount}`)
+            .map(
+              (payment) =>
+                `${PAYMENT_METHOD_LABELS[payment.method] ?? payment.method}: ${formatCurrency(payment.amount)}`,
+            )
             .join(' · ')}
         </dd>
         {returns.length > 0 && (
@@ -322,7 +326,7 @@ function SaleDetailBody({ sale, returns }: { sale: Sale; returns: SaleReturn[] }
               {returns
                 .map(
                   (sr) =>
-                    `S/ ${sr.total_refund_amount} (${sr.refund_type === 'CASH' ? 'efectivo' : 'saldo a favor'})`,
+                    `${formatCurrency(sr.total_refund_amount)} (${sr.refund_type === 'CASH' ? 'efectivo' : 'saldo a favor'})`,
                 )
                 .join(' · ')}
             </dd>

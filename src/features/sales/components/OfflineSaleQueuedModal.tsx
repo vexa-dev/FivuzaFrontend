@@ -1,5 +1,6 @@
 import { CloudOff } from 'lucide-react'
 import { Modal } from '../../../shared/components/Modal'
+import { formatCurrency } from '../../../shared/utils/format'
 
 interface OfflineSaleQueuedModalProps {
   total: string
@@ -17,7 +18,7 @@ export function OfflineSaleQueuedModal({ total, onClose }: OfflineSaleQueuedModa
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <CloudOff size={28} strokeWidth={2} style={{ color: 'var(--warning)' }} />
           <div>
-            <div className="core-table-strong">Total cobrado: S/ {total}</div>
+            <div className="core-table-strong">Total cobrado: {formatCurrency(total)}</div>
             <p className="core-page-subtitle" style={{ margin: 0 }}>
               Se sincronizará automáticamente en cuanto vuelva la conexión. El ticket se puede
               imprimir desde el historial una vez sincronizada.

@@ -1,6 +1,7 @@
 import { Download, FileBarChart } from 'lucide-react'
 import { useState } from 'react'
 import { EmptyState } from '../../../shared/components/EmptyState'
+import { formatCurrency, formatQuantity } from '../../../shared/utils/format'
 import { downloadAttendanceReport, downloadPayrollCostReport } from '../api'
 import { useAttendanceReport, usePayrollCostReport } from '../hooks/useReports'
 
@@ -120,7 +121,7 @@ export function ReportsTab() {
                     <td className="core-table-strong">{row.full_name}</td>
                     <td>{row.on_time_count}</td>
                     <td>{row.late_count}</td>
-                    <td>{row.total_worked_hours}</td>
+                    <td>{formatQuantity(row.total_worked_hours)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -179,7 +180,7 @@ export function ReportsTab() {
         ) : (
           payrollCostReport.data && (
             <p className="core-table-strong" style={{ fontSize: '1.1rem' }}>
-              Total: S/ {payrollCostReport.data.total_net_amount}
+              Total: {formatCurrency(payrollCostReport.data.total_net_amount)}
             </p>
           )
         )}

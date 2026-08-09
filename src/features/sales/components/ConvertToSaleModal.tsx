@@ -1,6 +1,7 @@
 import { Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Modal } from '../../../shared/components/Modal'
+import { formatCurrency } from '../../../shared/utils/format'
 import type { SalePaymentInput, SalePaymentMethod } from '../api'
 import { useCashRegisters, useOpenCashSessions } from '../hooks/useCashSessions'
 
@@ -53,7 +54,7 @@ export function ConvertToSaleModal({
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div className="detail-grid">
           <dt>Total a cobrar</dt>
-          <dd style={{ fontWeight: 700, fontSize: '1.125rem' }}>S/ {total}</dd>
+          <dd style={{ fontWeight: 700, fontSize: '1.125rem' }}>{formatCurrency(total)}</dd>
         </div>
 
         {(!openSessions || openSessions.length === 0) && (
@@ -138,7 +139,7 @@ export function ConvertToSaleModal({
             className={`core-page-subtitle ${paymentsTotal.toFixed(2) === Number(total).toFixed(2) ? '' : 'login-error'}`}
             style={{ margin: 0 }}
           >
-            Pagado: S/ {paymentsTotal.toFixed(2)} de S/ {total}
+            Pagado: {formatCurrency(paymentsTotal)} de {formatCurrency(total)}
           </p>
         </div>
 

@@ -15,6 +15,7 @@ import {
 import { useState } from 'react'
 import '../core/CorePage.css'
 import { EmptyState } from '../../shared/components/EmptyState'
+import { formatQuantity } from '../../shared/utils/format'
 import { useAuth } from '../auth/hooks/useAuth'
 import { KpiCard } from './components/KpiCard'
 import { PaymentMethodChart } from './components/PaymentMethodChart'
@@ -191,7 +192,7 @@ export function DashboardPage() {
                       {data.top_products.map((product) => (
                         <tr key={product.product_name}>
                           <td className="core-table-strong">{product.product_name}</td>
-                          <td>{product.quantity_sold}</td>
+                          <td>{formatQuantity(product.quantity_sold)}</td>
                           <td>{formatCurrency(product.revenue)}</td>
                         </tr>
                       ))}

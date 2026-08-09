@@ -1,6 +1,7 @@
 import { Plus, Trash2, TriangleAlert } from 'lucide-react'
 import { useState } from 'react'
 import { Modal } from '../../../shared/components/Modal'
+import { formatCurrency } from '../../../shared/utils/format'
 import type { Customer, SalePaymentMethod } from '../api'
 import type { CartPayment, CartState } from '../cart/types'
 import type { CartTotals } from '../cart/totals'
@@ -208,8 +209,8 @@ function CreditWarning({
       style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 6, color: exceedsLimit ? 'var(--danger)' : undefined }}
     >
       {exceedsLimit && <TriangleAlert size={14} strokeWidth={2} />}
-      Deuda actual: S/ {customer.current_debt}
-      {creditLimit !== null && ` · Límite: S/ ${customer.credit_limit}`}
+      Deuda actual: {formatCurrency(customer.current_debt)}
+      {creditLimit !== null && ` · Límite: ${formatCurrency(creditLimit)}`}
       {exceedsLimit && ' · Supera el límite de crédito'}
     </p>
   )
@@ -233,7 +234,7 @@ function BalanceWarning({
       style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 6, color: insufficient ? 'var(--danger)' : undefined }}
     >
       {insufficient && <TriangleAlert size={14} strokeWidth={2} />}
-      Saldo a favor disponible: S/ {customer.current_balance}
+      Saldo a favor disponible: {formatCurrency(customer.current_balance)}
       {insufficient && ' · Insuficiente'}
     </p>
   )
