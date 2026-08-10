@@ -50,6 +50,7 @@ export interface Membership {
   end_date: string
   status: 'ACTIVE' | 'FROZEN' | 'EXPIRED' | 'CANCELLED'
   frozen_since: string | null
+  group: number | null
   payments: MembershipPayment[]
   created_at: string
 }
@@ -85,3 +86,122 @@ export const unfreezeMembership = (id: number) =>
 
 export const cancelMembership = (id: number) =>
   authed<Membership>(`/gimnasio/memberships/${id}/cancel/`, { method: 'POST' })
+
+export type DayOfWeek =
+  | 'MONDAY'
+  | 'TUESDAY'
+  | 'WEDNESDAY'
+  | 'THURSDAY'
+  | 'FRIDAY'
+  | 'SATURDAY'
+  | 'SUNDAY'
+
+export interface GymClass {
+  id: number
+  name: string
+  instructor: number
+  instructor_name: string
+  max_capacity: number
+  duration_minutes: number
+  is_active: boolean
+  created_at: string
+}
+
+export const fetchGymClasses = (params?: { active_only?: boolean }) => {
+  const query = new URLSearchParams()
+  if (params?.active_only) query.set('active_only', 'true')
+  const qs = query.toString()
+  return authed<GymClass[]>(`/gimnasio/classes/${qs ? `?${qs}` : ''}`)
+}
+
+export const createGymClass = (data: {
+  name: string
+  instructor: number
+  max_capacity: number
+  duration_minutes: number
+}) => authed<GymClass>('/gimnasio/classes/', { method: 'POST', body: data })
+
+export const updateGymClass = (id: number, data: Partial<GymClass>) =>
+  authed<GymClass>(`/gimnasio/classes/${id}/`, { method: 'PATCH', body: data })
+
+export const deleteGymClass = (id: number) =>
+  authed<void>(`/gimnasio/classes/${id}/`, { method: 'DELETE' })
+
+export interface ClassSchedule {
+  id: number
+  gym_class: number
+  day_of_week: DayOfWeek
+  start_time: string
+  is_active: boolean
+}
+
+export const fetchClassSchedules = (params?: { gym_class?: number }) => {
+  const query = new URLSearchParams()
+  if (params?.gym_class) query.set('gym_class', String(params.gym_class))
+  const qs = query.toString()
+  return authed<ClassSchedule[]>(`/gimnasio/class-schedules/${qs ? `?${qs}` : ''}`)
+}
+
+export const createClassSchedule = (data: {
+  gym_class: number
+  day_of_week: DayOfWeek
+  start_time: string
+}) => authed<ClassSchedule>('/gimnasio/class-schedules/', { method: 'POST', body: data })
+
+export const deleteClassSchedule = (id: number) =>
+  authed<void>(`/gimnasio/class-schedules/${id}/`, { method: 'DELETE' })
+
+export interface ClassBooking {
+  id: number
+  customer: number
+  gym_class: number
+  class_date: string
+  status: 'RESERVADO' | 'ASISTIO' | 'NO_ASISTIO' | 'CANCELADO'
+  created_at: string
+}
+
+export const fetchClassBookings = (params?: {
+  customer?: number
+  gym_class?: number
+  class_date?: string
+}) => {
+  const query = new URLSearchParams()
+  if (params?.customer) query.set('customer', String(params.customer))
+  if (params?.gym_class) query.set('gym_class', String(params.gym_class))
+  if (params?.class_date) query.set('class_date', params.class_date)
+  const qs = query.toString()
+  return authed<ClassBooking[]>(`/gimnasio/class-bookings/${qs ? `?${qs}` : ''}`)
+}
+
+export const bookClass = (data: {
+  customer_id: number
+  gym_class_id: number
+  class_date: string
+}) => authed<ClassBooking>('/gimnasio/class-bookings/', { method: 'POST', body: data })
+
+export const markClassAttendance = (id: number, attended: boolean) =>
+  authed<ClassBooking>(`/gimnasio/class-bookings/${id}/attend/`, {
+    method: 'POST',
+    body: { attended },
+  })
+
+export const cancelClassBooking = (id: number) =>
+  authed<ClassBooking>(`/gimnasio/class-bookings/${id}/cancel/`, { method: 'POST' })
+
+export interface MembershipGroup {
+  id: number
+  holder_customer: number
+  name: string
+  memberships: Membership[]
+  created_at: string
+}
+
+export const fetchMembershipGroups = () =>
+  authed<MembershipGroup[]>('/gimnasio/membership-groups/')
+
+export const createMembershipGroup = (data: {
+  holder_customer_id: number
+  name?: string
+  membership_ids: number[]
+}) =>
+  authed<MembershipGroup>('/gimnasio/membership-groups/', { method: 'POST', body: data })
