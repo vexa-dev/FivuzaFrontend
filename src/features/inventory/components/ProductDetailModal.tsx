@@ -1,5 +1,6 @@
 import { Pencil, Trash2 } from 'lucide-react'
 import { useState } from 'react'
+import { ConfirmDialog } from '../../../shared/components/ConfirmDialog'
 import { Modal } from '../../../shared/components/Modal'
 import { formatCurrency } from '../../../shared/utils/format'
 import type { Product, ProductVariant } from '../api'
@@ -14,6 +15,7 @@ interface ProductDetailModalProps {
 
 export function ProductDetailModal({ product, canManage, onClose }: ProductDetailModalProps) {
   const [editingVariant, setEditingVariant] = useState<ProductVariant | null>(null)
+  const [deletingVariant, setDeletingVariant] = useState<ProductVariant | null>(null)
   const deleteVariant = useDeleteVariant()
 
   return (
@@ -53,11 +55,7 @@ export function ProductDetailModal({ product, canManage, onClose }: ProductDetai
                         type="button"
                         className="btn btn-danger-ghost btn-sm btn-icon"
                         aria-label={`Eliminar variante ${variant.sku}`}
-                        onClick={() => {
-                          if (confirm(`¿Eliminar la variante ${variant.sku}?`)) {
-                            deleteVariant.mutate(variant.id)
-                          }
-                        }}
+                        onClick={() => setDeletingVariant(variant)}
                       >
                         <Trash2 />
                       </button>
@@ -72,6 +70,16 @@ export function ProductDetailModal({ product, canManage, onClose }: ProductDetai
 
       {editingVariant && (
         <VariantEditModal variant={editingVariant} onClose={() => setEditingVariant(null)} />
+      )}
+
+      {deletingVariant && (
+        <ConfirmDialog
+          title="Eliminar variante"
+          message={`¿Eliminar la variante "${deletingVariant.sku}"? Esta acción no se puede deshacer.`}
+          confirmLabel="Eliminar"
+          onConfirm={() => deleteVariant.mutate(deletingVariant.id)}
+          onClose={() => setDeletingVariant(null)}
+        />
       )}
     </Modal>
   )

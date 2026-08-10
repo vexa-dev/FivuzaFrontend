@@ -1,0 +1,409 @@
+/* Icono de marca junto al titulo -antes era solo texto flotando sobre el
+   fondo de la pagina, sin nada que lo distinguiera. Reusa el mismo icono
+   de la nav (LayoutDashboard) para reforzar "estas aca", y el mismo par
+   primary/primary-subtle-bg que ya usan avatar/hero-stat-icon. */
+/* Boton icon-only sin borde -mismo patron que erp-sidebar-logout/
+   erp-mobile-menu-toggle (fondo solo al hover, sin contorno permanente). */
+.dashboard-settings-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.dashboard-settings-btn:hover {
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+}
+
+/* Header interno de la card de KPIs secundarios -el boton "personalizar"
+   vive aca, junto a lo que efectivamente controla, en vez de flotar en el
+   header general de la pagina sin relacion visual directa con su efecto. */
+.dashboard-compact-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.dashboard-compact-card-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.page-header-title-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.page-header-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-md);
+  background: var(--primary-subtle-bg);
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+/* align-items:start (no stretch) -antes la card se inflaba a la altura
+   completa del Resumen (5 filas) solo para tener espacio que llenar. Con
+   una sola cifra adentro, se ve mas intencional del tamaño que le
+   corresponde a su propio contenido, no al de su vecina. */
+.dashboard-hero-grid {
+  align-items: start;
+}
+
+.dashboard-hero-in {
+  animation: dashboard-hero-in 0.32s var(--ease-out) both;
+}
+
+@keyframes dashboard-hero-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+/* La card hero se leia enorme y vacia a la derecha del numero en pantallas
+   anchas (feedback real de uso) -pasa de columna centrada a fila: texto a
+   la izquierda, tendencia de 30 dias ocupando el resto del ancho en vez de
+   quedar en blanco. */
+.dashboard-hero-card {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 24px;
+  /* Cinturon y tirantes sobre .dashboard-hero-grid{align-items:start}: se
+     fija tambien aca para que gane pase lo que pase con la especificidad
+     de la fila del grid. */
+  align-self: start;
+}
+
+.dashboard-hero-card-text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.dashboard-hero-sparkline {
+  flex: 1;
+  min-width: 0;
+  /* Alto fijo, no flex:1 en altura -sin el stretch del grid ya no hay una
+     fila mas alta de la que "heredar" espacio para llenar. */
+  height: 100px;
+}
+
+@media (max-width: 860px) {
+  .dashboard-hero-card {
+    flex-direction: column;
+  }
+
+  .dashboard-hero-sparkline {
+    height: 120px;
+  }
+}
+
+/* Pila compacta -el feedback fue "letras muy pequeñas dificiles de leer":
+   valor mas grande (antes heredaba 1.125rem de .compact-stat-value),
+   divisores sutiles entre filas para que cada stat se lea como unidad
+   propia en vez de texto flotando en un padding gigante, y el
+   justify-content:space-between original se reemplaza por gap fijo. */
+.dashboard-compact-stack {
+  gap: 0;
+}
+
+.dashboard-compact-row {
+  padding: 14px 2px;
+  border-bottom: 1px solid var(--border-subtle);
+  animation: dashboard-row-in 0.28s var(--ease-out) both;
+  animation-delay: calc(80ms + var(--kpi-index, 0) * 45ms);
+}
+
+.dashboard-compact-row:last-child {
+  border-bottom: none;
+  padding-bottom: 2px;
+}
+
+.dashboard-compact-row:first-child {
+  padding-top: 2px;
+}
+
+.dashboard-compact-row .compact-stat-label {
+  font-size: 0.875rem;
+}
+
+.dashboard-compact-row .compact-stat-value {
+  font-size: 1.25rem;
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes dashboard-row-in {
+  from {
+    opacity: 0;
+    transform: translateX(-4px);
+  }
+}
+
+/* Acento superior -mismo dispositivo que la barra del link activo en el
+   sidebar (var(--primary), sin color nuevo), reusado aca para que las dos
+   cards de grafica destaquen frente al resto de la pagina en vez de leerse
+   como cards genericas mas. */
+.dashboard-chart-card {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-chart-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--primary);
+}
+
+/* Cuando dos cards de esta fila tienen contenido de distinto largo (ej.
+   "Ventas por dia" con grafica vs "Metodos de pago" con un pie chico), la
+   mas corta ya no queda con un hueco en blanco al fondo -margin:auto
+   absorbe el espacio sobrante arriba/abajo sin tocar el display/
+   flex-direction propio del contenido (evita pisar el layout en fila que
+   .payment-method-layout ya trae). */
+.dashboard-chart-card > *:last-child {
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  gap: 16px;
+  align-items: stretch;
+}
+
+/* Productos mas vendidos / Stock critico / Pendientes -mismo criterio que
+   .dashboard-chart-card: la fila se estira pareja y el contenido corto se
+   centra en vez de dejar espacio vacio abajo. */
+.dashboard-split-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 16px;
+  align-items: stretch;
+}
+
+.dashboard-split-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-split-card > *:last-child {
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+/* Resumen sobre la grafica de barras -antes la card solo tenia un titulo y
+   la grafica; con mas ancho de pantalla quedaba corta de contenido frente a
+   su propio tamaño. Tres cifras rapidas que el titulo del chart no daba. */
+.sales-chart-summary {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.sales-chart-summary-label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 2px;
+}
+
+.sales-chart-summary-value {
+  display: block;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Metodos de pago -el pie solo (sin desglose) dejaba la mitad derecha de
+   la card vacia; el desglose da la cifra exacta y el % que un pie por si
+   solo no comunica bien. */
+.payment-method-layout {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.payment-method-layout > *:first-child {
+  flex: 1 1 200px;
+  min-width: 180px;
+}
+
+.payment-method-breakdown {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1 1 200px;
+}
+
+.payment-method-breakdown li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+}
+
+.payment-method-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.payment-method-name {
+  flex: 1;
+  color: var(--text-secondary);
+}
+
+.payment-method-amount {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.payment-method-pct {
+  min-width: 34px;
+  text-align: right;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+/* Sparkline inline (patron Stripe) -tamaño fijo y chico, vive pegado al
+   numero dentro de la misma fila en vez de ser un grafico aparte. Solo se
+   usa en filas que tienen una serie diaria real detras (ver comentario en
+   InlineSparkline.tsx). */
+.inline-sparkline {
+  width: 56px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+/* Feed de actividad -lista cronologica en vez de tabla. El punto de color
+   reusa el semaforo de estado de pago (mismo criterio que las demas
+   pantallas: pagado=success, parcial=warning, sin pagar=danger). */
+.recent-sales-feed {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.recent-sales-feed-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 2px;
+  border-bottom: 1px solid var(--border-subtle);
+  animation: dashboard-row-in 0.28s var(--ease-out) both;
+  animation-delay: calc(80ms + var(--kpi-index, 0) * 45ms);
+}
+
+.recent-sales-feed-row:last-child {
+  border-bottom: none;
+  padding-bottom: 2px;
+}
+
+.recent-sales-feed-row:first-child {
+  padding-top: 2px;
+}
+
+/* Icono por evento -reemplaza el punto simple ahora que el feed mezcla
+   mas de un tipo de evento (venta, movimiento de stock): el tono sigue el
+   mismo semaforo del resto de la app, el icono en si dice que tipo de
+   evento es sin tener que leer el texto. */
+.activity-feed-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--bg-surface-secondary);
+  color: var(--text-muted);
+}
+
+.activity-feed-icon[data-tone='success'] {
+  background: var(--success-subtle-bg);
+  color: var(--success);
+}
+
+.activity-feed-icon[data-tone='warning'] {
+  background: var(--warning-subtle-bg);
+  color: var(--warning);
+}
+
+.activity-feed-icon[data-tone='danger'] {
+  background: var(--danger-subtle-bg);
+  color: var(--danger);
+}
+
+.recent-sales-feed-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.recent-sales-feed-customer {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recent-sales-feed-meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.recent-sales-feed-amount {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}

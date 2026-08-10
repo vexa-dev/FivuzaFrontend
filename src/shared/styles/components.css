@@ -64,6 +64,64 @@
   border-color: var(--border-default);
 }
 
+/* Solido, mismo peso que .btn-primary -para la accion final de un dialogo
+   de confirmacion destructivo. .btn-danger-ghost (abajo) es demasiado
+   discreto para ese momento: "eliminar" es una decision, no una fila mas
+   de acciones secundarias. */
+.btn-danger {
+  background-color: var(--danger);
+  background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.1), transparent 60%);
+  color: var(--text-on-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-danger:hover:not(:disabled) {
+  /* filter en vez de una segunda variable de color -no hay un token
+     "--danger-hover" definido, y --danger ya es distinto paso de la
+     escala en claro (600) vs oscuro (400): un hex fijo se veria bien en
+     un tema y invisible o invertido en el otro. */
+  filter: brightness(0.92);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.btn-danger:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* Dialogo de confirmacion (ConfirmDialog) -icono en circulo tintado igual
+   que .page-header-icon, solo que en danger en vez de primary: mismo
+   dispositivo visual, distinto significado segun el tono. */
+.confirm-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.confirm-dialog-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--danger-subtle-bg);
+  color: var(--danger);
+}
+
+.confirm-dialog-message {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.confirm-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .btn-danger-ghost {
   background: transparent;
   color: var(--text-secondary);
@@ -230,24 +288,74 @@ label {
   display: block;
 }
 
-.theme-toggle {
+/* Switch deslizante sol/luna -reemplaza el pill con borde + texto. Sin
+   borde, sin fondo propio en el track cuando esta en claro (solo el thumb
+   se distingue), y el track se llena de --primary en oscuro para que el
+   propio color ya comunique el estado sin necesitar leer un icono. */
+.theme-switch {
+  --theme-switch-w: 40px;
+  --theme-switch-h: 22px;
+  --theme-switch-thumb: 18px;
+  width: var(--theme-switch-w);
+  height: var(--theme-switch-h);
+  padding: 2px;
+  border: none;
+  border-radius: 999px;
+  background: var(--bg-surface-secondary);
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  border: 1px solid var(--border-default);
-  background: var(--bg-surface);
-  color: var(--text-primary);
-  padding: 8px 14px;
-  border-radius: 20px;
-  font-family: var(--font-base);
-  font-size: 0.8125rem;
-  font-weight: 700;
   cursor: pointer;
-  transition: background 0.15s;
+  flex-shrink: 0;
+  transition: background 0.2s var(--ease-out);
 }
 
-.theme-toggle:hover {
-  background: var(--bg-surface-hover);
+.theme-switch:hover {
+  background: var(--border-default);
+}
+
+.theme-switch[aria-pressed='true'] {
+  background: var(--primary);
+}
+
+.theme-switch[aria-pressed='true']:hover {
+  background: var(--primary-hover);
+}
+
+.theme-switch-thumb {
+  width: var(--theme-switch-thumb);
+  height: var(--theme-switch-thumb);
+  border-radius: 50%;
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  transform: translateX(0);
+  transition: transform 0.22s var(--ease-out);
+}
+
+.theme-switch[aria-pressed='true'] .theme-switch-thumb {
+  transform: translateX(
+    calc(var(--theme-switch-w) - var(--theme-switch-thumb) - 4px)
+  );
+  color: var(--primary);
+}
+
+.theme-switch-icon {
+  display: inline-flex;
+  /* key={theme} en el JSX remonta este span en cada toggle -sin eso, React
+     reutiliza el mismo nodo y la animacion nunca se vuelve a disparar. Nunca
+     nace de scale(0): un icono completamente ausente y luego "aparecido de
+     la nada" se ve roto, no elegante. */
+  animation: theme-icon-in 0.16s var(--ease-out);
+}
+
+@keyframes theme-icon-in {
+  from {
+    opacity: 0;
+    transform: scale(0.7) rotate(-20deg);
+  }
 }
 
 .password-input {
@@ -281,16 +389,49 @@ label {
   background: var(--bg-surface-hover);
 }
 
+/* Fila que combina la barra de pestañas con la accion principal de la
+   pagina (ej. "+ Nuevo producto") -antes ese boton vivia adentro de la
+   tarjeta de cada tabla, como si fuera un control mas de esa tabla en vez
+   de una accion a nivel de pagina. Reusable por cualquier vista con este
+   mismo patron (pestañas + accion primaria a la derecha). */
+.tabs-toolbar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.tabs-toolbar-row .tabs {
+  margin-bottom: 0;
+}
+
 /* Tabs -grupo de botones tipo "pill", usado para sub-navegacion dentro de
    una pagina (ej. Productos/Categorias/Proveedores en Inventario). */
+/* Pantallas con muchas pestañas (Inventario tiene 11) desbordaban la
+   barra: el texto se partia en varias lineas dentro del pill y encima
+   la pagina entera ganaba scroll horizontal para alcanzar las ultimas
+   -width:fit-content forzaba el contenedor a ser tan ancho como
+   todas las pestañas juntas, sin importar el viewport. Ahora la barra
+   scrollea sola (overflow-x), contenida a su propio ancho. */
 .tabs {
   display: flex;
   gap: 4px;
   padding: 4px;
   background: var(--bg-surface-secondary);
   border-radius: var(--radius-sm);
-  width: fit-content;
   margin-bottom: 20px;
+  /* width:fit-content (con max-width:100% como tope) -sin esto el fondo
+     de la barra se estira a todo el ancho del contenedor en vez de
+     terminar justo donde termina el ultimo boton. */
+  width: fit-content;
+  max-width: 100%;
+  overflow-x: auto;
+  /* overflow-x:auto solo, por spec CSS, implica overflow-y:auto tambien
+     -aparecia un scrollbar vertical fantasma aunque no hiciera falta. */
+  overflow-y: hidden;
+  scrollbar-width: thin;
 }
 
 .tab {
@@ -303,6 +444,8 @@ label {
   background: transparent;
   color: var(--text-secondary);
   cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
   transition:
     background 0.15s,
     color 0.15s;
@@ -311,6 +454,55 @@ label {
 .tab:hover:not(.tab-active) {
   color: var(--text-primary);
   background: var(--bg-surface-hover);
+}
+
+/* Selector de categoria -nivel superior cuando una pantalla agrupa muchas
+   pestañas (Inventario: Catalogo / Almacenes y stock / Compras). Estilo
+   "subrayado" en vez del pill de .tab, para que se lea como un nivel de
+   jerarquia distinto y no como mas pestañas del mismo tipo. */
+.tab-groups {
+  display: flex;
+  gap: 20px;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 16px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
+
+.tab-group {
+  font-family: var(--font-base);
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0 0 10px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  position: relative;
+  transition: color 0.15s;
+}
+
+.tab-group:hover {
+  color: var(--text-primary);
+}
+
+.tab-group-active {
+  color: var(--primary);
+}
+
+.tab-group-active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 2px 2px 0 0;
+  background: var(--primary);
+  animation: sidebar-active-in 0.18s var(--ease-out);
 }
 
 .tab-active {
@@ -328,6 +520,8 @@ label {
   align-items: flex-start;
   gap: 16px;
   margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-subtle);
   flex-wrap: wrap;
 }
 
@@ -430,6 +624,16 @@ label {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Titulo de card/widget -guia de tipografia: card-title = 16px/700/1.4.
+   Antes cada pantalla dejaba el <h3> sin clase, cayendo al tamano por
+   defecto del navegador (nunca controlado, distinto entre navegadores). */
+.card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.4;
+  margin: 0 0 12px;
 }
 
 /* Avatar -circulo con inicial, usado en el topbar del ERP. */

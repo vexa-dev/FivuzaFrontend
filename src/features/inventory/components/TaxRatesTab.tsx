@@ -1,26 +1,29 @@
-import { Percent, Pencil, Plus, Trash2 } from 'lucide-react'
+import { Percent, Pencil, Trash2 } from 'lucide-react'
 import { useState } from 'react'
+import { ConfirmDialog } from '../../../shared/components/ConfirmDialog'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import type { TaxRate } from '../api'
 import { useDeleteTaxRate, useTaxRates } from '../hooks/useTaxRates'
 import { TaxRateFormModal } from './TaxRateFormModal'
 
-export function TaxRatesTab({ canManage }: { canManage: boolean }) {
+interface TaxRatesTabProps {
+  canManage: boolean
+  // "Nuevo impuesto" se dispara desde la fila de pestañas de InventoryPage
+  // (al mismo nivel que el menu, no adentro de la tabla) -por eso el
+  // trigger de creacion vive en el padre; la edicion desde una fila si
+  // sigue siendo estado interno de esta tab.
+  showCreateForm: boolean
+  onCloseCreateForm: () => void
+}
+
+export function TaxRatesTab({ canManage, showCreateForm, onCloseCreateForm }: TaxRatesTabProps) {
   const { data: taxRates, isLoading } = useTaxRates()
   const deleteTaxRate = useDeleteTaxRate()
-  const [editingTaxRate, setEditingTaxRate] = useState<TaxRate | null | undefined>(undefined)
+  const [editingTaxRate, setEditingTaxRate] = useState<TaxRate | null>(null)
+  const [deletingTaxRate, setDeletingTaxRate] = useState<TaxRate | null>(null)
 
   return (
     <div className="card core-table-card">
-      {canManage && (
-        <div className="table-toolbar" style={{ justifyContent: 'flex-end' }}>
-          <button type="button" className="btn btn-primary" onClick={() => setEditingTaxRate(null)}>
-            <Plus size={15} strokeWidth={2.5} />
-            Nuevo impuesto
-          </button>
-        </div>
-      )}
-
       {isLoading && (
         <div className="loading-row">
           <span className="spinner" />
@@ -66,11 +69,7 @@ export function TaxRatesTab({ canManage }: { canManage: boolean }) {
                         type="button"
                         className="btn btn-danger-ghost btn-sm btn-icon"
                         aria-label={`Eliminar ${taxRate.name}`}
-                        onClick={() => {
-                          if (confirm(`¿Eliminar ${taxRate.name}?`)) {
-                            deleteTaxRate.mutate(taxRate.id)
-                          }
-                        }}
+                        onClick={() => setDeletingTaxRate(taxRate)}
                       >
                         <Trash2 />
                       </button>
@@ -83,10 +82,23 @@ export function TaxRatesTab({ canManage }: { canManage: boolean }) {
         </table>
       )}
 
-      {editingTaxRate !== undefined && (
+      {(showCreateForm || editingTaxRate) && (
         <TaxRateFormModal
           editingTaxRate={editingTaxRate}
-          onClose={() => setEditingTaxRate(undefined)}
+          onClose={() => {
+            onCloseCreateForm()
+            setEditingTaxRate(null)
+          }}
+        />
+      )}
+
+      {deletingTaxRate && (
+        <ConfirmDialog
+          title="Eliminar impuesto"
+          message={`¿Eliminar "${deletingTaxRate.name}"? Esta acción no se puede deshacer.`}
+          confirmLabel="Eliminar"
+          onConfirm={() => deleteTaxRate.mutate(deletingTaxRate.id)}
+          onClose={() => setDeletingTaxRate(null)}
         />
       )}
     </div>

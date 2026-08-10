@@ -1,10 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { createPurchaseOrder, fetchPurchaseOrders, receivePurchaseOrder } from '../api'
 
-export function usePurchaseOrders(params?: { status?: string; supplier?: number }) {
+export function usePurchaseOrders(params?: {
+  status?: string
+  supplier?: number
+  enabled?: boolean
+}) {
   return useQuery({
     queryKey: ['purchase-orders', params?.status ?? '', params?.supplier ?? ''],
     queryFn: () => fetchPurchaseOrders(params),
+    enabled: params?.enabled ?? true,
   })
 }
 

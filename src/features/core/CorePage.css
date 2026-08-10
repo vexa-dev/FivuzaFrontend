@@ -87,6 +87,59 @@
   font-weight: 500;
 }
 
+/* Fila expandible -patron "click para ver el detalle debajo" (ej.
+   variantes de un producto con su stock, costo y precio, sin abrir un
+   modal aparte). Generico via el mismo prefijo core-table-* por si otra
+   tabla del ERP necesita el mismo patron mas adelante. */
+.core-table-row-expandable {
+  cursor: pointer;
+}
+
+.core-table-chevron {
+  color: var(--text-muted);
+  transition: transform 0.15s var(--ease-out);
+}
+
+.core-table-chevron-open {
+  transform: rotate(90deg);
+}
+
+.core-table-expanded-row td {
+  background: var(--bg-surface-secondary);
+  padding: 0;
+}
+
+.core-table-expanded-row .core-table-nested {
+  animation: core-table-nested-in 0.15s var(--ease-out);
+}
+
+@keyframes core-table-nested-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.core-table-nested {
+  margin: 0;
+}
+
+.core-table-nested th,
+.core-table-nested td {
+  padding: 10px 16px 10px 44px;
+  font-size: 0.8125rem;
+}
+
+.core-table-nested th {
+  color: var(--text-muted);
+}
+
+.core-table-stock-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.75rem;
+}
+
 .summary-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));

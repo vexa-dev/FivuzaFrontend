@@ -3,16 +3,22 @@ import { useTheme } from '../../theme/useTheme'
 
 export function ThemeToggle() {
   const { theme, toggleTheme } = useTheme()
+  const isDark = theme === 'dark'
 
   return (
     <button
       type="button"
-      className="theme-toggle"
+      className="theme-switch"
       onClick={toggleTheme}
-      aria-label={theme === 'dark' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}
+      aria-label={isDark ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}
+      aria-pressed={isDark}
+      title={isDark ? 'Tema oscuro' : 'Tema claro'}
     >
-      {theme === 'dark' ? <Sun size={14} strokeWidth={2} /> : <Moon size={14} strokeWidth={2} />}
-      {theme === 'dark' ? 'Claro' : 'Oscuro'}
+      <span className="theme-switch-thumb">
+        <span className="theme-switch-icon" key={theme}>
+          {isDark ? <Moon size={11} strokeWidth={2} /> : <Sun size={11} strokeWidth={2} />}
+        </span>
+      </span>
     </button>
   )
 }

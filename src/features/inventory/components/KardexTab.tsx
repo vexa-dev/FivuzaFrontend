@@ -22,6 +22,8 @@ const CONCEPT_LABELS: Record<string, string> = {
   SALE: 'Venta',
   ADJUSTMENT: 'Ajuste',
   RETURN: 'Devolución',
+  TRANSFER_IN: 'Traslado (entrada)',
+  TRANSFER_OUT: 'Traslado (salida)',
 }
 
 export function KardexTab({ products, warehouses }: KardexTabProps) {

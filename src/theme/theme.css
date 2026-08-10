@@ -41,6 +41,12 @@
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
+
+  /* Curvas reforzadas (las nativas ease/ease-in-out del navegador son
+     demasiado planas para sentirse intencionales). ease-out para elementos
+     que entran/salen, ease-in-out para movimiento que ya esta en pantalla. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 }
 
 [data-theme='light'] {

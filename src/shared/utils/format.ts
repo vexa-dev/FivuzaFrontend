@@ -16,3 +16,16 @@ export function formatQuantity(value: string | number): string {
   const num = Number(value)
   return Number.isInteger(num) ? String(num) : num.toFixed(2)
 }
+
+/** Hora relativa para feeds de actividad -"hace 5 min" en vez de un ISO
+ * timestamp que el usuario tiene que parsear mentalmente. */
+export function formatRelativeTime(value: string): string {
+  const diffMs = Date.now() - new Date(value).getTime()
+  const diffMin = Math.floor(diffMs / 60000)
+  if (diffMin < 1) return 'ahora'
+  if (diffMin < 60) return `hace ${diffMin} min`
+  const diffHr = Math.floor(diffMin / 60)
+  if (diffHr < 24) return `hace ${diffHr} h`
+  const diffDay = Math.floor(diffHr / 24)
+  return `hace ${diffDay} d`
+}

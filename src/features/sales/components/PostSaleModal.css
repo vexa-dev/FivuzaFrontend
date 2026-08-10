@@ -1,0 +1,14 @@
+/* Unico momento de "celebracion" del modulo de ventas: confirmacion de
+   cobro exitoso. No es un patron repetido 100+ veces/dia como el resto del
+   POS -el modal ya pausa el flujo, asi que un pop sutil en el check
+   refuerza el "esto se completo" sin agregar demora perceptible. */
+.post-sale-check {
+  animation: post-sale-check-in 0.28s var(--ease-out);
+}
+
+@keyframes post-sale-check-in {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}
