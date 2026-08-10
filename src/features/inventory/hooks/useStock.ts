@@ -15,11 +15,22 @@ export function useStock(params?: { variant?: number; warehouse?: number }) {
   })
 }
 
+// Sin filtro -/inventario/stock/ ya devuelve todo el tenant si no se le pasa
+// variant/warehouse. Usado por la tabla de Productos para mostrar stock
+// total y por almacen sin pedir un endpoint agregado nuevo al backend.
+export function useAllStock() {
+  return useQuery({
+    queryKey: ['stock', 'all'],
+    queryFn: () => fetchStock(),
+  })
+}
+
 export function useInventoryMovements(params?: {
   variant?: number
   warehouse?: number
   date_from?: string
   date_to?: string
+  enabled?: boolean
 }) {
   return useQuery({
     queryKey: [
@@ -30,6 +41,7 @@ export function useInventoryMovements(params?: {
       params?.date_to ?? '',
     ],
     queryFn: () => fetchInventoryMovements(params),
+    enabled: params?.enabled ?? true,
   })
 }
 

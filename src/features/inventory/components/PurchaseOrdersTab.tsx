@@ -1,8 +1,9 @@
-import { PackageCheck, Plus, ShoppingBag } from 'lucide-react'
+import { PackageCheck, ShoppingBag } from 'lucide-react'
 import { useState } from 'react'
+import { ConfirmDialog } from '../../../shared/components/ConfirmDialog'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { formatCurrency } from '../../../shared/utils/format'
-import type { Product, Supplier, Warehouse } from '../api'
+import type { Product, PurchaseOrder, Supplier, Warehouse } from '../api'
 import { usePurchaseOrders, useReceivePurchaseOrder } from '../hooks/usePurchaseOrders'
 import { PurchaseOrderFormModal } from './PurchaseOrderFormModal'
 
@@ -11,6 +12,10 @@ interface PurchaseOrdersTabProps {
   suppliers: Supplier[]
   warehouses: Warehouse[]
   products: Product[]
+  // "Nueva orden de compra" se dispara desde la fila de pestañas de
+  // InventoryPage -mismo criterio que TaxRatesTab.
+  showCreateForm: boolean
+  onCloseCreateForm: () => void
 }
 
 const STATUS_BADGE: Record<string, string> = {
@@ -30,10 +35,12 @@ export function PurchaseOrdersTab({
   suppliers,
   warehouses,
   products,
+  showCreateForm,
+  onCloseCreateForm,
 }: PurchaseOrdersTabProps) {
   const { data: orders, isLoading } = usePurchaseOrders()
   const receiveOrder = useReceivePurchaseOrder()
-  const [showForm, setShowForm] = useState(false)
+  const [receivingOrder, setReceivingOrder] = useState<PurchaseOrder | null>(null)
 
   const supplierName = (id: number) =>
     suppliers.find((supplier) => supplier.id === id)?.company_name ?? '—'
@@ -42,15 +49,6 @@ export function PurchaseOrdersTab({
 
   return (
     <div className="card core-table-card">
-      {canManage && (
-        <div className="table-toolbar" style={{ justifyContent: 'flex-end' }}>
-          <button type="button" className="btn btn-primary" onClick={() => setShowForm(true)}>
-            <Plus size={15} strokeWidth={2.5} />
-            Nueva orden de compra
-          </button>
-        </div>
-      )}
-
       {isLoading && (
         <div className="loading-row">
           <span className="spinner" />
@@ -97,11 +95,7 @@ export function PurchaseOrdersTab({
                       <button
                         type="button"
                         className="btn btn-ghost btn-sm"
-                        onClick={() => {
-                          if (confirm('¿Marcar esta orden como recibida? Esto actualizará el stock.')) {
-                            receiveOrder.mutate(order.id)
-                          }
-                        }}
+                        onClick={() => setReceivingOrder(order)}
                       >
                         <PackageCheck size={13} strokeWidth={2} />
                         Recibir
@@ -115,12 +109,23 @@ export function PurchaseOrdersTab({
         </table>
       )}
 
-      {showForm && (
+      {showCreateForm && (
         <PurchaseOrderFormModal
           suppliers={suppliers}
           warehouses={warehouses}
           products={products}
-          onClose={() => setShowForm(false)}
+          onClose={onCloseCreateForm}
+        />
+      )}
+
+      {receivingOrder && (
+        <ConfirmDialog
+          title="Recibir orden de compra"
+          message="¿Marcar esta orden como recibida? Esto actualizará el stock del almacén de destino."
+          confirmLabel="Marcar como recibida"
+          tone="primary"
+          onConfirm={() => receiveOrder.mutate(receivingOrder.id)}
+          onClose={() => setReceivingOrder(null)}
         />
       )}
     </div>

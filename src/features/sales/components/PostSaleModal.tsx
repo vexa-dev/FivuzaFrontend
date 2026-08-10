@@ -3,6 +3,7 @@ import { Modal } from '../../../shared/components/Modal'
 import { formatCurrency } from '../../../shared/utils/format'
 import type { Sale } from '../api'
 import { useSaleReceipt } from '../hooks/useSales'
+import './PostSaleModal.css'
 import { ReceiptView } from './ReceiptView'
 
 interface PostSaleModalProps {
@@ -20,7 +21,7 @@ export function PostSaleModal({ sale, onClose }: PostSaleModalProps) {
     <Modal title="Venta registrada" onClose={onClose}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <CheckCircle2 size={28} strokeWidth={2} style={{ color: 'var(--success)' }} />
+          <CheckCircle2 size={28} strokeWidth={2} className="post-sale-check" style={{ color: 'var(--success)' }} />
           <div>
             <div className="core-table-strong">{sale.invoice_number}</div>
             <p className="core-page-subtitle" style={{ margin: 0 }}>

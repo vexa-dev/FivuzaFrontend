@@ -11,10 +11,11 @@ import {
   type ProductVariant,
 } from '../api'
 
-export function useProducts(params?: { search?: string; category?: number }) {
+export function useProducts(params?: { search?: string; category?: number; enabled?: boolean }) {
   return useQuery({
     queryKey: ['products', params?.search ?? '', params?.category ?? ''],
     queryFn: () => fetchProducts(params),
+    enabled: params?.enabled ?? true,
   })
 }
 

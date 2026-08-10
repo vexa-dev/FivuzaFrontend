@@ -27,7 +27,7 @@ export function CustomersTab({ canManage }: { canManage: boolean }) {
         </div>
         {canManage && (
           <button type="button" className="btn btn-primary" onClick={() => setEditingCustomer(null)}>
-            <Plus size={15} strokeWidth={2.5} />
+            <Plus size={14} strokeWidth={2} />
             Nuevo cliente
           </button>
         )}

@@ -39,7 +39,7 @@ export function PromotionsTab({
             className="btn btn-primary"
             onClick={() => setEditingPromotion(null)}
           >
-            <Plus size={15} strokeWidth={2.5} />
+            <Plus size={14} strokeWidth={2} />
             Nueva promoción
           </button>
         </div>

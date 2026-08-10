@@ -59,7 +59,7 @@ export function ErpLayout() {
             onClick={() => setCollapsed((value) => !value)}
             aria-label={collapsed ? 'Expandir menú' : 'Colapsar menú'}
           >
-            {collapsed ? <ChevronsRight size={14} strokeWidth={2.5} /> : <ChevronsLeft size={14} strokeWidth={2.5} />}
+            {collapsed ? <ChevronsRight size={14} strokeWidth={2} /> : <ChevronsLeft size={14} strokeWidth={2} />}
           </button>
         </div>
 
@@ -92,32 +92,45 @@ export function ErpLayout() {
             )
           })}
         </nav>
-      </aside>
 
-      <div className="erp-main">
-        <header className="erp-topbar">
-          <div className="erp-topbar-user">
-            <button
-              type="button"
-              className="erp-mobile-menu-toggle"
-              onClick={() => setMobileOpen(true)}
-              aria-label="Abrir menú"
-            >
-              <Menu size={20} strokeWidth={2} />
-            </button>
+        {/* Cuenta/tema/logout viven en el sidebar en vez de una topbar
+            aparte (feedback de diseno): libera una fila entera de cada
+            pantalla del ERP y deja el avatar/rol junto a la navegacion, que
+            es donde el usuario ya esta mirando. */}
+        <div className="erp-sidebar-footer">
+          <div className="erp-sidebar-user" title={collapsed ? user?.email : undefined}>
             <span className="avatar">{initial}</span>
-            <div className="erp-topbar-user-info">
-              <span className="erp-topbar-email">{user?.email}</span>
+            <div className="erp-sidebar-user-info">
+              <span className="erp-sidebar-user-email">{user?.email}</span>
               <span className="badge badge-neutral">{user?.role}</span>
             </div>
           </div>
-          <div className="erp-topbar-actions">
+          <div className="erp-sidebar-footer-actions">
             <ThemeToggle />
-            <button type="button" className="btn btn-ghost" onClick={handleLogout}>
-              <LogOut size={15} strokeWidth={2} />
-              Cerrar sesión
+            <button
+              type="button"
+              className="erp-sidebar-logout"
+              onClick={handleLogout}
+              aria-label="Cerrar sesión"
+              title="Cerrar sesión"
+            >
+              <LogOut size={collapsed ? 14 : 17} strokeWidth={2} />
             </button>
           </div>
+        </div>
+      </aside>
+
+      <div className="erp-main">
+        <header className="erp-mobile-topbar">
+          <button
+            type="button"
+            className="erp-mobile-menu-toggle"
+            onClick={() => setMobileOpen(true)}
+            aria-label="Abrir menú"
+          >
+            <Menu size={20} strokeWidth={2} />
+          </button>
+          <Logo height={20} withWordmark={false} />
         </header>
 
         <main className="erp-content">
