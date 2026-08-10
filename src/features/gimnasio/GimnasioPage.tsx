@@ -1,13 +1,17 @@
 import { useState } from 'react'
 import '../core/CorePage.css'
 import { useAuth } from '../auth/hooks/useAuth'
+import { ClassesTab } from './components/ClassesTab'
+import { MembershipGroupsTab } from './components/MembershipGroupsTab'
 import { MembershipPlansTab } from './components/MembershipPlansTab'
 import { MembersTab } from './components/MembersTab'
 
-type Tab = 'socios' | 'planes'
+type Tab = 'socios' | 'clases' | 'grupos' | 'planes'
 
 const TABS: [Tab, string][] = [
   ['socios', 'Socios'],
+  ['clases', 'Clases'],
+  ['grupos', 'Grupos'],
   ['planes', 'Planes'],
 ]
 
@@ -39,6 +43,8 @@ export function GimnasioPage() {
       </div>
 
       {tab === 'socios' && <MembersTab />}
+      {tab === 'clases' && <ClassesTab canManage={canManage} />}
+      {tab === 'grupos' && <MembershipGroupsTab />}
       {tab === 'planes' && <MembershipPlansTab canManage={canManage} />}
     </div>
   )
