@@ -1,5 +1,5 @@
 import { getAccessToken } from '../auth/hooks/session'
-import { tenantApiFetch } from '../../shared/utils/tenantApiClient'
+import { tenantApiFetchBlob, tenantApiFetch } from '../../shared/utils/tenantApiClient'
 
 export type MembershipPaymentMethod = 'CASH' | 'CARD' | 'YAPE'
 
@@ -205,3 +205,84 @@ export const createMembershipGroup = (data: {
   membership_ids: number[]
 }) =>
   authed<MembershipGroup>('/gimnasio/membership-groups/', { method: 'POST', body: data })
+
+export interface AccessCheckResult {
+  allowed: boolean
+  reason: string | null
+}
+
+export const fetchAccessCheck = (membershipId: number) =>
+  authed<AccessCheckResult>(`/gimnasio/memberships/${membershipId}/access-check/`)
+
+export const downloadMembershipQr = (membershipId: number) =>
+  tenantApiFetchBlob(`/gimnasio/memberships/${membershipId}/qr/`, getAccessToken())
+
+export interface CheckInResult extends AccessCheckResult {
+  membership_id: number
+  customer_name: string
+  plan_name: string
+  end_date: string
+}
+
+export const checkIn = (data: { token?: string; membership_id?: number }) =>
+  authed<CheckInResult>('/gimnasio/check-in/', { method: 'POST', body: data })
+
+export interface ClassAttendanceReportRow {
+  class_name: string
+  class_date: string
+  max_capacity: number
+  reserved_count: number
+  attended_count: number
+  no_show_count: number
+  cancelled_count: number
+  occupancy_pct: number
+}
+
+export const fetchClassAttendanceReport = (params: { date_from: string; date_to: string }) => {
+  const query = new URLSearchParams(params)
+  return authed<ClassAttendanceReportRow[]>(`/gimnasio/reports/class-attendance/?${query.toString()}`)
+}
+
+export const downloadClassAttendanceReport = (
+  params: { date_from: string; date_to: string },
+  format: 'csv' | 'xlsx',
+) => {
+  const query = new URLSearchParams({ ...params, export: format })
+  return tenantApiFetchBlob(`/gimnasio/reports/class-attendance/?${query.toString()}`, getAccessToken())
+}
+
+export interface MembershipsExpiringReportRow {
+  membership_id: number
+  customer_name: string
+  plan_name: string
+  end_date: string
+}
+
+export const fetchMembershipsExpiringReport = (params: { days: number }) =>
+  authed<MembershipsExpiringReportRow[]>(`/gimnasio/reports/memberships-expiring/?days=${params.days}`)
+
+export const downloadMembershipsExpiringReport = (params: { days: number }, format: 'csv' | 'xlsx') =>
+  tenantApiFetchBlob(
+    `/gimnasio/reports/memberships-expiring/?days=${params.days}&export=${format}`,
+    getAccessToken(),
+  )
+
+export interface RevenueByPlanReportRow {
+  plan_id: number
+  plan_name: string
+  payment_count: number
+  total_amount: string
+}
+
+export const fetchRevenueByPlanReport = (params: { date_from: string; date_to: string }) => {
+  const query = new URLSearchParams(params)
+  return authed<RevenueByPlanReportRow[]>(`/gimnasio/reports/revenue-by-plan/?${query.toString()}`)
+}
+
+export const downloadRevenueByPlanReport = (
+  params: { date_from: string; date_to: string },
+  format: 'csv' | 'xlsx',
+) => {
+  const query = new URLSearchParams({ ...params, export: format })
+  return tenantApiFetchBlob(`/gimnasio/reports/revenue-by-plan/?${query.toString()}`, getAccessToken())
+}
