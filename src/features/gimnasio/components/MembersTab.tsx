@@ -1,9 +1,9 @@
-import { Ban, Dumbbell, PauseCircle, PlayCircle, RefreshCcw, UserSearch } from 'lucide-react'
+import { Ban, Dumbbell, PauseCircle, PlayCircle, QrCode, RefreshCcw, UserSearch } from 'lucide-react'
 import { useState } from 'react'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { formatCurrency } from '../../../shared/utils/format'
 import { useCustomers } from '../../sales/hooks/useCustomers'
-import type { Membership } from '../api'
+import { downloadMembershipQr, type Membership } from '../api'
 import { useMembershipPlans } from '../hooks/useMembershipPlans'
 import {
   useCancelMembership,
@@ -211,6 +211,19 @@ function MembershipRow({
       </div>
 
       <div className="row-actions">
+        <button
+          type="button"
+          className="btn btn-ghost btn-sm"
+          onClick={() => {
+            downloadMembershipQr(membership.id).then((blob) => {
+              const url = URL.createObjectURL(blob)
+              window.open(url, '_blank')
+            })
+          }}
+        >
+          <QrCode size={14} strokeWidth={2} />
+          Ver QR
+        </button>
         {(membership.status === 'ACTIVE' || membership.status === 'EXPIRED') && (
           <button
             type="button"
