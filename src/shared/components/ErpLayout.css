@@ -1,23 +1,163 @@
+/* Expo-out sin rebote -el colapso/hover del sidebar debe sentirse premium
+   (un settle suave), no un salto elastico. Mismo rol que --ease-out del
+   tema pero un pelin mas suave en el arranque, reservada al gesto de
+   flotar del sidebar. */
+:root {
+  --ease-glass: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 .erp-layout {
   display: grid;
   grid-template-columns: 232px 1fr;
   min-height: 100vh;
-  transition: grid-template-columns 0.18s var(--ease-in-out);
+  background: var(--bg-app);
+  transition: grid-template-columns 0.28s var(--ease-glass);
 }
 
 .erp-layout-collapsed {
-  grid-template-columns: 64px 1fr;
+  grid-template-columns: 80px 1fr;
 }
 
+/* Flotante + liquid glass: sin sombra -la separacion del fondo viene del
+   propio material, translucido con blur/saturate fuertes encima del
+   bg-app (como una lamina de vidrio, no una card opaca), con un sheen
+   diagonal suave (::before) que simula el brillo que capta un borde de
+   vidrio real, mas un borde mas claro arriba que abajo. Los movimientos
+   (mount, hover, colapso) son deliberadamente chicos -el material debe
+   notarse por su textura, no por saltar. */
 .erp-sidebar {
-  background: var(--bg-surface);
-  border-right: 1px solid var(--border-subtle);
+  position: relative;
+  background: color-mix(in srgb, var(--bg-surface) 55%, transparent);
+  backdrop-filter: blur(28px) saturate(200%);
+  -webkit-backdrop-filter: blur(28px) saturate(200%);
+  border: 1px solid color-mix(in srgb, var(--text-primary) 10%, transparent);
+  border-top-color: color-mix(in srgb, var(--text-primary) 24%, transparent);
+  border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
   position: sticky;
-  top: 0;
-  height: 100vh;
+  top: 16px;
+  height: calc(100vh - 32px);
+  margin: 16px 0 16px 16px;
   overflow: hidden;
+  animation: erp-sidebar-mount-in 0.4s var(--ease-glass) both;
+  transition:
+    margin 0.28s var(--ease-glass),
+    border-radius 0.28s var(--ease-glass),
+    background 0.25s var(--ease-out);
+}
+
+/* Sheen liquido en el color de marca (--primary), no blanco -blanco sobre
+   un sidebar casi blanco en tema claro se perdia por completo. Dos glints
+   redondos fijos (no un lavado diagonal solido, no un blob persiguiendo el
+   cursor -eso se leia como un efecto roto en vez de vidrio) que derivan
+   muy lento y chico en reposo -como luz movil sobre la superficie de un
+   liquido. inset:-20% + transform (no background-position) para que la
+   deriva quede en GPU y nunca se vea un borde recto del gradiente. La
+   reaccion al mouse vive en los botones (ver .liquid-ripple), no aca. */
+.erp-sidebar::before {
+  content: '';
+  position: absolute;
+  inset: -20%;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      40% 32% at 22% 12%,
+      color-mix(in srgb, var(--primary) 40%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      38% 30% at 82% 88%,
+      color-mix(in srgb, var(--primary) 16%, transparent),
+      transparent 70%
+    );
+  animation: erp-sidebar-liquid 14s var(--ease-in-out) infinite;
+}
+
+@keyframes erp-sidebar-liquid {
+  0%,
+  100% {
+    transform: translate(0%, 0%) rotate(0deg);
+  }
+  33% {
+    transform: translate(2%, 3%) rotate(1deg);
+  }
+  66% {
+    transform: translate(-2%, -2.5%) rotate(-1deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .erp-sidebar::before {
+    animation: none;
+  }
+}
+
+/* En claro, bg-surface (#fff) y bg-app (#e9eef3) estan a solo ~20 puntos de
+   luminancia de distancia -la misma receta que en dark no genera casi
+   contraste, por mas blur/saturate que se le sume. Se compensa con mas
+   cuerpo (menos transparencia) y un borde propio con algo de peso; el
+   glint en --primary ya trae su propio contraste de color (no depende de
+   blanco-sobre-blanco), asi que se mantiene el mismo tono en los dos temas,
+   solo un poco mas fuerte para que no se lo coma el fondo claro. */
+[data-theme='light'] .erp-sidebar {
+  /* Un pelin de --primary mezclado adentro (no solo blanco translucido)
+     -es lo que hace que el panel lea como una lamina de vidrio con color
+     propio en vez de "blanco encima de blanco". */
+  background: color-mix(
+    in srgb,
+    color-mix(in srgb, var(--bg-surface) 90%, var(--primary) 10%) 80%,
+    transparent
+  );
+  backdrop-filter: blur(28px) saturate(220%) contrast(1.05);
+  -webkit-backdrop-filter: blur(28px) saturate(220%) contrast(1.05);
+  border-color: color-mix(in srgb, var(--color-neutral-900) 16%, transparent);
+  border-top-color: white;
+}
+
+[data-theme='light'] .erp-sidebar::before {
+  background:
+    radial-gradient(
+      40% 32% at 22% 12%,
+      color-mix(in srgb, var(--primary) 30%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      38% 30% at 82% 88%,
+      color-mix(in srgb, var(--primary) 14%, transparent),
+      transparent 70%
+    );
+}
+
+@keyframes erp-sidebar-mount-in {
+  from {
+    opacity: 0;
+    transform: translateX(-6px) scale(0.99);
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .erp-sidebar:hover {
+    background: color-mix(in srgb, var(--bg-surface) 66%, transparent);
+  }
+
+  [data-theme='light'] .erp-sidebar:hover {
+    background: color-mix(
+      in srgb,
+      color-mix(in srgb, var(--bg-surface) 90%, var(--primary) 10%) 90%,
+      transparent
+    );
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .erp-sidebar {
+    animation: none;
+  }
+
+  .erp-sidebar:hover {
+    transform: none;
+  }
 }
 
 .erp-sidebar-header {
@@ -43,6 +183,8 @@
    toggle, iconos del footer), con un fondo redondeado solo al hover en vez
    de un contorno permanente. */
 .erp-sidebar-toggle {
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -56,12 +198,57 @@
   flex-shrink: 0;
   transition:
     background 0.15s,
-    color 0.15s;
+    color 0.15s,
+    transform 0.2s var(--ease-out);
 }
 
 .erp-sidebar-toggle:hover {
   background: var(--bg-surface-hover);
   color: var(--text-primary);
+  transform: scale(1.08);
+}
+
+.erp-sidebar-toggle:active {
+  transform: scale(0.94);
+}
+
+.erp-sidebar-toggle-icon {
+  transition: transform 0.26s var(--ease-glass);
+}
+
+/* Ripple liquido: bloom redondo en --primary que nace en el punto exacto
+   donde se presiona (span posicionado por JS, ver spawnLiquidRipple en
+   ErpLayout.tsx) y se expande/desvanece una sola vez -asi es como "vidrio
+   liquido" reacciona a un toque, en vez de una mancha que persigue el
+   cursor por todo el panel. Dispara en pointerdown (feedback inmediato,
+   no en el click/release), y el propio span se remueve del DOM al
+   terminar su animacion. */
+.liquid-ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--primary) 55%, white 15%) 0%,
+    color-mix(in srgb, var(--primary) 30%, transparent) 45%,
+    transparent 72%
+  );
+  transform: scale(0);
+  opacity: 0.9;
+  pointer-events: none;
+  animation: liquid-ripple-pop 0.6s var(--ease-out) forwards;
+}
+
+@keyframes liquid-ripple-pop {
+  to {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .liquid-ripple {
+    display: none;
+  }
 }
 
 .erp-sidebar-nav {
@@ -89,9 +276,44 @@
   white-space: nowrap;
   overflow: hidden;
   position: relative;
+  /* Sin `opacity: 0` estatica a proposito: el fill-mode `both` de la
+     animacion ya cubre el estado inicial (backwards) y el final (forwards).
+     Si se fija opacity:0 aparte, el link activo queda invisible para
+     siempre -su propia animacion (sidebar-active-in) reemplaza por
+     completo esta, sin volver a tocar opacity, y el valor estatico nunca
+     se actualiza. */
+  animation: erp-sidebar-link-in 0.32s var(--ease-out) both;
   transition:
     background 0.15s,
     color 0.15s;
+}
+
+/* Stagger de entrada solo al montar el shell (una vez por carga, no en cada
+   click de nav) -30ms por item evita que los 6 links "salten" todos juntos.
+   nth-child en vez de props porque la lista es estatica y esto es puro CSS. */
+.erp-sidebar-link:nth-child(1) { animation-delay: 0ms; }
+.erp-sidebar-link:nth-child(2) { animation-delay: 30ms; }
+.erp-sidebar-link:nth-child(3) { animation-delay: 60ms; }
+.erp-sidebar-link:nth-child(4) { animation-delay: 90ms; }
+.erp-sidebar-link:nth-child(5) { animation-delay: 120ms; }
+.erp-sidebar-link:nth-child(6) { animation-delay: 150ms; }
+
+@keyframes erp-sidebar-link-in {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .erp-sidebar-link {
+    animation: none;
+    opacity: 1;
+  }
 }
 
 .erp-sidebar-link-icon {
@@ -228,6 +450,8 @@
 /* Solo icono, sin borde -el rojo ya comunica "accion destructiva/salir"
    sin necesitar el peso visual de un boton con contorno. */
 .erp-sidebar-logout {
+  position: relative;
+  overflow: hidden;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -325,10 +549,10 @@
     position: fixed;
     inset: 0 auto 0 0;
     width: 240px;
+    height: calc(100vh - 32px);
     z-index: 30;
-    transform: translateX(-100%);
+    transform: translateX(calc(-100% - 16px));
     transition: transform 0.22s var(--ease-in-out);
-    box-shadow: var(--shadow-lg);
   }
 
   .erp-sidebar-mobile-open {

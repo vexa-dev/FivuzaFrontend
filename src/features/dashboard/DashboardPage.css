@@ -82,6 +82,73 @@
   }
 }
 
+/* Cards del dashboard: entrada suave + hover con leve elevacion -mismo
+   lenguaje "premium" del sidebar (transform+opacity, sin saltos grandes).
+   Se excluye .dashboard-hero-card porque ya trae su propia animacion
+   (dashboard-hero-in) con distinto timing/desplazamiento. */
+.dashboard-page .card:not(.dashboard-hero-card) {
+  animation: dashboard-card-in 0.36s var(--ease-out) both;
+}
+
+@keyframes dashboard-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.99);
+  }
+}
+
+/* Stagger por fila -30-50ms entre cards vecinas evita que toda la pantalla
+   aparezca de un solo golpe al cargar, sin que se note como una lista de
+   "cascada" larga (son pocas cards, no una tabla de 50 filas). */
+.hero-stats-grid > .card:nth-child(2) {
+  animation-delay: 60ms;
+}
+
+.charts-grid > .card:nth-child(1) {
+  animation-delay: 40ms;
+}
+
+.charts-grid > .card:nth-child(2) {
+  animation-delay: 80ms;
+}
+
+.dashboard-split-grid > .card:nth-child(1) {
+  animation-delay: 40ms;
+}
+
+.dashboard-split-grid > .card:nth-child(2) {
+  animation-delay: 80ms;
+}
+
+.dashboard-split-grid > .card:nth-child(3) {
+  animation-delay: 120ms;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .dashboard-page .card {
+    transition:
+      transform 0.22s var(--ease-out),
+      border-color 0.22s var(--ease-out),
+      box-shadow 0.22s var(--ease-out);
+  }
+
+  .dashboard-page .card:hover {
+    transform: translateY(-3px);
+    border-color: color-mix(in srgb, var(--primary) 35%, var(--border-subtle));
+    box-shadow: var(--shadow-md);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-page .card {
+    animation: none;
+  }
+
+  .dashboard-page .card:hover {
+    transform: none;
+  }
+}
+
 /* La card hero se leia enorme y vacia a la derecha del numero en pantallas
    anchas (feedback real de uso) -pasa de columna centrada a fila: texto a
    la izquierda, tendencia de 30 dias ocupando el resto del ancho en vez de
