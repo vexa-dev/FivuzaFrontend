@@ -37,6 +37,21 @@ export interface UserPermissionOverride {
   is_granted: boolean
 }
 
+export type DataExportFormat = 'ZIP' | 'XLSX'
+export type DataExportStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'EXPIRED'
+
+export interface DataExportRecord {
+  id: number
+  requested_by: number
+  scope: 'FULL'
+  format: DataExportFormat
+  status: DataExportStatus
+  error_message: string
+  requested_at: string
+  completed_at: string | null
+  expires_at: string | null
+}
+
 function authed<T>(path: string, init: Parameters<typeof tenantApiFetch>[1] = {}) {
   return tenantApiFetch<T>(path, { ...init, token: getAccessToken() })
 }
@@ -94,3 +109,11 @@ export const setUserPermissionOverride = (
 
 export const removeUserPermissionOverride = (overrideId: number) =>
   authed<void>(`/usuarios/user-permissions/${overrideId}/`, { method: 'DELETE' })
+
+export const fetchDataExports = () => authed<DataExportRecord[]>('/usuarios/data-exports/')
+
+export const requestDataExport = (format: DataExportFormat) =>
+  authed<DataExportRecord>('/usuarios/data-exports/', { method: 'POST', body: { format } })
+
+export const fetchDataExportDownloadUrl = (id: number) =>
+  authed<{ download_url: string }>(`/usuarios/data-exports/${id}/download/`)
