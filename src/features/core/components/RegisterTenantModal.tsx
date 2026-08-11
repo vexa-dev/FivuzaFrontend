@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Modal } from '../../../shared/components/Modal'
 import type { Plan } from '../api'
 import { useRegisterTenant } from '../hooks/useTenantLifecycle'
+import { LegalDocumentModal } from './LegalDocumentModal'
 
 interface RegisterTenantModalProps {
   plans: Plan[]
@@ -15,6 +16,8 @@ export function RegisterTenantModal({ plans, onClose }: RegisterTenantModalProps
   const [domain, setDomain] = useState('')
   const [planCode, setPlanCode] = useState('')
   const [billingCycle, setBillingCycle] = useState<'MONTHLY' | 'SEMIANNUAL' | 'ANNUAL'>('MONTHLY')
+  const [acceptTerms, setAcceptTerms] = useState(false)
+  const [showLegalDocument, setShowLegalDocument] = useState<'terms' | 'privacy' | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const registerTenant = useRegisterTenant()
@@ -37,6 +40,10 @@ export function RegisterTenantModal({ plans, onClose }: RegisterTenantModalProps
       setError('Negocio, schema, dominio y plan son requeridos.')
       return
     }
+    if (!acceptTerms) {
+      setError('Debes confirmar que el negocio acepta los Términos y la Política de Privacidad.')
+      return
+    }
 
     registerTenant
       .mutateAsync({
@@ -46,6 +53,7 @@ export function RegisterTenantModal({ plans, onClose }: RegisterTenantModalProps
         domain,
         plan_code: planCode,
         billing_cycle: billingCycle,
+        accept_terms: acceptTerms,
       })
       .then(onClose)
       .catch(() => setError('No se pudo registrar el tenant. Revisa que el schema/dominio no estén en uso.'))
@@ -118,6 +126,52 @@ export function RegisterTenantModal({ plans, onClose }: RegisterTenantModalProps
           </select>
         </div>
 
+        <label
+          htmlFor="tenant-accept-terms"
+          style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontWeight: 400 }}
+        >
+          <input
+            id="tenant-accept-terms"
+            type="checkbox"
+            checked={acceptTerms}
+            onChange={(event) => setAcceptTerms(event.target.checked)}
+            style={{ marginTop: 3 }}
+          />
+          <span>
+            El negocio acepta los{' '}
+            <button
+              type="button"
+              onClick={() => setShowLegalDocument('terms')}
+              style={{
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                textDecoration: 'underline',
+                cursor: 'pointer',
+                color: 'inherit',
+              }}
+            >
+              Términos y Condiciones
+            </button>{' '}
+            y la{' '}
+            <button
+              type="button"
+              onClick={() => setShowLegalDocument('privacy')}
+              style={{
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                textDecoration: 'underline',
+                cursor: 'pointer',
+                color: 'inherit',
+              }}
+            >
+              Política de Privacidad
+            </button>{' '}
+            vigentes.
+          </span>
+        </label>
+
         {error && (
           <p className="login-error" role="alert">
             {error}
@@ -128,6 +182,13 @@ export function RegisterTenantModal({ plans, onClose }: RegisterTenantModalProps
           {registerTenant.isPending ? 'Registrando...' : 'Registrar tenant'}
         </button>
       </form>
+
+      {showLegalDocument && (
+        <LegalDocumentModal
+          document={showLegalDocument}
+          onClose={() => setShowLegalDocument(null)}
+        />
+      )}
     </Modal>
   )
 }

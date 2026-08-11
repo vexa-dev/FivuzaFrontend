@@ -153,6 +153,7 @@ export interface RegisterTenantPayload {
   domain: string
   plan_code: string
   billing_cycle: 'MONTHLY' | 'SEMIANNUAL' | 'ANNUAL'
+  accept_terms: boolean
 }
 
 export function registerTenant(payload: RegisterTenantPayload) {
@@ -160,6 +161,15 @@ export function registerTenant(payload: RegisterTenantPayload) {
     '/core/tenants/register/',
     { method: 'POST', body: payload, token: getAccessToken() },
   )
+}
+
+export interface LegalDocument {
+  version: string
+  content: string
+}
+
+export function fetchLegalDocument(document: 'terms' | 'privacy') {
+  return apiFetch<LegalDocument>(`/core/legal/${document}/`)
 }
 
 export function suspendTenant(id: number, reason: string) {

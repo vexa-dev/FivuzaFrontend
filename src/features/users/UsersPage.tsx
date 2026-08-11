@@ -1,8 +1,10 @@
 import { KeyRound, Pencil, Plus, Trash2, UsersRound } from 'lucide-react'
-import { useState, type CSSProperties } from 'react'
+import { useMemo, useState, type CSSProperties } from 'react'
 import '../core/CorePage.css'
 import { EmptyState } from '../../shared/components/EmptyState'
+import { useAuth } from '../auth/hooks/useAuth'
 import { AnimatedTabs } from './components/AnimatedTabs'
+import { DataExportsTab } from './components/DataExportsTab'
 import { RolesManager } from './components/RolesManager'
 import { UserAvatar } from './components/UserAvatar'
 import { UserFormModal } from './components/UserFormModal'
@@ -13,14 +15,22 @@ import { useRoles } from './hooks/useRoles'
 import { useDeleteUser, useUsers } from './hooks/useUsers'
 import './UsersPage.css'
 
-type Tab = 'usuarios' | 'roles'
-
-const TAB_OPTIONS: [Tab, string][] = [
-  ['usuarios', 'Usuarios'],
-  ['roles', 'Roles y permisos'],
-]
+type Tab = 'usuarios' | 'roles' | 'respaldo'
 
 export function UsersPage() {
+  const { hasPermission } = useAuth()
+  const canExportData = hasPermission('DATA_EXPORT')
+  const tabOptions = useMemo<[Tab, string][]>(() => {
+    const options: [Tab, string][] = [
+      ['usuarios', 'Usuarios'],
+      ['roles', 'Roles y permisos'],
+    ]
+    if (canExportData) {
+      options.push(['respaldo', 'Respaldo de datos'])
+    }
+    return options
+  }, [canExportData])
+
   const [tab, setTab] = useState<Tab>('usuarios')
   const { data: users, isLoading, error } = useUsers()
   const { data: roles } = useRoles()
@@ -59,7 +69,7 @@ export function UsersPage() {
         )}
       </div>
 
-      <AnimatedTabs value={tab} onChange={setTab} options={TAB_OPTIONS} />
+      <AnimatedTabs value={tab} onChange={setTab} options={tabOptions} />
 
       {tab === 'usuarios' && (
         <div className="card core-table-card">
@@ -148,6 +158,8 @@ export function UsersPage() {
       )}
 
       {tab === 'roles' && <RolesManager roles={roles ?? []} />}
+
+      {tab === 'respaldo' && canExportData && <DataExportsTab />}
 
       {showForm && (
         <UserFormModal

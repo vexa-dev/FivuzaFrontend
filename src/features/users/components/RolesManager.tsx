@@ -29,6 +29,8 @@ const MODULE_LABELS: Record<string, string> = {
   CASH: 'Caja',
   HR: 'Recursos humanos',
   REPORTS: 'Reportes',
+  GYM: 'Gimnasio',
+  COMPLIANCE: 'Cumplimiento y datos',
 }
 
 const MODULE_ICONS: Record<string, ComponentType<{ size?: number }>> = {
