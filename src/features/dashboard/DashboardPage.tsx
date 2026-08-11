@@ -164,7 +164,7 @@ export function DashboardPage() {
     : null
 
   return (
-    <div>
+    <div className="dashboard-page">
       <div className="page-header">
         <div className="page-header-title-group">
           <span className="page-header-icon">

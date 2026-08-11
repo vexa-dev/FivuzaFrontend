@@ -1,6 +1,5 @@
 import {
   ChevronsLeft,
-  ChevronsRight,
   Contact,
   Dumbbell,
   LayoutDashboard,
@@ -10,7 +9,7 @@ import {
   ShoppingCart,
   Users as UsersIcon,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../../features/auth/hooks/useAuth'
 import { useLogout } from '../../features/auth/hooks/useLogout'
@@ -43,6 +42,54 @@ export function ErpLayout() {
   const initial = user?.email?.[0]?.toUpperCase() ?? '?'
   const lowStockCount = lowStockVariants?.length ?? 0
 
+  // Ripple liquido al presionar un boton/link del sidebar (no al pasar el
+  // mouse por el panel entero -eso se veia como un blob persiguiendo el
+  // cursor, no como vidrio). Va por estado de React (no appendChild directo
+  // al DOM): el sidebar re-renderiza seguido por su cuenta (polling de
+  // stock bajo, cambios de ruta que actualizan isActive en el link que se
+  // acaba de clickear), y un nodo insertado a mano se lo pisa React en el
+  // proximo render -se veia roto a mitad de animacion. Como estado, React
+  // lo trata como un hijo mas y lo sobrevive.
+  const rippleIdRef = useRef(0)
+  const [ripples, setRipples] = useState<
+    { id: number; key: string; left: number; top: number; size: number }[]
+  >([])
+
+  const spawnLiquidRipple = (rippleKey: string) => (event: React.PointerEvent<HTMLElement>) => {
+    if (event.pointerType !== 'mouse' && event.pointerType !== 'touch' && event.pointerType !== 'pen') {
+      return
+    }
+    const rect = event.currentTarget.getBoundingClientRect()
+    const size = Math.max(rect.width, rect.height) * 1.8
+    rippleIdRef.current += 1
+    setRipples((prev) => [
+      ...prev,
+      {
+        id: rippleIdRef.current,
+        key: rippleKey,
+        left: event.clientX - rect.left - size / 2,
+        top: event.clientY - rect.top - size / 2,
+        size,
+      },
+    ])
+  }
+
+  const removeRipple = (id: number) => {
+    setRipples((prev) => prev.filter((ripple) => ripple.id !== id))
+  }
+
+  const renderRipples = (rippleKey: string) =>
+    ripples
+      .filter((ripple) => ripple.key === rippleKey)
+      .map((ripple) => (
+        <span
+          key={ripple.id}
+          className="liquid-ripple"
+          style={{ left: ripple.left, top: ripple.top, width: ripple.size, height: ripple.size }}
+          onAnimationEnd={() => removeRipple(ripple.id)}
+        />
+      ))
+
   return (
     <div className={`erp-layout ${collapsed ? 'erp-layout-collapsed' : ''}`}>
       <ImpersonationBanner />
@@ -57,9 +104,16 @@ export function ErpLayout() {
             type="button"
             className="erp-sidebar-toggle"
             onClick={() => setCollapsed((value) => !value)}
+            onPointerDown={spawnLiquidRipple('toggle')}
             aria-label={collapsed ? 'Expandir menú' : 'Colapsar menú'}
           >
-            {collapsed ? <ChevronsRight size={14} strokeWidth={2} /> : <ChevronsLeft size={14} strokeWidth={2} />}
+            <ChevronsLeft
+              size={14}
+              strokeWidth={2}
+              className="erp-sidebar-toggle-icon"
+              style={{ transform: collapsed ? 'rotate(180deg)' : 'rotate(0deg)' }}
+            />
+            {renderRipples('toggle')}
           </button>
         </div>
 
@@ -73,6 +127,7 @@ export function ErpLayout() {
                 key={item.to}
                 to={item.to}
                 onClick={() => setMobileOpen(false)}
+                onPointerDown={spawnLiquidRipple(item.to)}
                 className={({ isActive }) =>
                   `erp-sidebar-link ${isActive ? 'erp-sidebar-link-active' : ''}`
                 }
@@ -88,6 +143,7 @@ export function ErpLayout() {
                     {lowStockCount}
                   </span>
                 )}
+                {renderRipples(item.to)}
               </NavLink>
             )
           })}
@@ -111,10 +167,12 @@ export function ErpLayout() {
               type="button"
               className="erp-sidebar-logout"
               onClick={handleLogout}
+              onPointerDown={spawnLiquidRipple('logout')}
               aria-label="Cerrar sesión"
               title="Cerrar sesión"
             >
               <LogOut size={collapsed ? 14 : 17} strokeWidth={2} />
+              {renderRipples('logout')}
             </button>
           </div>
         </div>
