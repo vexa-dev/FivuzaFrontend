@@ -40,6 +40,6 @@
     "oxlint": "^1.76.0",
     "rollup-plugin-visualizer": "^7.0.1",
     "typescript": "~7.0.2",
-    "vite": "^8.2.0"
+    "vite": "^8.2.1"
   }
 }
