@@ -25,7 +25,8 @@
 }
 
 .toast-error {
-  border-left: 3px solid var(--danger);
+  background: var(--danger-subtle-bg);
+  border-color: var(--danger-subtle-bg);
 }
 
 .toast-error svg {
@@ -35,7 +36,8 @@
 }
 
 .toast-success {
-  border-left: 3px solid var(--success);
+  background: var(--success-subtle-bg);
+  border-color: var(--success-subtle-bg);
 }
 
 .toast-success svg {
