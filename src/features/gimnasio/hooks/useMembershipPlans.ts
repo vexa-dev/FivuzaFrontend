@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useToast } from '../../../shared/components/ToastProvider'
+import { getErrorMessage } from '../../../shared/utils/errorMessage'
 import {
   createMembershipPlan,
   deleteMembershipPlan,
@@ -30,8 +32,11 @@ export function useUpdateMembershipPlan() {
 
 export function useDeleteMembershipPlan() {
   const queryClient = useQueryClient()
+  const { showToast } = useToast()
   return useMutation({
     mutationFn: (id: number) => deleteMembershipPlan(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['gimnasio', 'membership-plans'] }),
+    onError: (error) =>
+      showToast('error', getErrorMessage(error, 'No se pudo eliminar el plan.')),
   })
 }

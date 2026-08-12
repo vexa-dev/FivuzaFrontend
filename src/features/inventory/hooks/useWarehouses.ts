@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useToast } from '../../../shared/components/ToastProvider'
+import { getErrorMessage } from '../../../shared/utils/errorMessage'
 import {
   createWarehouse,
   deleteWarehouse,
@@ -33,8 +35,11 @@ export function useUpdateWarehouse() {
 
 export function useDeleteWarehouse() {
   const queryClient = useQueryClient()
+  const { showToast } = useToast()
   return useMutation({
     mutationFn: (id: number) => deleteWarehouse(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['warehouses'] }),
+    onError: (error) =>
+      showToast('error', getErrorMessage(error, 'No se pudo eliminar el almacén.')),
   })
 }

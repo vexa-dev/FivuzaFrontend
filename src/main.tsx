@@ -8,6 +8,7 @@ import './theme/theme.css'
 import './shared/styles/components.css'
 import './index.css'
 import App from './App.tsx'
+import { ToastProvider } from './shared/components/ToastProvider.tsx'
 import { ThemeProvider } from './theme/ThemeContext.tsx'
 
 const queryClient = new QueryClient()
@@ -41,7 +42,9 @@ createRoot(document.getElementById('root')!).render(
     <ThemeProvider>
       <BrowserRouter>
         <QueryClientProvider client={queryClient}>
-          <App />
+          <ToastProvider>
+            <App />
+          </ToastProvider>
         </QueryClientProvider>
       </BrowserRouter>
     </ThemeProvider>

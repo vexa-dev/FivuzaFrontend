@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useToast } from '../../../shared/components/ToastProvider'
+import { getErrorMessage } from '../../../shared/utils/errorMessage'
 import {
   createCategory,
   deleteCategory,
@@ -33,8 +35,11 @@ export function useUpdateCategory() {
 
 export function useDeleteCategory() {
   const queryClient = useQueryClient()
+  const { showToast } = useToast()
   return useMutation({
     mutationFn: (id: number) => deleteCategory(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['categories'] }),
+    onError: (error) =>
+      showToast('error', getErrorMessage(error, 'No se pudo eliminar la categoría.')),
   })
 }

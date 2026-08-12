@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useToast } from '../../../shared/components/ToastProvider'
+import { getErrorMessage } from '../../../shared/utils/errorMessage'
 import {
   createSupplier,
   deleteSupplier,
@@ -33,8 +35,11 @@ export function useUpdateSupplier() {
 
 export function useDeleteSupplier() {
   const queryClient = useQueryClient()
+  const { showToast } = useToast()
   return useMutation({
     mutationFn: (id: number) => deleteSupplier(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['suppliers'] }),
+    onError: (error) =>
+      showToast('error', getErrorMessage(error, 'No se pudo eliminar el proveedor.')),
   })
 }

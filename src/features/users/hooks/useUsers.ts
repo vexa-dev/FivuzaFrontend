@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useToast } from '../../../shared/components/ToastProvider'
+import { getErrorMessage } from '../../../shared/utils/errorMessage'
 import { createUser, deleteUser, fetchUsers, updateUser, type TenantUserRecord } from '../api'
 
 export function useUsers() {
@@ -24,9 +26,12 @@ export function useUpdateUser() {
 
 export function useDeleteUser() {
   const queryClient = useQueryClient()
+  const { showToast } = useToast()
   return useMutation({
     mutationFn: (id: number) => deleteUser(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
+    onError: (error) =>
+      showToast('error', getErrorMessage(error, 'No se pudo eliminar el usuario.')),
   })
 }
 

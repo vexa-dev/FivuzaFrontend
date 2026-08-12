@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useToast } from '../../../shared/components/ToastProvider'
+import { getErrorMessage } from '../../../shared/utils/errorMessage'
 import {
   convertQuote,
   createQuote,
@@ -26,25 +28,34 @@ export function useCreateQuote() {
 
 export function useMarkQuoteSent() {
   const queryClient = useQueryClient()
+  const { showToast } = useToast()
   return useMutation({
     mutationFn: markQuoteSent,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['quotes'] }),
+    onError: (error) =>
+      showToast('error', getErrorMessage(error, 'No se pudo marcar la cotización como enviada.')),
   })
 }
 
 export function useMarkQuoteAccepted() {
   const queryClient = useQueryClient()
+  const { showToast } = useToast()
   return useMutation({
     mutationFn: markQuoteAccepted,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['quotes'] }),
+    onError: (error) =>
+      showToast('error', getErrorMessage(error, 'No se pudo marcar la cotización como aceptada.')),
   })
 }
 
 export function useMarkQuoteRejected() {
   const queryClient = useQueryClient()
+  const { showToast } = useToast()
   return useMutation({
     mutationFn: markQuoteRejected,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['quotes'] }),
+    onError: (error) =>
+      showToast('error', getErrorMessage(error, 'No se pudo marcar la cotización como rechazada.')),
   })
 }
 

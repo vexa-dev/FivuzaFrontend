@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useToast } from '../../../shared/components/ToastProvider'
+import { getErrorMessage } from '../../../shared/utils/errorMessage'
 import {
   cancelMembership,
   createMembership,
@@ -35,24 +37,33 @@ export function useRenewMembership() {
 
 export function useFreezeMembership() {
   const queryClient = useQueryClient()
+  const { showToast } = useToast()
   return useMutation({
     mutationFn: freezeMembership,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['gimnasio', 'memberships'] }),
+    onError: (error) =>
+      showToast('error', getErrorMessage(error, 'No se pudo congelar la membresía.')),
   })
 }
 
 export function useUnfreezeMembership() {
   const queryClient = useQueryClient()
+  const { showToast } = useToast()
   return useMutation({
     mutationFn: unfreezeMembership,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['gimnasio', 'memberships'] }),
+    onError: (error) =>
+      showToast('error', getErrorMessage(error, 'No se pudo descongelar la membresía.')),
   })
 }
 
 export function useCancelMembership() {
   const queryClient = useQueryClient()
+  const { showToast } = useToast()
   return useMutation({
     mutationFn: cancelMembership,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['gimnasio', 'memberships'] }),
+    onError: (error) =>
+      showToast('error', getErrorMessage(error, 'No se pudo cancelar la membresía.')),
   })
 }

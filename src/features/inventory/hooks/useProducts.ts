@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useToast } from '../../../shared/components/ToastProvider'
+import { getErrorMessage } from '../../../shared/utils/errorMessage'
 import {
   createProduct,
   createVariant,
@@ -38,9 +40,12 @@ export function useUpdateProduct() {
 
 export function useDeleteProduct() {
   const queryClient = useQueryClient()
+  const { showToast } = useToast()
   return useMutation({
     mutationFn: (id: number) => deleteProduct(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['products'] }),
+    onError: (error) =>
+      showToast('error', getErrorMessage(error, 'No se pudo dar de baja el producto.')),
   })
 }
 
