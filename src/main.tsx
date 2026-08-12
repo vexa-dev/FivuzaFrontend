@@ -10,6 +10,7 @@ import './index.css'
 import App from './App.tsx'
 import { ToastProvider } from './shared/components/ToastProvider.tsx'
 import { ThemeProvider } from './theme/ThemeContext.tsx'
+import { BrandThemeProvider } from './theme/BrandThemeContext.tsx'
 
 const queryClient = new QueryClient()
 
@@ -40,13 +41,15 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator) {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ThemeProvider>
-      <BrowserRouter>
-        <QueryClientProvider client={queryClient}>
-          <ToastProvider>
-            <App />
-          </ToastProvider>
-        </QueryClientProvider>
-      </BrowserRouter>
+      <BrandThemeProvider>
+        <BrowserRouter>
+          <QueryClientProvider client={queryClient}>
+            <ToastProvider>
+              <App />
+            </ToastProvider>
+          </QueryClientProvider>
+        </BrowserRouter>
+      </BrandThemeProvider>
     </ThemeProvider>
   </StrictMode>,
 )

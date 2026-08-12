@@ -531,6 +531,24 @@ label {
   flex-shrink: 0;
 }
 
+.page-header-title-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.page-header-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-md);
+  background: var(--primary-subtle-bg);
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
 .table-toolbar {
   display: flex;
   justify-content: space-between;

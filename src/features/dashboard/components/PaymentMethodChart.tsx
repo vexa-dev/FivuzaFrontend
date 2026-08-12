@@ -14,15 +14,17 @@ const METHOD_LABELS: Record<string, string> = {
   BALANCE: 'Saldo a favor',
 }
 
-// Paleta categorica derivada de los tokens de marca (nunca un hex nuevo
-// suelto): metodos de pago son categorias, no estados, asi que no se usa
-// el semaforo success/warning/danger aca -serian ilegibles como "estado".
+// Paleta categorica derivada de --primary (nunca un hex nuevo suelto):
+// metodos de pago son categorias, no estados, asi que no se usa el
+// semaforo success/warning/danger aca -serian ilegibles como "estado".
+// Se deriva en runtime con color-mix para seguir al color de marca activo
+// (base --primary del tema, o el que fije el negocio) en vez de un azul fijo.
 const COLORS = [
-  'var(--color-accent-600)',
-  'var(--color-accent-400)',
-  'var(--color-neutral-400)',
-  'var(--color-accent-900)',
-  'var(--color-neutral-600)',
+  'var(--primary)',
+  'color-mix(in srgb, var(--primary) 55%, var(--bg-surface))',
+  'color-mix(in srgb, var(--primary) 75%, black)',
+  'var(--text-muted)',
+  'color-mix(in srgb, var(--primary) 30%, var(--bg-surface))',
 ]
 
 export function PaymentMethodChart({ data }: PaymentMethodChartProps) {

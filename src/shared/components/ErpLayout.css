@@ -47,52 +47,6 @@
     background 0.25s var(--ease-out);
 }
 
-/* Sheen liquido en el color de marca (--primary), no blanco -blanco sobre
-   un sidebar casi blanco en tema claro se perdia por completo. Dos glints
-   redondos fijos (no un lavado diagonal solido, no un blob persiguiendo el
-   cursor -eso se leia como un efecto roto en vez de vidrio) que derivan
-   muy lento y chico en reposo -como luz movil sobre la superficie de un
-   liquido. inset:-20% + transform (no background-position) para que la
-   deriva quede en GPU y nunca se vea un borde recto del gradiente. La
-   reaccion al mouse vive en los botones (ver .liquid-ripple), no aca. */
-.erp-sidebar::before {
-  content: '';
-  position: absolute;
-  inset: -20%;
-  pointer-events: none;
-  background:
-    radial-gradient(
-      40% 32% at 22% 12%,
-      color-mix(in srgb, var(--primary) 40%, transparent),
-      transparent 70%
-    ),
-    radial-gradient(
-      38% 30% at 82% 88%,
-      color-mix(in srgb, var(--primary) 16%, transparent),
-      transparent 70%
-    );
-  animation: erp-sidebar-liquid 14s var(--ease-in-out) infinite;
-}
-
-@keyframes erp-sidebar-liquid {
-  0%,
-  100% {
-    transform: translate(0%, 0%) rotate(0deg);
-  }
-  33% {
-    transform: translate(2%, 3%) rotate(1deg);
-  }
-  66% {
-    transform: translate(-2%, -2.5%) rotate(-1deg);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .erp-sidebar::before {
-    animation: none;
-  }
-}
-
 /* En claro, bg-surface (#fff) y bg-app (#e9eef3) estan a solo ~20 puntos de
    luminancia de distancia -la misma receta que en dark no genera casi
    contraste, por mas blur/saturate que se le sume. Se compensa con mas
@@ -113,20 +67,6 @@
   -webkit-backdrop-filter: blur(28px) saturate(220%) contrast(1.05);
   border-color: color-mix(in srgb, var(--color-neutral-900) 16%, transparent);
   border-top-color: white;
-}
-
-[data-theme='light'] .erp-sidebar::before {
-  background:
-    radial-gradient(
-      40% 32% at 22% 12%,
-      color-mix(in srgb, var(--primary) 30%, transparent),
-      transparent 70%
-    ),
-    radial-gradient(
-      38% 30% at 82% 88%,
-      color-mix(in srgb, var(--primary) 14%, transparent),
-      transparent 70%
-    );
 }
 
 @keyframes erp-sidebar-mount-in {
@@ -447,6 +387,39 @@
   --theme-switch-thumb: 20px;
 }
 
+/* Mismo dispositivo visual que .erp-sidebar-logout (icono solo, sin borde),
+   pero neutro -no es una accion destructiva, es solo navegacion. */
+.erp-sidebar-settings {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  flex-shrink: 0;
+  text-decoration: none;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.erp-sidebar-settings:hover {
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+}
+
+.erp-sidebar-settings-active {
+  color: var(--primary);
+  background: var(--primary-subtle-bg);
+}
+
 /* Solo icono, sin borde -el rojo ya comunica "accion destructiva/salir"
    sin necesitar el peso visual de un boton con contorno. */
 .erp-sidebar-logout {
@@ -485,7 +458,8 @@
   --theme-switch-thumb: 18px;
 }
 
-.erp-layout-collapsed .erp-sidebar-logout {
+.erp-layout-collapsed .erp-sidebar-logout,
+.erp-layout-collapsed .erp-sidebar-settings {
   width: 30px;
   height: 30px;
 }

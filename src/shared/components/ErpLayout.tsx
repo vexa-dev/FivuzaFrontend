@@ -6,6 +6,7 @@ import {
   LogOut,
   Menu,
   Package,
+  Settings,
   ShoppingCart,
   Users as UsersIcon,
 } from 'lucide-react'
@@ -163,6 +164,16 @@ export function ErpLayout() {
           </div>
           <div className="erp-sidebar-footer-actions">
             <ThemeToggle />
+            <NavLink
+              to="/configuracion"
+              className={({ isActive }) => `erp-sidebar-settings ${isActive ? 'erp-sidebar-settings-active' : ''}`}
+              onPointerDown={spawnLiquidRipple('settings')}
+              aria-label="Configuración"
+              title="Configuración"
+            >
+              <Settings size={collapsed ? 14 : 17} strokeWidth={2} />
+              {renderRipples('settings')}
+            </NavLink>
             <button
               type="button"
               className="erp-sidebar-logout"

@@ -162,3 +162,24 @@ textarea {
 button {
   letter-spacing: inherit;
 }
+
+/* Toques de marca de bajo costo pero alta frecuencia -el usuario los ve en
+   casi cualquier interaccion (seleccionar texto, hacer scroll), asi que el
+   color de marca se siente presente en todo el sistema sin gritar. */
+::selection {
+  background: var(--primary-subtle-bg);
+  color: var(--text-primary);
+}
+
+* {
+  scrollbar-color: color-mix(in srgb, var(--primary) 35%, var(--text-muted)) transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--primary) 35%, var(--text-muted));
+  border-radius: 20px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--primary) 55%, var(--text-muted));
+}
