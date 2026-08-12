@@ -30,7 +30,7 @@
     "@types/jest": "^30.0.0",
     "@types/node": "^26.1.1",
     "@types/react": "^19.2.18",
-    "@types/react-dom": "^19.2.3",
+    "@types/react-dom": "^19.2.4",
     "@vitejs/plugin-react": "^6.0.5",
     "babel-jest": "^30.4.1",
     "babel-plugin-transform-vite-meta-env": "^1.0.3",
