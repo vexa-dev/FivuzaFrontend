@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useToast } from '../../../shared/components/ToastProvider'
+import { getErrorMessage } from '../../../shared/utils/errorMessage'
 import {
   createEmployeeSchedule,
   deleteEmployeeSchedule,
@@ -35,9 +37,12 @@ export function useUpdateEmployeeSchedule() {
 
 export function useDeleteEmployeeSchedule() {
   const queryClient = useQueryClient()
+  const { showToast } = useToast()
   return useMutation({
     mutationFn: (id: number) => deleteEmployeeSchedule(id),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ['hr', 'employee-schedules'] }),
+    onError: (error) =>
+      showToast('error', getErrorMessage(error, 'No se pudo eliminar el horario.')),
   })
 }

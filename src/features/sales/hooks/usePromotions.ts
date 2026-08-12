@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useToast } from '../../../shared/components/ToastProvider'
+import { getErrorMessage } from '../../../shared/utils/errorMessage'
 import {
   addPromotionTarget,
   createPromotion,
@@ -44,9 +46,12 @@ export function useUpdatePromotion() {
 
 export function useDeletePromotion() {
   const queryClient = useQueryClient()
+  const { showToast } = useToast()
   return useMutation({
     mutationFn: (id: number) => deletePromotion(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['sales', 'promotions'] }),
+    onError: (error) =>
+      showToast('error', getErrorMessage(error, 'No se pudo eliminar la promoción.')),
   })
 }
 
