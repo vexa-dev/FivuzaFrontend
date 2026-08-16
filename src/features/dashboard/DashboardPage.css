@@ -474,3 +474,235 @@
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
 }
+
+/* Secciones por modulo (Inventario, Caja, Clientes, Ventas, RRHH, Gimnasio)
+   -el dashboard paso de "un puñado de cards" a "varias familias de datos";
+   sin un titulo propio por grupo, todo se leia como una sola lista larga
+   sin jerarquia. Mismo tratamiento tipografico que .dashboard-compact-
+   -card-title (uppercase, muted) pero un escalon mas grande porque este
+   titula VARIAS cards, no una sola. */
+.dashboard-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.dashboard-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dashboard-section-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  background: var(--primary-subtle-bg);
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.dashboard-section-title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* Fila de cifras chicas (valor de inventario, saldo a favor, ticket
+   promedio...) -no son KPIs "hero" ni caben bien en la pila compacta
+   (esa es para 1 card con varias filas relacionadas); esta es para varias
+   cards de una sola cifra cada una, del mismo tamaño, en fila. */
+.dashboard-mini-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.dashboard-mini-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 18px;
+}
+
+.dashboard-mini-stat-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.dashboard-mini-stat-value {
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.dashboard-mini-stat-caption {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+/* Anillo de progreso (RadialStat) -mismo padding/gap de dashboard-mini-stat
+   para que quepa en la misma grilla (auto-fit, minmax 200px) sin romper la
+   alineacion de fila con las MiniStat vecinas. */
+.dashboard-radial-stat {
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+}
+
+.dashboard-radial-ring {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+}
+
+.dashboard-radial-ring svg {
+  transform: rotate(-90deg);
+}
+
+.dashboard-radial-track {
+  fill: none;
+  stroke: var(--border-subtle);
+  stroke-width: 6;
+}
+
+.dashboard-radial-fill {
+  fill: none;
+  stroke-width: 6;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.5s var(--ease-out);
+}
+
+.dashboard-radial-value {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.dashboard-radial-stat-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* Barras capsula horizontales (RankingBars) -track full-radius vacio +
+   relleno full-radius proporcional, mismo lenguaje "pill" que los badges
+   de estado ya usados en el resto de la app (border-radius:999px). */
+.dashboard-ranking-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px 16px 16px;
+}
+
+.dashboard-ranking-row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.dashboard-ranking-row-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.dashboard-ranking-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-ranking-value {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.dashboard-ranking-sublabel {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.dashboard-ranking-track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--bg-surface-secondary);
+  overflow: hidden;
+}
+
+.dashboard-ranking-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.5s var(--ease-out);
+}
+
+/* Columnas capsula verticales (CapsuleColumns) -alto variable con puntas
+   redondeadas en vez de barras rectas: mismo dispositivo "pill" que las
+   barras horizontales de arriba, en eje vertical para desgloses cortos que
+   viven al lado de MiniStats en vez de ocupar una card de grafico entera. */
+.dashboard-capsule-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  height: 120px;
+  padding: 8px 4px 0;
+}
+
+.dashboard-capsule-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  gap: 6px;
+}
+
+.dashboard-capsule-bar {
+  width: 100%;
+  max-width: 34px;
+  border-radius: 999px;
+  transition: height 0.5s var(--ease-out);
+}
+
+.dashboard-capsule-value {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.dashboard-capsule-label {
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.2;
+}

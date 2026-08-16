@@ -1,168 +1,104 @@
-/* Expo-out sin rebote -el colapso/hover del sidebar debe sentirse premium
-   (un settle suave), no un salto elastico. Mismo rol que --ease-out del
-   tema pero un pelin mas suave en el arranque, reservada al gesto de
-   flotar del sidebar. */
+/* Expo-out sin rebote -las aperturas de dropdown y los hovers deben
+   sentirse premium (un settle suave), no un salto elastico. */
 :root {
   --ease-glass: cubic-bezier(0.16, 1, 0.3, 1);
+  /* Antes 64px -se sentia gruesa, con demasiado aire vertical alrededor
+     del logo y el avatar. */
+  --erp-topbar-h: 52px;
 }
 
 .erp-layout {
-  display: grid;
-  grid-template-columns: 232px 1fr;
-  min-height: 100vh;
-  background: var(--bg-app);
-  transition: grid-template-columns 0.28s var(--ease-glass);
-}
-
-.erp-layout-collapsed {
-  grid-template-columns: 80px 1fr;
-}
-
-/* Flotante + liquid glass: sin sombra -la separacion del fondo viene del
-   propio material, translucido con blur/saturate fuertes encima del
-   bg-app (como una lamina de vidrio, no una card opaca), con un sheen
-   diagonal suave (::before) que simula el brillo que capta un borde de
-   vidrio real, mas un borde mas claro arriba que abajo. Los movimientos
-   (mount, hover, colapso) son deliberadamente chicos -el material debe
-   notarse por su textura, no por saltar. */
-.erp-sidebar {
-  position: relative;
-  background: color-mix(in srgb, var(--bg-surface) 55%, transparent);
-  backdrop-filter: blur(28px) saturate(200%);
-  -webkit-backdrop-filter: blur(28px) saturate(200%);
-  border: 1px solid color-mix(in srgb, var(--text-primary) 10%, transparent);
-  border-top-color: color-mix(in srgb, var(--text-primary) 24%, transparent);
-  border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
+  min-height: 100vh;
+  background: var(--bg-app);
+}
+
+/* Parte de arriba: fila unica y fija -logo a la izquierda, avatar a la
+   derecha, perfectamente alineados (mismo --erp-topbar-h para ambos).
+   Sticky (no fixed): el cuerpo scrollea por debajo sin que la topbar
+   tenga que reposicionarse con JS, y sin necesitar padding-top compensado
+   en .erp-content -es parte del flujo normal, el body simplemente
+   arranca despues. */
+.erp-topbar {
   position: sticky;
-  top: 16px;
-  height: calc(100vh - 32px);
-  margin: 16px 0 16px 16px;
-  overflow: hidden;
-  animation: erp-sidebar-mount-in 0.4s var(--ease-glass) both;
-  transition:
-    margin 0.28s var(--ease-glass),
-    border-radius 0.28s var(--ease-glass),
-    background 0.25s var(--ease-out);
-}
-
-/* En claro, bg-surface (#fff) y bg-app (#e9eef3) estan a solo ~20 puntos de
-   luminancia de distancia -la misma receta que en dark no genera casi
-   contraste, por mas blur/saturate que se le sume. Se compensa con mas
-   cuerpo (menos transparencia) y un borde propio con algo de peso; el
-   glint en --primary ya trae su propio contraste de color (no depende de
-   blanco-sobre-blanco), asi que se mantiene el mismo tono en los dos temas,
-   solo un poco mas fuerte para que no se lo coma el fondo claro. */
-[data-theme='light'] .erp-sidebar {
-  /* Un pelin de --primary mezclado adentro (no solo blanco translucido)
-     -es lo que hace que el panel lea como una lamina de vidrio con color
-     propio en vez de "blanco encima de blanco". */
-  background: color-mix(
-    in srgb,
-    color-mix(in srgb, var(--bg-surface) 90%, var(--primary) 10%) 80%,
-    transparent
-  );
-  backdrop-filter: blur(28px) saturate(220%) contrast(1.05);
-  -webkit-backdrop-filter: blur(28px) saturate(220%) contrast(1.05);
-  border-color: color-mix(in srgb, var(--color-neutral-900) 16%, transparent);
-  border-top-color: white;
-}
-
-@keyframes erp-sidebar-mount-in {
-  from {
-    opacity: 0;
-    transform: translateX(-6px) scale(0.99);
-  }
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .erp-sidebar:hover {
-    background: color-mix(in srgb, var(--bg-surface) 66%, transparent);
-  }
-
-  [data-theme='light'] .erp-sidebar:hover {
-    background: color-mix(
-      in srgb,
-      color-mix(in srgb, var(--bg-surface) 90%, var(--primary) 10%) 90%,
-      transparent
-    );
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .erp-sidebar {
-    animation: none;
-  }
-
-  .erp-sidebar:hover {
-    transform: none;
-  }
-}
-
-.erp-sidebar-header {
+  top: 0;
+  z-index: 30;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 16px;
+  height: var(--erp-topbar-h);
+  padding: 0 20px;
+  background: color-mix(in srgb, var(--bg-app) 90%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--border-subtle);
-  white-space: nowrap;
 }
 
-/* Colapsado: logo y boton ya no caben lado a lado en 64px de ancho -antes
-   el boton se superponia al logo. Se apilan en columna, logo siempre
-   visible arriba. */
-.erp-layout-collapsed .erp-sidebar-header {
-  flex-direction: column;
-  justify-content: center;
-  gap: 10px;
-  padding: 16px 8px;
-}
-
-/* Sin borde -icon-button plano como el resto del chrome (mobile menu
-   toggle, iconos del footer), con un fondo redondeado solo al hover en vez
-   de un contorno permanente. */
-.erp-sidebar-toggle {
+/* El logo ES el boton que abre/cierra el menu de navegacion -reemplaza al
+   chevron/sidebar separado que habia antes. Fondo tenue en reposo (no
+   transparente del todo) para que se lea como una ficha con peso propio,
+   no un SVG flotando sobre la topbar. */
+.erp-sidebar-logo-trigger {
   position: relative;
   overflow: hidden;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: transparent;
+  gap: 8px;
+  background: var(--bg-surface-secondary);
   border: none;
   border-radius: var(--radius-sm);
-  width: 26px;
-  height: 26px;
-  color: var(--text-muted);
+  /* Antes 8px 12px -con el logo+wordmark ya midiendo su ancho justo
+     (inline-flex no estira solo), el padding de sobra se leia como un
+     hueco vacio a la derecha del texto. Mas ajustado, la ficha abraza el
+     contenido en vez de flotar dentro de una caja mas grande de lo que
+     necesita. */
+  padding: 5px 9px;
+  color: inherit;
   cursor: pointer;
-  flex-shrink: 0;
   transition:
     background 0.15s,
-    color 0.15s,
-    transform 0.2s var(--ease-out);
+    transform 0.15s var(--ease-out);
 }
 
-.erp-sidebar-toggle:hover {
+.erp-sidebar-logo-trigger:hover {
   background: var(--bg-surface-hover);
-  color: var(--text-primary);
-  transform: scale(1.08);
+  transform: scale(1.02);
 }
 
-.erp-sidebar-toggle:active {
-  transform: scale(0.94);
+.erp-sidebar-logo-trigger:active {
+  transform: scale(0.97);
 }
 
-.erp-sidebar-toggle-icon {
-  transition: transform 0.26s var(--ease-glass);
+/* Vuelta completa al abrir -no un giro parcial que deja el icono
+   "torcido": una animacion de 0 a 360 siempre termina en el mismo lugar
+   visual en el que empezo, asi que se puede repetir en cada apertura sin
+   que el logo quede progresivamente mas rotado. */
+@keyframes erp-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.erp-sidebar-logo-trigger-open img {
+  animation: erp-logo-spin 0.5s var(--ease-glass);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .erp-sidebar-logo-trigger-open img {
+    animation: none;
+  }
 }
 
 /* Ripple liquido: bloom redondo en --primary que nace en el punto exacto
    donde se presiona (span posicionado por JS, ver spawnLiquidRipple en
    ErpLayout.tsx) y se expande/desvanece una sola vez -asi es como "vidrio
-   liquido" reacciona a un toque, en vez de una mancha que persigue el
-   cursor por todo el panel. Dispara en pointerdown (feedback inmediato,
-   no en el click/release), y el propio span se remueve del DOM al
-   terminar su animacion. */
+   liquido" reacciona a un toque. Dispara en pointerdown (feedback
+   inmediato), y el propio span se remueve del DOM al terminar. */
 .liquid-ripple {
   position: absolute;
   border-radius: 50%;
@@ -191,16 +127,55 @@
   }
 }
 
-.erp-sidebar-nav {
+/* Dropdown de navegacion: flota SOBRE el cuerpo (portal a document.body,
+   position:fixed calculado desde el logo) -nunca lo empuja ni lo
+   redimensiona, asi la topbar y el cuerpo se quedan quietos siempre.
+   left llega como el CENTRO horizontal del logo (no su borde izquierdo,
+   ver openNav en el TSX) + translateX(-50%) aca -asi el dropdown queda
+   centrado bajo el logo aunque tengan anchos distintos, en vez de
+   compartir el mismo borde izquierdo. */
+.erp-nav-menu {
+  position: fixed;
+  z-index: 50;
+  /* Antes min-width:220px -mas ancho que el label mas largo ("Usuarios"),
+     dejaba un colchon vacio a la derecha del texto en todos los items
+     mas cortos. width:max-content lo ajusta al contenido real. */
+  width: max-content;
+  max-width: min(200px, calc(100vw - 32px));
+  background: var(--bg-surface);
+  border-radius: var(--radius-md);
+  /* Antes shadow-lg -se leia como un halo oscuro muy marcado alrededor
+     del dropdown. shadow-sm alcanza para separarlo del contenido de atras
+     sin ese efecto. */
+  box-shadow: var(--shadow-sm);
+  padding: 8px;
   display: flex;
   flex-direction: column;
-  padding: 14px 12px;
   gap: 3px;
-  /* Empuja el footer de cuenta al fondo del sidebar y deja que la propia
-     nav scrollee si algun dia hay mas items de los que caben, sin mover el
-     footer de su sitio. */
-  flex: 1;
-  overflow-y: auto;
+  transform-origin: top center;
+  animation: erp-nav-menu-in 0.3s var(--ease-glass) both;
+}
+
+/* Desciende desde el logo (solo translateY, sin scale) -un scale se lee
+   como "aparece de frente/zoom", esto se lee como "baja y se asienta". */
+@keyframes erp-nav-menu-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .erp-nav-menu {
+    animation: none;
+    /* Sin la animacion, el translateX(-50%) que centra el dropdown tiene
+       que quedar declarado aca -si no, se pierde el centrado entero. */
+    transform: translateX(-50%);
+  }
 }
 
 .erp-sidebar-link {
@@ -216,27 +191,21 @@
   white-space: nowrap;
   overflow: hidden;
   position: relative;
-  /* Sin `opacity: 0` estatica a proposito: el fill-mode `both` de la
-     animacion ya cubre el estado inicial (backwards) y el final (forwards).
-     Si se fija opacity:0 aparte, el link activo queda invisible para
-     siempre -su propia animacion (sidebar-active-in) reemplaza por
-     completo esta, sin volver a tocar opacity, y el valor estatico nunca
-     se actualiza. */
-  animation: erp-sidebar-link-in 0.32s var(--ease-out) both;
+  opacity: 0;
+  animation: erp-sidebar-link-in 0.28s var(--ease-out) both;
   transition:
     background 0.15s,
     color 0.15s;
 }
 
-/* Stagger de entrada solo al montar el shell (una vez por carga, no en cada
-   click de nav) -30ms por item evita que los 6 links "salten" todos juntos.
-   nth-child en vez de props porque la lista es estatica y esto es puro CSS. */
-.erp-sidebar-link:nth-child(1) { animation-delay: 0ms; }
-.erp-sidebar-link:nth-child(2) { animation-delay: 30ms; }
-.erp-sidebar-link:nth-child(3) { animation-delay: 60ms; }
-.erp-sidebar-link:nth-child(4) { animation-delay: 90ms; }
-.erp-sidebar-link:nth-child(5) { animation-delay: 120ms; }
-.erp-sidebar-link:nth-child(6) { animation-delay: 150ms; }
+/* Cascada corta al abrir el dropdown -30ms por item, se nota como un
+   gesto fluido en vez de 6 links apareciendo todos de golpe. */
+.erp-nav-menu .erp-sidebar-link:nth-child(1) { animation-delay: 20ms; }
+.erp-nav-menu .erp-sidebar-link:nth-child(2) { animation-delay: 45ms; }
+.erp-nav-menu .erp-sidebar-link:nth-child(3) { animation-delay: 70ms; }
+.erp-nav-menu .erp-sidebar-link:nth-child(4) { animation-delay: 95ms; }
+.erp-nav-menu .erp-sidebar-link:nth-child(5) { animation-delay: 120ms; }
+.erp-nav-menu .erp-sidebar-link:nth-child(6) { animation-delay: 145ms; }
 
 @keyframes erp-sidebar-link-in {
   from {
@@ -264,16 +233,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   flex: 1;
-  opacity: 1;
-  transition: opacity 0.12s var(--ease-out);
-}
-
-/* Al colapsar, el ancho del sidebar ya recorta el texto por si solo -el
-   fade evita que se sienta como un corte seco antes de que termine de
-   angostarse, en vez de sumar otra animacion encima. */
-.erp-layout-collapsed .erp-sidebar-link-label {
-  opacity: 0;
-  transition-duration: 0.08s;
 }
 
 .erp-sidebar-link-badge {
@@ -296,17 +255,14 @@
   color: var(--text-primary);
 }
 
-/* Estado activo solido en vez de un tinte sutil + barra fina: la nav es lo
-   primero que se lee en cada pantalla del ERP, y con 6 items todos con el
-   mismo peso visual costaba encontrar "donde estoy" de un vistazo. El
-   fondo solido usa el mismo --primary de siempre (nada de color nuevo),
-   solo con mas conviccion. */
+/* Estado activo solido en vez de un tinte sutil + barra fina: con 6 items
+   todos con el mismo peso visual costaba encontrar "donde estoy" de un
+   vistazo. El fondo solido usa el mismo --primary de siempre. */
 .erp-sidebar-link-active {
   background: var(--primary);
   color: var(--text-on-primary);
   font-weight: 700;
   box-shadow: var(--shadow-sm);
-  animation: sidebar-active-in 0.18s var(--ease-out);
 }
 
 .erp-sidebar-link-active .erp-sidebar-link-icon {
@@ -318,246 +274,171 @@
   color: var(--text-on-primary);
 }
 
-@keyframes sidebar-active-in {
+/* Cuenta -arriba a la derecha de la topbar. Solo el avatar; el resto
+   (correo, rol, tema, configuracion, salir) vive en el menu flotante que
+   abre (ver .erp-account-menu). */
+.erp-topbar-account {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.erp-avatar-trigger {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  border: none;
+  background: transparent;
+  padding: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.15s var(--ease-out);
+}
+
+.erp-avatar-trigger:hover {
+  transform: scale(1.06);
+}
+
+.erp-avatar-trigger:active {
+  transform: scale(0.94);
+}
+
+/* Menu flotante de cuenta: crece desde su punto de anclaje (ease-glass),
+   como overlay -no empuja el contenido, se dibuja encima con sombra
+   propia. Portal a document.body; top/right llegan por style inline,
+   calculados desde el boton que lo abre -crece hacia la izquierda porque
+   esta pegado al borde derecho de la pantalla. */
+.erp-account-menu {
+  position: fixed;
+  z-index: 50;
+  width: max-content;
+  min-width: 220px;
+  max-width: min(280px, calc(100vw - 32px));
+  background: var(--bg-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: 8px;
+  transform-origin: top right;
+  animation: erp-account-menu-in 0.22s var(--ease-glass) both;
+}
+
+@keyframes erp-account-menu-in {
   from {
     opacity: 0;
-    transform: scale(0.97);
+    transform: translateY(-6px) scale(0.97);
   }
 }
 
-/* Cuenta/tema/logout -antes vivian en una topbar aparte, repetida arriba
-   de cada pantalla del ERP. Movidos aca liberan esa fila entera y quedan
-   junto a la navegacion, en el mismo lugar donde el usuario ya esta
-   mirando al cambiar de seccion. */
-.erp-sidebar-footer {
-  border-top: 1px solid var(--border-subtle);
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  flex-shrink: 0;
+@media (prefers-reduced-motion: reduce) {
+  .erp-account-menu {
+    animation: none;
+  }
 }
 
-.erp-sidebar-user {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  overflow: hidden;
-}
-
-.erp-sidebar-user-info {
+.erp-account-menu-header {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 7px;
-  overflow: hidden;
-  min-width: 0;
-  opacity: 1;
-  transition: opacity 0.12s var(--ease-out);
+  gap: 6px;
+  padding: 8px 10px 10px;
 }
 
-.erp-sidebar-user-email {
+.erp-account-menu-email {
   font-size: 0.8125rem;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
+  word-break: break-all;
 }
 
-.erp-layout-collapsed .erp-sidebar-user-info {
-  opacity: 0;
-  width: 0;
-  transition-duration: 0.08s;
+.erp-account-menu-divider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: 4px 0;
 }
 
-.erp-sidebar-footer-actions {
+.erp-account-menu-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  width: 100%;
-}
-
-/* Un poco mas grandes que el tamaño base -son los unicos dos controles del
-   footer, tienen espacio de sobra en el sidebar expandido para respirar. */
-.erp-sidebar-footer-actions .theme-switch {
-  --theme-switch-w: 44px;
-  --theme-switch-h: 24px;
-  --theme-switch-thumb: 20px;
-}
-
-/* Mismo dispositivo visual que .erp-sidebar-logout (icono solo, sin borde),
-   pero neutro -no es una accion destructiva, es solo navegacion. */
-.erp-sidebar-settings {
-  position: relative;
-  overflow: hidden;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  padding: 0;
-  border: none;
-  background: transparent;
+  gap: 12px;
+  padding: 6px 10px;
+  font-size: 0.8125rem;
   color: var(--text-secondary);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  flex-shrink: 0;
-  text-decoration: none;
-  transition:
-    background 0.15s,
-    color 0.15s;
 }
 
-.erp-sidebar-settings:hover {
-  background: var(--bg-surface-hover);
-  color: var(--text-primary);
-}
-
-.erp-sidebar-settings-active {
-  color: var(--primary);
-  background: var(--primary-subtle-bg);
-}
-
-/* Solo icono, sin borde -el rojo ya comunica "accion destructiva/salir"
-   sin necesitar el peso visual de un boton con contorno. */
-.erp-sidebar-logout {
-  position: relative;
-  overflow: hidden;
-  display: inline-flex;
+.erp-account-menu-item {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  padding: 0;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
   border: none;
-  background: transparent;
-  color: var(--danger);
   border-radius: var(--radius-sm);
+  background: transparent;
+  text-align: left;
+  text-decoration: none;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-primary);
   cursor: pointer;
-  flex-shrink: 0;
   transition: background 0.15s;
 }
 
-.erp-sidebar-logout:hover {
-  background: var(--danger-subtle-bg);
-}
-
-/* Colapsado vuelve al tamaño compacto original -el sidebar angosto (64px)
-   no tiene el mismo margen que el expandido para agrandar estos controles. */
-.erp-layout-collapsed .erp-sidebar-footer-actions {
-  flex-direction: column;
-  justify-content: center;
-  gap: 10px;
-}
-
-.erp-layout-collapsed .erp-sidebar-footer-actions .theme-switch {
-  --theme-switch-w: 40px;
-  --theme-switch-h: 22px;
-  --theme-switch-thumb: 18px;
-}
-
-.erp-layout-collapsed .erp-sidebar-logout,
-.erp-layout-collapsed .erp-sidebar-settings {
-  width: 30px;
-  height: 30px;
-}
-
-.erp-main {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
-/* Barra minima solo-mobile: unico proposito es abrir el drawer del sidebar
-   (donde ahora vive la cuenta) cuando el sidebar fijo no cabe. En desktop
-   no existe -el contenido de cada pagina empieza directo, sin una fila de
-   chrome vacia arriba. */
-.erp-mobile-topbar {
-  display: none;
-}
-
-.erp-content {
-  padding: 28px 32px 48px;
-  flex: 1;
-  /* El contenido de cada pantalla (tablas anchas, formularios de varias
-     columnas) puede exceder el viewport en mobile -que se desplace este
-     contenedor, nunca el body entero, para que el sidebar/topbar se
-     mantengan fijos. */
-  overflow-x: auto;
-}
-
-.erp-sidebar-backdrop {
-  display: none;
-}
-
-.erp-mobile-menu-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border: none;
-  background: transparent;
-  color: var(--text-primary);
-  cursor: pointer;
-  border-radius: var(--radius-sm);
-  flex-shrink: 0;
-}
-
-.erp-mobile-menu-toggle:hover {
+.erp-account-menu-item:hover {
   background: var(--bg-surface-hover);
 }
 
-/* Debajo de este ancho el sidebar fijo de 2 columnas ya no cabe -pasa a
-   ser un drawer que se superpone al contenido en vez de compartir el
-   espacio con el, igual que cualquier ERP/dashboard mobile-first. */
-@media (max-width: 768px) {
-  .erp-layout,
-  .erp-layout-collapsed {
-    grid-template-columns: 1fr;
-  }
+.erp-account-menu-item-danger {
+  color: var(--danger);
+}
 
-  .erp-sidebar {
-    position: fixed;
-    inset: 0 auto 0 0;
-    width: 240px;
-    height: calc(100vh - 32px);
-    z-index: 30;
-    transform: translateX(calc(-100% - 16px));
-    transition: transform 0.22s var(--ease-in-out);
-  }
+.erp-account-menu-item-danger:hover {
+  background: var(--danger-subtle-bg);
+}
 
-  .erp-sidebar-mobile-open {
-    transform: translateX(0);
-  }
+/* Parte de abajo: el cuerpo. Ancho completo por defecto, arranca justo
+   debajo de la topbar (flujo normal, sin position:fixed) -pero cuando el
+   menu de navegacion esta abierto, se corre a la derecha lo suficiente
+   para que el dropdown no lo tape. --erp-nav-gap llega por style inline
+   (ver ErpLayout.tsx), medido del ancho REAL del dropdown ya renderizado
+   -un valor fijo quedaba desactualizado apenas cambiaba el label mas
+   largo o la tipografia del tema, dejando de mas o de menos hueco. */
+.erp-content {
+  padding: 28px 32px 48px;
+  flex: 1;
+  transition: margin-left 0.4s var(--ease-glass);
+  /* El contenido de cada pantalla (tablas anchas, formularios de varias
+     columnas) puede exceder el viewport en mobile -que se desplace este
+     contenedor, nunca el body entero. */
+  overflow-x: auto;
+}
 
-  .erp-sidebar-backdrop {
-    display: block;
-    position: fixed;
-    inset: 0;
-    background: color-mix(in srgb, black 50%, transparent);
-    z-index: 20;
-  }
+.erp-layout-nav-open .erp-content {
+  margin-left: var(--erp-nav-gap, 180px);
+}
 
-  .erp-sidebar-toggle {
-    /* El collapse manual de desktop no tiene sentido en un drawer que ya
-       se cierra solo -evita dos mecanismos de "ocultar sidebar" compitiendo. */
-    display: none;
+@media (prefers-reduced-motion: reduce) {
+  .erp-content {
+    transition: none;
   }
+}
 
-  .erp-mobile-topbar {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--border-subtle);
-    position: sticky;
-    top: 0;
-    background: color-mix(in srgb, var(--bg-app) 92%, transparent);
-    backdrop-filter: blur(6px);
-    z-index: 10;
+/* Tablet/mobile: el dropdown de navegacion se queda como overlay puro,
+   no corre el contenido -en una pantalla angosta correr el cuerpo para
+   dejarle espacio al menu deja muy poco (o nada) visible detras; mejor
+   que el menu se dibuje encima y el cuerpo se quede quieto, igual que ya
+   hace el menu de cuenta. */
+@media (max-width: 1024px) {
+  .erp-layout-nav-open .erp-content {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .erp-topbar {
+    padding: 0 16px;
   }
 
   .erp-content {
