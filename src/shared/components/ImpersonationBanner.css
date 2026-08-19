@@ -1,8 +1,4 @@
 .impersonation-banner {
-  /* .erp-layout es un grid de 2 columnas (sidebar + main) -sin esto, este
-     tercer hijo caeria en la primera celda y empujaria erp-main a una fila
-     nueva en la columna del sidebar, rompiendo el layout entero. */
-  grid-column: 1 / -1;
   display: flex;
   align-items: center;
   justify-content: center;

@@ -31,6 +31,7 @@ import { useAuth } from '../auth/hooks/useAuth'
 import { useProducts } from '../inventory/hooks/useProducts'
 import { usePurchaseOrders } from '../inventory/hooks/usePurchaseOrders'
 import { useInventoryMovements, useLowStockVariants } from '../inventory/hooks/useStock'
+import { useWarehouses } from '../inventory/hooks/useWarehouses'
 import type { Sale } from '../sales/api'
 import { useCustomers } from '../sales/hooks/useCustomers'
 import { useOfflineSync } from '../sales/hooks/useOfflineSync'
@@ -38,11 +39,18 @@ import { useQuotes } from '../sales/hooks/useQuotes'
 import { useReservations } from '../sales/hooks/useReservations'
 import { useSales } from '../sales/hooks/useSales'
 import { ActivityFeed, type ActivityItem } from './components/ActivityFeed'
+import { CustomersSection } from './components/CustomersSection'
+import { DashboardCardsModal } from './components/DashboardCardsModal'
+import { GymSection } from './components/GymSection'
+import { HrSection } from './components/HrSection'
 import { InlineSparkline } from './components/InlineSparkline'
+import { InventorySection } from './components/InventorySection'
+import { SalesExtraSection } from './components/SalesExtraSection'
 import { MonthTrendSparkline } from './components/MonthTrendSparkline'
 import { PaymentMethodChart } from './components/PaymentMethodChart'
 import { SalesByDayChart } from './components/SalesByDayChart'
 import { WidgetSettingsModal } from './components/WidgetSettingsModal'
+import { useCardVisibility } from './hooks/useCardVisibility'
 import { useAttendanceToday, useOpenCashSessionsCount } from './hooks/useDashboardExtras'
 import { useDashboardMetrics } from './hooks/useDashboardMetrics'
 import { useWidgetVisibility } from './hooks/useWidgetVisibility'
@@ -60,18 +68,23 @@ const MOVEMENT_CONCEPT_LABEL: Record<string, string> = {
 }
 
 export function DashboardPage() {
-  const { data, isLoading, isConnected } = useDashboardMetrics()
+  const [warehouseId, setWarehouseId] = useState<number | ''>('')
+  const { data, isLoading, isConnected } = useDashboardMetrics(warehouseId || undefined)
+  const { data: warehouses } = useWarehouses()
   const { isVisible } = useWidgetVisibility()
+  const { isCardVisible } = useCardVisibility()
   const { hasPermission } = useAuth()
   const [showSettings, setShowSettings] = useState(false)
+  const [showCardsSettings, setShowCardsSettings] = useState(false)
 
   const canSeeAttendance = hasPermission('HR_MANAGE')
   const canViewInventory = hasPermission('INVENTORY_VIEW')
+  const canSeeGym = hasPermission('GYM_MANAGE')
   const { count: openCashSessions } = useOpenCashSessionsCount()
   const { data: attendanceToday } = useAttendanceToday(canSeeAttendance)
   const { data: lowStockVariants } = useLowStockVariants({ enabled: canViewInventory })
-  const showLowStockPanel = isVisible('LOW_STOCK') && canViewInventory
-  const showTopProducts = isVisible('TOP_PRODUCTS')
+  const showLowStockPanel = isCardVisible('lowStock') && canViewInventory
+  const showTopProducts = isCardVisible('topProducts')
 
   // Pendientes operativos -datos que ya existen para sus propias pestañas
   // (Cotizaciones, Apartados, Ordenes de compra, Clientes) y que antes no
@@ -86,10 +99,11 @@ export function DashboardPage() {
   const customersWithDebt = customers?.filter((customer) => Number(customer.current_debt) > 0) ?? []
   const totalDebt = customersWithDebt.reduce((sum, customer) => sum + Number(customer.current_debt), 0)
   const showPendingPanel =
-    (pendingQuotes && pendingQuotes.length > 0) ||
-    (activeReservations && activeReservations.length > 0) ||
-    (canViewInventory && pendingPurchaseOrders && pendingPurchaseOrders.length > 0) ||
-    customersWithDebt.length > 0
+    isCardVisible('pending') &&
+    ((pendingQuotes && pendingQuotes.length > 0) ||
+      (activeReservations && activeReservations.length > 0) ||
+      (canViewInventory && pendingPurchaseOrders && pendingPurchaseOrders.length > 0) ||
+      customersWithDebt.length > 0)
 
   const { pendingCount: offlinePendingCount, failedCount: offlineFailedCount } = useOfflineSync()
 
@@ -163,6 +177,11 @@ export function DashboardPage() {
       }
     : null
 
+  const monthTransactions = data?.month.by_day.reduce((sum, day) => sum + day.transactions, 0) ?? 0
+  const monthDiscount =
+    data?.month.by_day.reduce((sum, day) => sum + Number(day.discount), 0) ?? 0
+  const avgTicket = monthTransactions > 0 ? Number(data?.month.total_sales ?? 0) / monthTransactions : null
+
   return (
     <div className="dashboard-page">
       <div className="page-header">
@@ -176,6 +195,21 @@ export function DashboardPage() {
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {warehouses && warehouses.length > 1 && (
+            <select
+              aria-label="Filtrar dashboard por almacén"
+              title="Filtrar dashboard por almacén"
+              value={warehouseId}
+              onChange={(event) => setWarehouseId(event.target.value ? Number(event.target.value) : '')}
+            >
+              <option value="">Todos los almacenes</option>
+              {warehouses.map((warehouse) => (
+                <option key={warehouse.id} value={warehouse.id}>
+                  {warehouse.name}
+                </option>
+              ))}
+            </select>
+          )}
           {(offlinePendingCount > 0 || offlineFailedCount > 0) && (
             <span
               className={`badge ${offlineFailedCount > 0 ? 'badge-danger' : 'badge-warning'}`}
@@ -210,6 +244,15 @@ export function DashboardPage() {
               </>
             )}
           </span>
+          <button
+            type="button"
+            className="dashboard-settings-btn"
+            aria-label="Elegir qué cards se muestran"
+            title="Elegir qué cards se muestran"
+            onClick={() => setShowCardsSettings(true)}
+          >
+            <Settings size={15} strokeWidth={2} />
+          </button>
         </div>
       </div>
 
@@ -304,20 +347,35 @@ export function DashboardPage() {
                     value={`${attendanceSummary.onTime} a tiempo`}
                   />
                 )}
+                {avgTicket !== null && (
+                  <CompactStat
+                    index={5}
+                    icon={<Receipt size={18} strokeWidth={2} />}
+                    label="Ticket promedio (30 días)"
+                    value={formatCurrency(avgTicket)}
+                    title={`${monthTransactions} venta(s) · S/ ${monthDiscount.toFixed(2)} en descuentos otorgados`}
+                  />
+                )}
               </div>
             </div>
           </div>
 
-          <div className="charts-grid">
-            <div className="card dashboard-chart-card" style={{ padding: 16 }}>
-              <h3 className="card-title">Ventas por día (últimos 30 días)</h3>
-              <SalesByDayChart data={data.month.by_day} />
+          {(isCardVisible('salesByDay') || isCardVisible('paymentMethods')) && (
+            <div className="charts-grid">
+              {isCardVisible('salesByDay') && (
+                <div className="card dashboard-chart-card" style={{ padding: 16 }}>
+                  <h3 className="card-title">Ventas por día (últimos 30 días)</h3>
+                  <SalesByDayChart data={data.month.by_day} />
+                </div>
+              )}
+              {isCardVisible('paymentMethods') && (
+                <div className="card dashboard-chart-card" style={{ padding: 16 }}>
+                  <h3 className="card-title">Métodos de pago (30 días)</h3>
+                  <PaymentMethodChart data={data.payment_method_distribution} />
+                </div>
+              )}
             </div>
-            <div className="card dashboard-chart-card" style={{ padding: 16 }}>
-              <h3 className="card-title">Métodos de pago (30 días)</h3>
-              <PaymentMethodChart data={data.payment_method_distribution} />
-            </div>
-          </div>
+          )}
 
           {(showTopProducts || showLowStockPanel || showPendingPanel) && (
             <div className="dashboard-split-grid">
@@ -397,8 +455,18 @@ export function DashboardPage() {
 
               {showLowStockPanel && (
                 <div className="card core-table-card dashboard-split-card">
-                  <div style={{ padding: '12px 16px 0' }}>
+                  <div
+                    style={{
+                      padding: '12px 16px 0',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                    }}
+                  >
                     <h3 className="card-title">Stock crítico</h3>
+                    {data.critical_stock_count > 0 && (
+                      <span className="badge badge-danger">{data.critical_stock_count}</span>
+                    )}
                   </div>
                   {!lowStockVariants || lowStockVariants.length === 0 ? (
                     <EmptyState icon={<PackageCheck />} title="Sin productos en stock crítico" />
@@ -438,16 +506,29 @@ export function DashboardPage() {
             </div>
           )}
 
-          <div className="card" style={{ padding: 20 }}>
-            <div className="dashboard-compact-card-header">
-              <span className="dashboard-compact-card-title">Actividad reciente</span>
+          {/* Secciones por modulo -todo lo que el sistema ya calcula/guarda
+              pero no vivia en ningun lado del dashboard (auditoria previa).
+              Cada una pide sus propios datos y se gatea con el mismo
+              permiso que ya protege esa pantalla en el sidebar. */}
+          {canViewInventory && isCardVisible('inventory') && <InventorySection />}
+          {isCardVisible('salesExtra') && <SalesExtraSection />}
+          {isCardVisible('customers') && <CustomersSection />}
+          {canSeeAttendance && isCardVisible('hr') && <HrSection />}
+          {canSeeGym && isCardVisible('gym') && <GymSection />}
+
+          {isCardVisible('activity') && (
+            <div className="card" style={{ padding: 20 }}>
+              <div className="dashboard-compact-card-header">
+                <span className="dashboard-compact-card-title">Actividad reciente</span>
+              </div>
+              <ActivityFeed items={activityItems} />
             </div>
-            <ActivityFeed items={activityItems} />
-          </div>
+          )}
         </div>
       )}
 
       {showSettings && <WidgetSettingsModal onClose={() => setShowSettings(false)} />}
+      {showCardsSettings && <DashboardCardsModal onClose={() => setShowCardsSettings(false)} />}
     </div>
   )
 }

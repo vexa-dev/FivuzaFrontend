@@ -52,6 +52,9 @@ const HRPage = lazy(() => import('./features/hr/HRPage').then((m) => ({ default:
 const GimnasioPage = lazy(() =>
   import('./features/gimnasio/GimnasioPage').then((m) => ({ default: m.GimnasioPage })),
 )
+const SettingsPage = lazy(() =>
+  import('./features/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })),
+)
 const ImpersonateLandingPage = lazy(() =>
   import('./features/auth/ImpersonateLandingPage').then((m) => ({
     default: m.ImpersonateLandingPage,
@@ -104,6 +107,7 @@ function App() {
                 <Route element={<TenantProtectedRoute requirePermission="GYM_MANAGE" />}>
                   <Route path="/gimnasio" element={<GimnasioPage />} />
                 </Route>
+                <Route path="/configuracion" element={<SettingsPage />} />
               </Route>
             </Route>
           </Routes>

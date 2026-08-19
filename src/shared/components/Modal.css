@@ -28,6 +28,13 @@
   animation: modal-slide-in 0.18s var(--ease-out);
 }
 
+/* Variante ancha -para contenido tabular (varias columnas) que se ve
+   comprimido y con scroll horizontal atrapado dentro del recuadro chico
+   por defecto (28rem). No reemplaza max-height/overflow-y de arriba. */
+.modal-card-lg {
+  max-width: 56rem;
+}
+
 .modal-card-closing {
   animation: modal-slide-out 0.16s var(--ease-in-out) forwards;
 }

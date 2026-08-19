@@ -61,7 +61,11 @@ export function SalesByDayChart({ data }: SalesByDayChartProps) {
             {chartData.map((row) => (
               <Cell
                 key={row.date}
-                fill={row.date === bestDay.date ? 'var(--color-accent-500)' : 'var(--color-accent-700)'}
+                fill={
+                  row.date === bestDay.date
+                    ? 'var(--primary)'
+                    : 'color-mix(in srgb, var(--primary) 55%, var(--bg-surface))'
+                }
               />
             ))}
           </Bar>

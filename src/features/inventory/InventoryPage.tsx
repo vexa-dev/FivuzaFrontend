@@ -1,32 +1,28 @@
-import {
-  CheckCircle2,
-  ChevronRight,
-  PackageSearch,
-  Pencil,
-  Plus,
-  Search,
-  Trash2,
-} from 'lucide-react'
-import { Fragment, useState, type ReactNode } from 'react'
+import { Pencil, PackageSearch, Plus, Trash2 } from 'lucide-react'
+import { useState, type ReactNode } from 'react'
 import '../core/CorePage.css'
 import { ConfirmDialog } from '../../shared/components/ConfirmDialog'
 import { EmptyState } from '../../shared/components/EmptyState'
-import { formatCurrency, formatQuantity } from '../../shared/utils/format'
 import { useAuth } from '../auth/hooks/useAuth'
+import { AttributesTab } from './components/AttributesTab'
+import { BrandFormModal } from './components/BrandFormModal'
 import { CatalogImportTab } from './components/CatalogImportTab'
 import { CategoryFormModal } from './components/CategoryFormModal'
 import { KardexTab } from './components/KardexTab'
 import { LabelsPrintTab } from './components/LabelsPrintTab'
 import { ProductDetailModal } from './components/ProductDetailModal'
 import { ProductFormModal } from './components/ProductFormModal'
+import { ProductsTab } from './components/ProductsTab'
 import { PurchaseOrdersTab } from './components/PurchaseOrdersTab'
 import { StockAdjustTab } from './components/StockAdjustTab'
 import { StockTransferTab } from './components/StockTransferTab'
 import { SupplierFormModal } from './components/SupplierFormModal'
 import { TaxRatesTab } from './components/TaxRatesTab'
 import { WarehouseFormModal } from './components/WarehouseFormModal'
-import type { Category, Product, Supplier, Warehouse } from './api'
-import { useCategories, useDeleteCategory } from './hooks/useCategories'
+import type { Brand, Category, Product, Supplier, Warehouse } from './api'
+import { useAttributes } from './hooks/useAttributes'
+import { useBrands, useDeleteBrand } from './hooks/useBrands'
+import { useCategories, useDeleteCategory, useUpdateCategory } from './hooks/useCategories'
 import { useDeleteProduct, useProducts } from './hooks/useProducts'
 import { useDeleteSupplier, useSuppliers } from './hooks/useSuppliers'
 import { useAllStock } from './hooks/useStock'
@@ -35,7 +31,9 @@ import { useDeleteWarehouse, useWarehouses } from './hooks/useWarehouses'
 type Tab =
   | 'productos'
   | 'categorias'
+  | 'marcas'
   | 'proveedores'
+  | 'atributos'
   | 'almacenes'
   | 'stock'
   | 'traslados'
@@ -57,7 +55,9 @@ const TAB_GROUPS: { id: string; label: string; tabs: [Tab, string][] }[] = [
     tabs: [
       ['productos', 'Productos'],
       ['categorias', 'Categorías'],
+      ['marcas', 'Marcas'],
       ['proveedores', 'Proveedores'],
+      ['atributos', 'Atributos'],
       ['importar', 'Importar catálogo'],
       ['etiquetas', 'Imprimir etiquetas'],
     ],
@@ -100,8 +100,10 @@ export function InventoryPage() {
   const [search, setSearch] = useState('')
 
   const { data: categories, isLoading: loadingCategories } = useCategories()
+  const { data: brands, isLoading: loadingBrands } = useBrands()
   const { data: suppliers, isLoading: loadingSuppliers } = useSuppliers()
   const { data: warehouses, isLoading: loadingWarehouses } = useWarehouses()
+  const { data: attributes } = useAttributes()
   const { data: products, isLoading: loadingProducts } = useProducts({ search })
   // Sin filtro de busqueda -Kardex/Ajustar stock necesitan el catalogo
   // completo, independiente de lo que el usuario haya buscado en la tab
@@ -109,31 +111,9 @@ export function InventoryPage() {
   const { data: allProducts } = useProducts()
   const { data: allStock } = useAllStock()
 
-  const [expandedProductId, setExpandedProductId] = useState<number | null>(null)
-  const [stockWarehouseFilter, setStockWarehouseFilter] = useState<number | ''>('')
-
-  // variantId -> [{warehouseId, quantity}] -construido una vez del stock
-  // completo del tenant, no un fetch por variante (evita N+1 requests al
-  // expandir cada fila).
-  const stockByVariant = new Map<number, { warehouseId: number; quantity: string }[]>()
-  allStock?.forEach((record) => {
-    const list = stockByVariant.get(record.variant) ?? []
-    list.push({ warehouseId: record.warehouse, quantity: record.quantity })
-    stockByVariant.set(record.variant, list)
-  })
-
-  const variantStockRows = (variantId: number) => {
-    const rows = stockByVariant.get(variantId) ?? []
-    return stockWarehouseFilter
-      ? rows.filter((row) => row.warehouseId === stockWarehouseFilter)
-      : rows
-  }
-  const variantStockTotal = (variantId: number) =>
-    variantStockRows(variantId).reduce((sum, row) => sum + Number(row.quantity), 0)
-  const productStockTotal = (product: Product) =>
-    product.variants.reduce((sum, variant) => sum + variantStockTotal(variant.id), 0)
-
   const deleteCategory = useDeleteCategory()
+  const updateCategory = useUpdateCategory()
+  const deleteBrand = useDeleteBrand()
   const deleteSupplier = useDeleteSupplier()
   const deleteWarehouse = useDeleteWarehouse()
   const deleteProduct = useDeleteProduct()
@@ -145,17 +125,18 @@ export function InventoryPage() {
   // recien editada, sin depender de que el usuario cierre y reabra.
   const viewingProduct = products?.find((product) => product.id === viewingProductId) ?? null
   const [editingCategory, setEditingCategory] = useState<Category | null | undefined>(undefined)
+  const [editingBrand, setEditingBrand] = useState<Brand | null | undefined>(undefined)
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null | undefined>(undefined)
   const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null | undefined>(undefined)
+  const [showAttributeForm, setShowAttributeForm] = useState(false)
   const [showTaxRateForm, setShowTaxRateForm] = useState(false)
   const [showPurchaseOrderForm, setShowPurchaseOrderForm] = useState(false)
 
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null)
   const [deletingCategory, setDeletingCategory] = useState<Category | null>(null)
+  const [deletingBrand, setDeletingBrand] = useState<Brand | null>(null)
   const [deletingSupplier, setDeletingSupplier] = useState<Supplier | null>(null)
   const [deletingWarehouse, setDeletingWarehouse] = useState<Warehouse | null>(null)
-
-  const categoryName = (id: number) => categories?.find((c) => c.id === id)?.name ?? '—'
 
   const visibleGroups = TAB_GROUPS.map((group) => ({
     ...group,
@@ -189,6 +170,13 @@ export function InventoryPage() {
         Nueva categoría
       </button>
     )
+  } else if (tab === 'marcas' && canManage) {
+    primaryAction = (
+      <button type="button" className="btn btn-primary" onClick={() => setEditingBrand(null)}>
+        <Plus size={15} strokeWidth={2.5} />
+        Nueva marca
+      </button>
+    )
   } else if (tab === 'proveedores' && canManage) {
     primaryAction = (
       <button type="button" className="btn btn-primary" onClick={() => setEditingSupplier(null)}>
@@ -201,6 +189,13 @@ export function InventoryPage() {
       <button type="button" className="btn btn-primary" onClick={() => setEditingWarehouse(null)}>
         <Plus size={15} strokeWidth={2.5} />
         Nuevo almacén
+      </button>
+    )
+  } else if (tab === 'atributos' && canManage) {
+    primaryAction = (
+      <button type="button" className="btn btn-primary" onClick={() => setShowAttributeForm(true)}>
+        <Plus size={15} strokeWidth={2.5} />
+        Nuevo atributo
       </button>
     )
   } else if (tab === 'compras' && canManagePurchases) {
@@ -264,163 +259,21 @@ export function InventoryPage() {
       </div>
 
       {tab === 'productos' && (
-        <div className="card core-table-card">
-          <div className="table-toolbar" style={{ justifyContent: 'flex-start' }}>
-            <div className="search-input">
-              <Search />
-              <input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Buscar por nombre..."
-              />
-            </div>
-            {(warehouses?.length ?? 0) > 1 && (
-              <select
-                value={stockWarehouseFilter}
-                onChange={(event) => setStockWarehouseFilter(Number(event.target.value) || '')}
-                style={{ maxWidth: 200 }}
-                aria-label="Filtrar stock por almacén"
-              >
-                <option value="">Stock: todos los almacenes</option>
-                {warehouses?.map((warehouse) => (
-                  <option key={warehouse.id} value={warehouse.id}>
-                    Stock: {warehouse.name}
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
-
-          {loadingProducts && <LoadingRow />}
-          {products && products.length === 0 && (
-            <EmptyState
-              icon={<PackageSearch />}
-              title={search ? 'Sin resultados' : 'Todavía no hay productos'}
-              subtitle={
-                search
-                  ? 'Prueba con otro término de búsqueda.'
-                  : canManage
-                    ? 'Crea el primero con "Nuevo producto".'
-                    : 'Cuando se agreguen productos, aparecerán aquí.'
-              }
-            />
-          )}
-          {products && products.length > 0 && (
-            <table className="core-table">
-              <thead>
-                <tr>
-                  <th></th>
-                  <th>Nombre</th>
-                  <th>Categoría</th>
-                  <th>Variantes</th>
-                  <th>Stock</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {products.map((product) => {
-                  const expanded = expandedProductId === product.id
-                  return (
-                    <Fragment key={product.id}>
-                      <tr
-                        className="core-table-row-expandable"
-                        onClick={() => setExpandedProductId(expanded ? null : product.id)}
-                      >
-                        <td>
-                          <ChevronRight
-                            size={15}
-                            strokeWidth={2}
-                            className={`core-table-chevron ${expanded ? 'core-table-chevron-open' : ''}`}
-                          />
-                        </td>
-                        <td className="core-table-strong">{product.name}</td>
-                        <td>{categoryName(product.category)}</td>
-                        <td>
-                          <span className="badge badge-neutral">{product.variants.length}</span>
-                        </td>
-                        <td className="core-table-strong">{formatQuantity(productStockTotal(product))}</td>
-                        <td>
-                          <div className="row-actions" onClick={(event) => event.stopPropagation()}>
-                            <button
-                              type="button"
-                              className="btn btn-ghost btn-sm"
-                              onClick={() => setViewingProductId(product.id)}
-                            >
-                              Ver variantes
-                            </button>
-                            {canManage && (
-                              <button
-                                type="button"
-                                className="btn btn-danger-ghost btn-sm btn-icon"
-                                aria-label={`Eliminar ${product.name}`}
-                                onClick={() => setDeletingProduct(product)}
-                              >
-                                <Trash2 />
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                      {expanded && (
-                        <tr className="core-table-expanded-row">
-                          <td colSpan={6}>
-                            <table className="core-table core-table-nested">
-                              <thead>
-                                <tr>
-                                  <th>SKU</th>
-                                  <th>Precio compra</th>
-                                  <th>Precio venta</th>
-                                  <th>Stock</th>
-                                  <th>Predet.</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {product.variants.map((variant) => {
-                                  const rows = variantStockRows(variant.id)
-                                  return (
-                                    <tr key={variant.id}>
-                                      <td className="core-table-strong">{variant.sku}</td>
-                                      <td>{formatCurrency(variant.cost)}</td>
-                                      <td>{formatCurrency(variant.price)}</td>
-                                      <td>
-                                        {stockWarehouseFilter || rows.length <= 1 ? (
-                                          formatQuantity(variantStockTotal(variant.id))
-                                        ) : (
-                                          <span className="core-table-stock-breakdown">
-                                            {rows.map((row) => (
-                                              <span key={row.warehouseId}>
-                                                {warehouses?.find((w) => w.id === row.warehouseId)?.name ??
-                                                  `#${row.warehouseId}`}
-                                                : {formatQuantity(row.quantity)}
-                                              </span>
-                                            ))}
-                                          </span>
-                                        )}
-                                      </td>
-                                      <td>
-                                        {variant.is_default && (
-                                          <CheckCircle2
-                                            size={15}
-                                            strokeWidth={2}
-                                            color="var(--success)"
-                                          />
-                                        )}
-                                      </td>
-                                    </tr>
-                                  )
-                                })}
-                              </tbody>
-                            </table>
-                          </td>
-                        </tr>
-                      )}
-                    </Fragment>
-                  )
-                })}
-              </tbody>
-            </table>
-          )}
-        </div>
+        <ProductsTab
+          products={products}
+          loading={loadingProducts}
+          search={search}
+          onSearchChange={setSearch}
+          categories={categories ?? []}
+          brands={brands ?? []}
+          suppliers={suppliers ?? []}
+          warehouses={warehouses ?? []}
+          attributes={attributes ?? []}
+          allStock={allStock}
+          canManage={canManage}
+          onViewProduct={setViewingProductId}
+          onDeleteProduct={setDeletingProduct}
+        />
       )}
 
       {tab === 'categorias' && (
@@ -434,6 +287,11 @@ export function InventoryPage() {
               <thead>
                 <tr>
                   <th>Nombre</th>
+                  <th
+                    title="Los productos de esta categoría se agrupan en la tabla de Productos por el valor de este atributo (ej. Talla). Cada categoría puede usar uno distinto, o ninguno."
+                  >
+                    Atributo de agrupación
+                  </th>
                   {canManage && <th></th>}
                 </tr>
               </thead>
@@ -441,6 +299,34 @@ export function InventoryPage() {
                 {categories.map((category) => (
                   <tr key={category.id}>
                     <td className="core-table-strong">{category.name}</td>
+                    <td>
+                      {canManage ? (
+                        <select
+                          value={category.primary_attribute ?? ''}
+                          onChange={(event) =>
+                            updateCategory.mutate({
+                              id: category.id,
+                              data: {
+                                primary_attribute: event.target.value
+                                  ? Number(event.target.value)
+                                  : null,
+                              },
+                            })
+                          }
+                          aria-label={`Atributo de agrupación de ${category.name}`}
+                          style={{ maxWidth: 180 }}
+                        >
+                          <option value="">Sin agrupar</option>
+                          {attributes?.map((attribute) => (
+                            <option key={attribute.id} value={attribute.id}>
+                              {attribute.name}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        (attributes?.find((a) => a.id === category.primary_attribute)?.name ?? '—')
+                      )}
+                    </td>
                     {canManage && (
                       <td>
                         <div className="row-actions">
@@ -457,6 +343,54 @@ export function InventoryPage() {
                             className="btn btn-danger-ghost btn-sm btn-icon"
                             aria-label={`Eliminar ${category.name}`}
                             onClick={() => setDeletingCategory(category)}
+                          >
+                            <Trash2 />
+                          </button>
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
+      {tab === 'marcas' && (
+        <div className="card core-table-card">
+          {loadingBrands && <LoadingRow />}
+          {brands && brands.length === 0 && (
+            <EmptyState icon={<PackageSearch />} title="Todavía no hay marcas" />
+          )}
+          {brands && brands.length > 0 && (
+            <table className="core-table">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  {canManage && <th></th>}
+                </tr>
+              </thead>
+              <tbody>
+                {brands.map((brand) => (
+                  <tr key={brand.id}>
+                    <td className="core-table-strong">{brand.name}</td>
+                    {canManage && (
+                      <td>
+                        <div className="row-actions">
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-sm btn-icon"
+                            aria-label={`Editar ${brand.name}`}
+                            onClick={() => setEditingBrand(brand)}
+                          >
+                            <Pencil />
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-danger-ghost btn-sm btn-icon"
+                            aria-label={`Eliminar ${brand.name}`}
+                            onClick={() => setDeletingBrand(brand)}
                           >
                             <Trash2 />
                           </button>
@@ -521,6 +455,14 @@ export function InventoryPage() {
             </table>
           )}
         </div>
+      )}
+
+      {tab === 'atributos' && (
+        <AttributesTab
+          canManage={canManage}
+          showCreateForm={showAttributeForm}
+          onCloseCreateForm={() => setShowAttributeForm(false)}
+        />
       )}
 
       {tab === 'almacenes' && (
@@ -611,7 +553,9 @@ export function InventoryPage() {
       {showProductForm && (
         <ProductFormModal
           categories={categories ?? []}
+          brands={brands ?? []}
           suppliers={suppliers ?? []}
+          attributes={attributes ?? []}
           onClose={() => setShowProductForm(false)}
         />
       )}
@@ -620,6 +564,7 @@ export function InventoryPage() {
         <ProductDetailModal
           product={viewingProduct}
           canManage={canManage}
+          attributes={attributes ?? []}
           onClose={() => setViewingProductId(null)}
         />
       )}
@@ -627,8 +572,13 @@ export function InventoryPage() {
       {editingCategory !== undefined && (
         <CategoryFormModal
           editingCategory={editingCategory}
+          attributes={attributes ?? []}
           onClose={() => setEditingCategory(undefined)}
         />
+      )}
+
+      {editingBrand !== undefined && (
+        <BrandFormModal editingBrand={editingBrand} onClose={() => setEditingBrand(undefined)} />
       )}
 
       {editingSupplier !== undefined && (
@@ -662,6 +612,16 @@ export function InventoryPage() {
           confirmLabel="Eliminar"
           onConfirm={() => deleteCategory.mutate(deletingCategory.id)}
           onClose={() => setDeletingCategory(null)}
+        />
+      )}
+
+      {deletingBrand && (
+        <ConfirmDialog
+          title="Eliminar marca"
+          message={`¿Eliminar "${deletingBrand.name}"? Esta acción no se puede deshacer.`}
+          confirmLabel="Eliminar"
+          onConfirm={() => deleteBrand.mutate(deletingBrand.id)}
+          onClose={() => setDeletingBrand(null)}
         />
       )}
 

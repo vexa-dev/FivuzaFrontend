@@ -1,0 +1,72 @@
+.attribute-values-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Chip removible -mismo lenguaje visual que .badge (pill, mismo padding
+   vertical) pero con la "x" propia en vez de reusar .badge tal cual, para
+   no mezclar "esto es informativo" (badges de estado en toda la app) con
+   "esto se puede quitar con un click". */
+.attribute-value-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 6px 4px 10px;
+  border-radius: 20px;
+  background: var(--bg-surface-secondary);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.attribute-value-chip button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.attribute-value-chip button:hover {
+  background: var(--danger-subtle-bg);
+  color: var(--danger);
+}
+
+.attribute-value-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px dashed var(--border-default);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+
+.attribute-value-add-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.attribute-value-add-form input {
+  width: 90px;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+}

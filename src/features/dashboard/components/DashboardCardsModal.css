@@ -1,0 +1,125 @@
+.dashboard-cards-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.dashboard-cards-modal-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.dashboard-cards-modal-count {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.dashboard-cards-modal-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.dashboard-cards-modal-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-default);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s;
+}
+
+.dashboard-cards-modal-action:hover {
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+  border-color: var(--border-strong, var(--border-default));
+}
+
+.dashboard-cards-modal-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dashboard-cards-modal-group-title {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+
+/* Fila clickeable completa (no solo el switch) -mas area de click, mismo
+   criterio de accesibilidad que el resto de los toggles de la app. */
+.dashboard-cards-modal-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 4px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.dashboard-cards-modal-row:hover {
+  background: var(--bg-surface-hover);
+}
+
+.dashboard-cards-modal-row-label {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+}
+
+/* Switch pill -mismo lenguaje "capsula" que RankingBars/CapsuleColumns del
+   dashboard: track full-radius + knob circular que se desliza, en vez de
+   un checkbox nativo que hay que mirar de cerca para leer su estado. */
+.dashboard-cards-modal-switch {
+  position: relative;
+  width: 38px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--border-default);
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: background 0.18s var(--ease-out);
+}
+
+.dashboard-cards-modal-switch.is-on {
+  background: var(--primary);
+}
+
+.dashboard-cards-modal-switch:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.dashboard-cards-modal-switch-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.18s var(--ease-out);
+}
+
+.dashboard-cards-modal-switch.is-on .dashboard-cards-modal-switch-knob {
+  transform: translateX(16px);
+}

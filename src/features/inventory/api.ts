@@ -17,6 +17,18 @@ export interface Category {
   id: number
   name: string
   is_active: boolean
+  // Que atributo agrupa filas en la tabla de Productos PARA LOS PRODUCTOS
+  // DE ESTA CATEGORIA (ej. Talla en "Ropa") -por categoria y no uno solo
+  // global: un ERP generico vende mas de un tipo de producto a la vez y
+  // cada categoria necesita su propio criterio de agrupacion, o ninguno
+  // (ver ProductsTab.tsx).
+  primary_attribute: number | null
+}
+
+export interface Brand {
+  id: number
+  name: string
+  is_active: boolean
 }
 
 export interface Supplier {
@@ -27,9 +39,26 @@ export interface Supplier {
   address: string
 }
 
+export interface AttributeValue {
+  id: number
+  attribute: number
+  value: string
+}
+
 export interface Attribute {
   id: number
   name: string
+  values: AttributeValue[]
+}
+
+// Lo que devuelve el backend anidado en cada variante -solo el id del
+// AttributeValue (ver ProductVariantSerializer.attribute_values en
+// FivuzaBackend), sin el texto "Talla: M" ya resuelto. Para mostrarlo
+// legible hay que cruzarlo contra la lista de Attribute (ver
+// hooks/useAttributes.ts).
+export interface VariantAttributeValue {
+  id: number
+  attribute_value: number
 }
 
 export interface ProductVariant {
@@ -43,6 +72,7 @@ export interface ProductVariant {
   image_url: string | null
   is_default: boolean
   is_active: boolean
+  attribute_values: VariantAttributeValue[]
   updated_at: string
 }
 
@@ -52,6 +82,7 @@ export interface Product {
   name: string
   description: string
   category: number
+  brand: number | null
   supplier: number | null
   unit_of_measure: 'UND' | 'KG'
   is_for_sale: boolean
@@ -67,6 +98,7 @@ export interface NewVariantInput {
   cost?: string
   price?: string
   min_stock?: string
+  attribute_value_ids?: number[]
 }
 
 export interface StockRecord {
@@ -126,7 +158,7 @@ export const deleteWarehouse = (id: number) =>
 export const fetchCategories = (search?: string) =>
   authed<Category[]>(`/inventario/categories/${search ? `?search=${search}` : ''}`)
 
-export const createCategory = (data: { name: string }) =>
+export const createCategory = (data: { name: string; primary_attribute?: number | null }) =>
   authed<Category>('/inventario/categories/', { method: 'POST', body: data })
 
 export const updateCategory = (id: number, data: Partial<Category>) =>
@@ -134,6 +166,37 @@ export const updateCategory = (id: number, data: Partial<Category>) =>
 
 export const deleteCategory = (id: number) =>
   authed<void>(`/inventario/categories/${id}/`, { method: 'DELETE' })
+
+// Marcas
+export const fetchBrands = (search?: string) =>
+  authed<Brand[]>(`/inventario/brands/${search ? `?search=${search}` : ''}`)
+
+export const createBrand = (data: { name: string }) =>
+  authed<Brand>('/inventario/brands/', { method: 'POST', body: data })
+
+export const updateBrand = (id: number, data: Partial<Brand>) =>
+  authed<Brand>(`/inventario/brands/${id}/`, { method: 'PATCH', body: data })
+
+export const deleteBrand = (id: number) =>
+  authed<void>(`/inventario/brands/${id}/`, { method: 'DELETE' })
+
+// Atributos (Talla, Color...) y sus valores
+export const fetchAttributes = () => authed<Attribute[]>('/inventario/attributes/')
+
+export const createAttribute = (data: { name: string }) =>
+  authed<Attribute>('/inventario/attributes/', { method: 'POST', body: data })
+
+export const updateAttribute = (id: number, data: Partial<Pick<Attribute, 'name'>>) =>
+  authed<Attribute>(`/inventario/attributes/${id}/`, { method: 'PATCH', body: data })
+
+export const deleteAttribute = (id: number) =>
+  authed<void>(`/inventario/attributes/${id}/`, { method: 'DELETE' })
+
+export const createAttributeValue = (data: { attribute: number; value: string }) =>
+  authed<AttributeValue>('/inventario/attribute-values/', { method: 'POST', body: data })
+
+export const deleteAttributeValue = (id: number) =>
+  authed<void>(`/inventario/attribute-values/${id}/`, { method: 'DELETE' })
 
 // Proveedores
 export const fetchSuppliers = (search?: string) =>
@@ -162,6 +225,7 @@ export const createProduct = (data: {
   name: string
   description?: string
   category: number
+  brand?: number | null
   supplier?: number | null
   unit_of_measure: Product['unit_of_measure']
   variants_input?: NewVariantInput[]

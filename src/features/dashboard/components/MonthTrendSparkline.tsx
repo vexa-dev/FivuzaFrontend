@@ -19,8 +19,8 @@ export function MonthTrendSparkline({ data }: MonthTrendSparklineProps) {
       <AreaChart data={chartData} margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
         <defs>
           <linearGradient id="hero-trend-fill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="var(--color-accent-500)" stopOpacity={0.35} />
-            <stop offset="100%" stopColor="var(--color-accent-500)" stopOpacity={0} />
+            <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.35} />
+            <stop offset="100%" stopColor="var(--primary)" stopOpacity={0} />
           </linearGradient>
         </defs>
         <Tooltip
@@ -36,7 +36,7 @@ export function MonthTrendSparkline({ data }: MonthTrendSparklineProps) {
         <Area
           type="monotone"
           dataKey="total"
-          stroke="var(--color-accent-500)"
+          stroke="var(--primary)"
           strokeWidth={2}
           fill="url(#hero-trend-fill)"
           isAnimationActive={false}
