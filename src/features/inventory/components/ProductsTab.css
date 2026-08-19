@@ -1,0 +1,481 @@
+/* El toolbar vive FUERA de .products-scroll-region (mas abajo, alrededor
+   de la tabla/cards) -pedido explicito de que el encabezado no
+   desaparezca al hacer scroll, resuelto NO con sticky (ver por que en
+   .products-scroll-region) sino dejando el toolbar en flujo normal,
+   antes de la region que scrollea: como el toolbar nunca esta DENTRO del
+   contenedor con scroll, sencillamente nunca se mueve, sin necesitar
+   position:sticky ni sus bugs de calculo de offset. */
+.products-toolbar {
+  flex-wrap: wrap;
+  padding: 16px 16px 12px;
+}
+
+/* Region con scroll propio, contiene la tabla/cards (el toolbar de
+   arriba queda afuera, ver .products-toolbar) -no se puede usar el
+   scroll de la pagina para el header pegajoso: <main class="erp-content">
+   tiene overflow-x:auto (ErpLayout.css), lo que por regla del modulo CSS
+   Overflow fuerza tambien overflow-y:auto, pero como su alto no esta
+   acotado nunca desborda DE VERDAD (el documento/html es quien scrollea
+   en la practica) -eso vuelve inerte cualquier position:sticky adentro,
+   porque el contenedor "de referencia" nunca mueve su propio scrollTop.
+   Confirmado en el navegador: con el thead pegado directo contra ese
+   scroll no funcional, terminaba mal posicionado. Por eso esta region
+   tiene su PROPIA altura acotada (calc(100vh - <su posicion en la
+   pagina>), medida en ProductsTab.tsx) y su propio overflow:auto genuino
+   -asi el thead de la tabla se pega contra ESTE scroll, que si funciona.
+   El overflow:hidden de .core-table-card (CorePage.css) sigue intacto y
+   sigue recortando las esquinas redondeadas: esta region entera cabe
+   dentro de esa caja, no necesita escapar de sus bordes. */
+.products-scroll-region {
+  padding-bottom: 4px;
+}
+
+.products-toolbar-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 1 1 auto;
+}
+
+.products-toolbar-filters select {
+  width: auto;
+  max-width: 200px;
+}
+
+/* Selector de vista -mismo lenguaje que .tabs/.tab (par de botones
+   segmentados) pero mas chico, porque no es navegacion de pagina sino una
+   preferencia de despliegue dentro de la misma pestaña. */
+.view-toggle {
+  display: flex;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.view-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.view-toggle-btn + .view-toggle-btn {
+  border-left: 1px solid var(--border-default);
+}
+
+.view-toggle-btn:hover {
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+}
+
+.view-toggle-btn-active,
+.view-toggle-btn-active:hover {
+  background: var(--primary-subtle-bg);
+  color: var(--primary);
+}
+
+/* Vista de cards -mismo criterio de grilla que el catalogo del POS
+   (auto-fill, minmax) pero mas ancha por card porque aca cabe mucho mas
+   dato por producto (descripcion, badges de estado, precio, stock...). */
+.product-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+  padding: 16px;
+}
+
+.product-card {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+.product-card-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  background: var(--bg-surface-secondary);
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.product-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.product-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  flex: 1;
+}
+
+.product-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.product-card-name {
+  font-weight: 700;
+  font-size: 0.9375rem;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+/* line-clamp -la descripcion de un producto puede ser un parrafo entero;
+   2 lineas alcanzan para dar contexto sin que una card se estire mucho
+   mas alto que sus vecinas por tener una descripcion larga. */
+.product-card-description {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.product-card-meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.product-card-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.product-card-footer {
+  margin-top: 4px;
+}
+
+/* Lista de variantes dentro de la card -sin acordeon: 1 variante se lee
+   como una fila normal; 2+ comparten un borde envolvente
+   (.product-card-variants-grouped) que las lee como "un mismo grupo" sin
+   necesitar abrir nada para confirmarlo. */
+.product-card-variants {
+  display: flex;
+  flex-direction: column;
+}
+
+.product-card-variants-grouped {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.product-card-variant-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 0;
+}
+
+.product-card-variants-grouped .product-card-variant-row {
+  padding: 7px 10px;
+}
+
+.product-card-variants-grouped .product-card-variant-row + .product-card-variant-row {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.product-card-variant-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+}
+
+.product-card-variant-sku {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Chips de atributos ("Talla: M", "Color: Rojo") -solo aparecen cuando la
+   variante tiene atributos asignados (ver AttributesTab). Chips en vez de
+   texto mudo: se leen mejor y no dependen de que la fila sea ancha para
+   no verse amontonados (flex-wrap los acomoda en 2 lineas si hace falta). */
+.product-card-variant-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.product-card-variant-sku .badge,
+.product-card-variant-chips .badge {
+  padding: 2px 8px;
+  font-size: 0.625rem;
+}
+
+/* Chips de atributos sin relleno solido -.badge-neutral usa
+   --bg-surface-secondary de fondo, que es justo el mismo tono que se usaba
+   para la cebra por producto (ya removida). Contra una fila sin ningun
+   otro tinte, ese relleno se lee como un bloque de color que "sobresale"
+   sin razon (mas notorio en chips de una sola linea corta, ej. una talla
+   numerica). Se cambia a solo borde para que el chip se lea como una
+   etiqueta discreta, no como una mancha de color. */
+.product-card-variant-chips .badge,
+.products-attribute-chips .badge {
+  background: transparent;
+  border: 1px solid var(--border-default);
+}
+
+.product-card-variant-price {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.product-card-variant-stock {
+  min-width: 44px;
+  text-align: right;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.product-card-stock-low {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.product-card-updated {
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.product-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+/* Miniatura en la vista de lista -misma imagen que la card, a escala de
+   fila de tabla, para no perder el dato visual en la vista densa. */
+.products-list-thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface-secondary);
+  color: var(--text-muted);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.products-list-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.products-list-description {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  margin: 4px 0 0;
+  max-width: 260px;
+}
+
+/* Chips de atributos en la vista de lista -UNA sola columna "Atributos"
+   para cualquier cantidad de atributos que el catalogo use (Talla, Color,
+   Talla de calzado...), en vez de una columna nueva por cada uno. Con
+   flex-wrap, 2+ chips pasan a una segunda linea en vez de angostar el
+   resto de la fila. */
+.products-attribute-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.products-attribute-chips .badge {
+  padding: 2px 8px;
+  font-size: 0.6875rem;
+}
+
+/* table-layout:fixed -obliga a respetar los anchos del <colgroup> (ver
+   ProductsTab.tsx) en vez de recalcular el ancho de columna por fila,
+   que es lo que rompia la alineacion en cuanto una fila traia un colSpan
+   y otras no. overflow-wrap para que nombres/descripciones largas no
+   estiren la columna, ahora que su ancho es fijo. */
+.products-grouped-table {
+  table-layout: fixed;
+  /* border-collapse:separate (no collapse, el default de .core-table) +
+     border-spacing:0 -limitacion real de CSS, no un capricho: position:
+     sticky sobre <th>/<td> simplemente NO funciona con border-collapse:
+     collapse (confirmado en el navegador: el thead dejaba de pegarse al
+     hacer scroll, aunque la geometria "en reposo" se viera bien). spacing
+     en 0 para que, con separate, las celdas sigan tocandose sin dejar
+     huecos blancos entre ellas. */
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.products-grouped-table td {
+  overflow-wrap: break-word;
+}
+
+/* Encabezado como <div> normal (.products-header-row), NO <thead> -dos
+   problemas reales de renderizado, no caprichos:
+   1) position:sticky no funciona sobre partes de tabla (<thead>, <th>)
+      en varios motores de renderizado -confirmado en el navegador: con
+      sticky puesto directo sobre cada <th> (o sobre el <thead>), el
+      encabezado simplemente scrolleaba de largo con el resto, aunque
+      geometricamente todo se viera bien "en reposo". Sticky SI funciona
+      de forma confiable sobre cajas de bloque normales.
+   2) un <thead> con width:100% (para poder crecer igual que el <table>
+      padre en pantallas anchas, ver la columna Nombre `grow` mas abajo)
+      tampoco resuelve ese ancho de forma confiable dentro del algoritmo
+      de layout de una tabla -confirmado en el navegador: se quedaba fijo
+      en su min-width sin importar que el <table> si se estirara. Un
+      <div> normal, con width:100% relativo a .products-table-scroll (un
+      contenedor de bloque comun), no tiene ninguno de estos dos
+      problemas. Las columnas siguen viniendo de PRODUCT_COLUMNS, la
+      misma fuente que <colgroup>, para que ambos queden sincronizados. */
+.products-header-row {
+  display: flex;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  width: 100%;
+  /* Fondo opaco en el propio contenedor, no solo en cada celda -y
+     will-change para forzar su propia capa de composicion. Sin esto, el
+     navegador a veces no repinta a tiempo el area cubierta por un sticky
+     mientras se scrollea rapido dentro de un contenedor con overflow,
+     dejando un frame "fantasma" de la fila anterior asomando debajo del
+     encabezado (confirmado en el navegador: un chip de una fila ya
+     scrolleada se veia colado justo debajo del header). */
+  background: var(--bg-surface);
+  will-change: transform;
+}
+
+/* Replica manual de .core-table th (CorePage.css) -esta celda ya no es
+   un <th> real, asi que el selector por tag no la alcanza. */
+.products-header-cell {
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  text-align: left;
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-default);
+}
+
+/* Codigo de barras -numero de longitud fija; envolverlo a 2 lineas (ej.
+   "775000100014" / "9") se lee como dos numeros distintos. Una sola linea
+   con elipsis (el title en el <td> conserva el valor completo al hacer
+   hover) en vez de partirlo. */
+.products-nowrap-cell {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Nombre, Precio y Stock actual son los 3 datos que mas se consultan de
+   un vistazo en esta tabla -pedido explicito de resaltarlos mas que el
+   resto de columnas (categoria, proveedor, costo...), que quedan como
+   dato de apoyo secundario. */
+/* Especificidad td.clase (no solo .clase) a proposito: la regla base
+   ".core-table td { color: var(--text-secondary) }" (CorePage.css) tiene
+   especificidad (clase + elemento) mayor que una clase sola, asi que un
+   .products-price-cell suelto pierde el color contra ella. Iguala esa
+   especificidad para que el color SI se aplique. */
+.products-grouped-table td.products-name-cell {
+  font-weight: 700;
+  font-size: 0.9375rem;
+  color: var(--text-primary);
+}
+
+.products-grouped-table td.products-price-cell {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.products-grouped-table td.products-stock-cell {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Stock bajo le gana al color de arriba por tener una clase mas
+   (mayor especificidad), no por orden de aparicion en el archivo. */
+.products-grouped-table td.products-stock-cell.product-card-stock-low {
+  color: var(--danger);
+}
+
+/* Stock minimo -no es un dato "positivo" a destacar como el stock actual,
+   es un umbral de alerta: se resalta distinto (rojizo, no negrita) para
+   que se lea como referencia de riesgo, no se confunda con el stock
+   actual de al lado ni compita con el mismo peso visual. */
+.products-grouped-table td.products-min-stock-cell {
+  color: var(--danger);
+}
+
+/* Boton de eliminar de la fila -rojo siempre, no solo al hacer hover
+   (.btn-danger-ghost por defecto es gris, se pone rojo recien al pasar el
+   mouse; "eliminar" en una fila de tabla debe distinguirse a simple
+   vista, no requerir hover para saber cual boton es el destructivo). */
+.products-row-delete {
+  color: var(--danger);
+  border-color: var(--danger-subtle-bg);
+}
+
+/* Cebra clasica tipo "tabla de Word", regida por FILA -pedido explicito:
+   cada variante es su propia fila independiente (ver ProductsTab.tsx,
+   "Polo M"/"Polo L"/"Polo S" en vez de agrupadas bajo un "Polo" comun),
+   asi que el tinte alterna fila por fila, sin noción de "producto" que
+   agrupe varias filas bajo un mismo tinte. */
+.products-grouped-table tbody tr.products-zebra td {
+  background: var(--bg-surface-secondary);
+}
+
+/* El hover SIEMPRE debe ganarle a la cebra -sin esta regla, hover pierde
+   contra el tinte por selector mas especifico (mismo problema reportado:
+   "que el hover no se pierda"). Mismo selector base + :hover, para que su
+   especificidad sea estrictamente mayor que la de la cebra sola. */
+.products-grouped-table tbody tr.products-zebra:hover td {
+  background: var(--bg-surface-hover);
+}
+

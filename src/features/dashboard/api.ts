@@ -3,7 +3,7 @@ import { tenantApiFetch } from '../../shared/utils/tenantApiClient'
 
 export interface SalesRangeMetric {
   total_sales: string
-  by_day: { date: string; total: string }[]
+  by_day: { date: string; total: string; transactions: number; discount: string }[]
 }
 
 export interface DashboardMetrics {

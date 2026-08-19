@@ -8,9 +8,14 @@ interface ModalProps {
   title: string
   onClose: () => void
   children: ReactNode
+  // 'lg' -para contenido que no entra en el ancho de formulario por
+  // defecto (28rem), tipicamente una tabla con varias columnas (ej. las
+  // variantes de un producto en ProductDetailModal); el resto de modales
+  // (formularios de nombre/campos sueltos) se quedan con 'md'.
+  size?: 'md' | 'lg'
 }
 
-export function Modal({ title, onClose, children }: ModalProps) {
+export function Modal({ title, onClose, children, size = 'md' }: ModalProps) {
   const [closing, setClosing] = useState(false)
 
   // El modal se desmontaba instantaneo al cerrar (solo tenia animacion de
@@ -25,7 +30,7 @@ export function Modal({ title, onClose, children }: ModalProps) {
   return (
     <div className={`modal-overlay ${closing ? 'modal-overlay-closing' : ''}`} onClick={requestClose}>
       <div
-        className={`modal-card card ${closing ? 'modal-card-closing' : ''}`}
+        className={`modal-card card ${size === 'lg' ? 'modal-card-lg' : ''} ${closing ? 'modal-card-closing' : ''}`}
         onClick={(event) => event.stopPropagation()}
       >
         <div className="modal-header">

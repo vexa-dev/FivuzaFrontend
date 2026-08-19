@@ -1,19 +1,34 @@
 import { useState, type FormEvent } from 'react'
 import { Modal } from '../../../shared/components/Modal'
-import type { Category, NewVariantInput, Supplier } from '../api'
+import type { Attribute, Brand, Category, NewVariantInput, Supplier } from '../api'
 import { useCreateProduct } from '../hooks/useProducts'
 
 interface ProductFormModalProps {
   categories: Category[]
+  brands: Brand[]
   suppliers: Supplier[]
+  attributes: Attribute[]
   onClose: () => void
 }
 
-const emptyVariant = (): NewVariantInput => ({ sku: '', barcode: '', cost: '', price: '' })
+const emptyVariant = (): NewVariantInput => ({
+  sku: '',
+  barcode: '',
+  cost: '',
+  price: '',
+  attribute_value_ids: [],
+})
 
-export function ProductFormModal({ categories, suppliers, onClose }: ProductFormModalProps) {
+export function ProductFormModal({
+  categories,
+  brands,
+  suppliers,
+  attributes,
+  onClose,
+}: ProductFormModalProps) {
   const [name, setName] = useState('')
   const [categoryId, setCategoryId] = useState<number | ''>(categories[0]?.id ?? '')
+  const [brandId, setBrandId] = useState<number | ''>('')
   const [supplierId, setSupplierId] = useState<number | ''>('')
   const [unitOfMeasure, setUnitOfMeasure] = useState<'UND' | 'KG'>('UND')
   const [variants, setVariants] = useState<NewVariantInput[]>([emptyVariant()])
@@ -31,6 +46,25 @@ export function ProductFormModal({ categories, suppliers, onClose }: ProductForm
 
   const removeVariantRow = (index: number) =>
     setVariants((rows) => rows.filter((_, rowIndex) => rowIndex !== index))
+
+  // Cada Attribute (Talla, Color...) permite como maximo 1 valor por
+  // variante -al elegir uno nuevo se reemplaza el anterior DE ESE MISMO
+  // atributo (los ids de otros atributos en la fila quedan intactos), en
+  // vez de acumular selecciones contradictorias como "Talla: M" y
+  // "Talla: L" a la vez en la misma variante.
+  const setVariantAttributeValue = (index: number, attribute: Attribute, valueId: number | '') => {
+    const attributeValueIds = new Set(attribute.values.map((value) => value.id))
+    setVariants((rows) =>
+      rows.map((row, rowIndex) => {
+        if (rowIndex !== index) return row
+        const kept = (row.attribute_value_ids ?? []).filter((id) => !attributeValueIds.has(id))
+        return {
+          ...row,
+          attribute_value_ids: valueId === '' ? kept : [...kept, valueId],
+        }
+      }),
+    )
+  }
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
@@ -51,6 +85,7 @@ export function ProductFormModal({ categories, suppliers, onClose }: ProductForm
         type: 'PRODUCT',
         name,
         category: categoryId,
+        brand: brandId || null,
         supplier: supplierId || null,
         unit_of_measure: unitOfMeasure,
         variants_input: validVariants.map((row) => ({
@@ -58,6 +93,7 @@ export function ProductFormModal({ categories, suppliers, onClose }: ProductForm
           barcode: row.barcode || undefined,
           cost: row.cost || '0',
           price: row.price || '0',
+          attribute_value_ids: row.attribute_value_ids,
         })),
       })
       .then(onClose)
@@ -88,6 +124,24 @@ export function ProductFormModal({ categories, suppliers, onClose }: ProductForm
             </select>
           </div>
 
+          <div style={{ flex: 1 }}>
+            <label htmlFor="product-brand">Marca (opcional)</label>
+            <select
+              id="product-brand"
+              value={brandId}
+              onChange={(event) => setBrandId(event.target.value ? Number(event.target.value) : '')}
+            >
+              <option value="">—</option>
+              {brands.map((brand) => (
+                <option key={brand.id} value={brand.id}>
+                  {brand.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 10 }}>
           <div style={{ flex: 1 }}>
             <label htmlFor="product-supplier">Proveedor (opcional)</label>
             <select
@@ -129,7 +183,15 @@ export function ProductFormModal({ categories, suppliers, onClose }: ProductForm
           </p>
 
           {variants.map((variant, index) => (
-            <div key={index} style={{ display: 'flex', gap: 6, marginBottom: 8, alignItems: 'flex-end' }}>
+            <div
+              key={index}
+              style={{
+                marginBottom: 10,
+                paddingBottom: 10,
+                borderBottom: variants.length > 1 ? '1px dashed var(--border-subtle)' : 'none',
+              }}
+            >
+            <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end' }}>
               <div style={{ flex: 2 }}>
                 {index === 0 && <label htmlFor={`variant-sku-${index}`}>SKU</label>}
                 <input
@@ -179,6 +241,40 @@ export function ProductFormModal({ categories, suppliers, onClose }: ProductForm
                   ✕
                 </button>
               )}
+            </div>
+
+            {attributes.length > 0 && (
+              <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+                {attributes.map((attribute) => {
+                  const selected =
+                    attribute.values.find((value) =>
+                      (variant.attribute_value_ids ?? []).includes(value.id),
+                    )?.id ?? ''
+                  return (
+                    <div key={attribute.id} style={{ flex: '1 1 140px' }}>
+                      <select
+                        aria-label={attribute.name}
+                        value={selected}
+                        onChange={(event) =>
+                          setVariantAttributeValue(
+                            index,
+                            attribute,
+                            event.target.value ? Number(event.target.value) : '',
+                          )
+                        }
+                      >
+                        <option value="">{attribute.name}: —</option>
+                        {attribute.values.map((value) => (
+                          <option key={value.id} value={value.id}>
+                            {attribute.name}: {value.value}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
             </div>
           ))}
         </div>

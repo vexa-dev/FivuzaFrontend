@@ -1,30 +1,38 @@
 import { Pencil, Trash2 } from 'lucide-react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { ConfirmDialog } from '../../../shared/components/ConfirmDialog'
 import { Modal } from '../../../shared/components/Modal'
 import { formatCurrency } from '../../../shared/utils/format'
-import type { Product, ProductVariant } from '../api'
+import type { Attribute, Product, ProductVariant } from '../api'
+import { attributeValueLabels } from '../hooks/useAttributes'
 import { useDeleteVariant } from '../hooks/useProducts'
 import { VariantEditModal } from './VariantEditModal'
 
 interface ProductDetailModalProps {
   product: Product
   canManage: boolean
+  attributes: Attribute[]
   onClose: () => void
 }
 
-export function ProductDetailModal({ product, canManage, onClose }: ProductDetailModalProps) {
+export function ProductDetailModal({ product, canManage, attributes, onClose }: ProductDetailModalProps) {
   const [editingVariant, setEditingVariant] = useState<ProductVariant | null>(null)
   const [deletingVariant, setDeletingVariant] = useState<ProductVariant | null>(null)
   const deleteVariant = useDeleteVariant()
+  const attributeLabels = useMemo(() => attributeValueLabels(attributes), [attributes])
 
   return (
-    <Modal title={product.name} onClose={onClose}>
+    <Modal title={product.name} onClose={onClose} size="lg">
+      {/* Los atributos (Talla, Color) solo se pueden asignar al CREAR una
+          variante nueva (ver "Nuevo producto") -el backend no tiene ningun
+          endpoint para editarlos en una variante ya existente, asi que
+          aca se muestran de solo lectura, no como campo editable. */}
       <div style={{ overflowX: 'auto' }}>
         <table className="core-table">
           <thead>
             <tr>
               <th>SKU</th>
+              <th>Atributos</th>
               <th>Código de barras</th>
               <th>Costo</th>
               <th>Precio</th>
@@ -36,6 +44,12 @@ export function ProductDetailModal({ product, canManage, onClose }: ProductDetai
             {product.variants.map((variant) => (
               <tr key={variant.id}>
                 <td className="core-table-strong">{variant.sku}</td>
+                <td>
+                  {variant.attribute_values
+                    .map((av) => attributeLabels.get(av.attribute_value))
+                    .filter(Boolean)
+                    .join(', ') || '—'}
+                </td>
                 <td>{variant.barcode ?? '—'}</td>
                 <td>{formatCurrency(variant.cost)}</td>
                 <td>{formatCurrency(variant.price)}</td>

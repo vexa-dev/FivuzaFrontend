@@ -31,6 +31,7 @@ import { useAuth } from '../auth/hooks/useAuth'
 import { useProducts } from '../inventory/hooks/useProducts'
 import { usePurchaseOrders } from '../inventory/hooks/usePurchaseOrders'
 import { useInventoryMovements, useLowStockVariants } from '../inventory/hooks/useStock'
+import { useWarehouses } from '../inventory/hooks/useWarehouses'
 import type { Sale } from '../sales/api'
 import { useCustomers } from '../sales/hooks/useCustomers'
 import { useOfflineSync } from '../sales/hooks/useOfflineSync'
@@ -67,7 +68,9 @@ const MOVEMENT_CONCEPT_LABEL: Record<string, string> = {
 }
 
 export function DashboardPage() {
-  const { data, isLoading, isConnected } = useDashboardMetrics()
+  const [warehouseId, setWarehouseId] = useState<number | ''>('')
+  const { data, isLoading, isConnected } = useDashboardMetrics(warehouseId || undefined)
+  const { data: warehouses } = useWarehouses()
   const { isVisible } = useWidgetVisibility()
   const { isCardVisible } = useCardVisibility()
   const { hasPermission } = useAuth()
@@ -174,6 +177,11 @@ export function DashboardPage() {
       }
     : null
 
+  const monthTransactions = data?.month.by_day.reduce((sum, day) => sum + day.transactions, 0) ?? 0
+  const monthDiscount =
+    data?.month.by_day.reduce((sum, day) => sum + Number(day.discount), 0) ?? 0
+  const avgTicket = monthTransactions > 0 ? Number(data?.month.total_sales ?? 0) / monthTransactions : null
+
   return (
     <div className="dashboard-page">
       <div className="page-header">
@@ -187,6 +195,21 @@ export function DashboardPage() {
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {warehouses && warehouses.length > 1 && (
+            <select
+              aria-label="Filtrar dashboard por almacén"
+              title="Filtrar dashboard por almacén"
+              value={warehouseId}
+              onChange={(event) => setWarehouseId(event.target.value ? Number(event.target.value) : '')}
+            >
+              <option value="">Todos los almacenes</option>
+              {warehouses.map((warehouse) => (
+                <option key={warehouse.id} value={warehouse.id}>
+                  {warehouse.name}
+                </option>
+              ))}
+            </select>
+          )}
           {(offlinePendingCount > 0 || offlineFailedCount > 0) && (
             <span
               className={`badge ${offlineFailedCount > 0 ? 'badge-danger' : 'badge-warning'}`}
@@ -324,6 +347,15 @@ export function DashboardPage() {
                     value={`${attendanceSummary.onTime} a tiempo`}
                   />
                 )}
+                {avgTicket !== null && (
+                  <CompactStat
+                    index={5}
+                    icon={<Receipt size={18} strokeWidth={2} />}
+                    label="Ticket promedio (30 días)"
+                    value={formatCurrency(avgTicket)}
+                    title={`${monthTransactions} venta(s) · S/ ${monthDiscount.toFixed(2)} en descuentos otorgados`}
+                  />
+                )}
               </div>
             </div>
           </div>
@@ -423,8 +455,18 @@ export function DashboardPage() {
 
               {showLowStockPanel && (
                 <div className="card core-table-card dashboard-split-card">
-                  <div style={{ padding: '12px 16px 0' }}>
+                  <div
+                    style={{
+                      padding: '12px 16px 0',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                    }}
+                  >
                     <h3 className="card-title">Stock crítico</h3>
+                    {data.critical_stock_count > 0 && (
+                      <span className="badge badge-danger">{data.critical_stock_count}</span>
+                    )}
                   </div>
                   {!lowStockVariants || lowStockVariants.length === 0 ? (
                     <EmptyState icon={<PackageCheck />} title="Sin productos en stock crítico" />
