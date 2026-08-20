@@ -1,8 +1,7 @@
-import { createContext, useState, type ReactNode } from 'react'
+import { createContext, useEffect, useState, type ReactNode } from 'react'
+import { restoreTenantSession } from '../api'
 import {
   clearSession,
-  getStoredImpersonation,
-  getStoredUser,
   saveSession,
   type ImpersonationInfo,
   type TenantSession,
@@ -16,15 +15,26 @@ interface AuthContextValue {
   login: (session: TenantSession) => void
   logout: () => void
   hasPermission: (code: string) => boolean
+  isRestoring: boolean
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<TenantUser | null>(() => getStoredUser())
-  const [impersonation, setImpersonation] = useState<ImpersonationInfo | null>(() =>
-    getStoredImpersonation(),
-  )
+  const [user, setUser] = useState<TenantUser | null>(null)
+  const [impersonation, setImpersonation] = useState<ImpersonationInfo | null>(null)
+  const [isRestoring, setIsRestoring] = useState(true)
+
+  useEffect(() => {
+    restoreTenantSession()
+      .then((session) => {
+        saveSession(session)
+        setUser(session.user)
+        setImpersonation(session.impersonation ?? null)
+      })
+      .catch(clearSession)
+      .finally(() => setIsRestoring(false))
+  }, [])
 
   const login = (session: TenantSession) => {
     saveSession(session)
@@ -49,6 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         logout,
         hasPermission,
+        isRestoring,
       }}
     >
       {children}

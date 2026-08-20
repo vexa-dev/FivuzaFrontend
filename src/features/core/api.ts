@@ -130,16 +130,19 @@ export function loginPlatformStaff(email: string, password: string) {
   })
 }
 
-export function logoutPlatformStaff(refresh: string) {
+export function restorePlatformSession() {
+  return apiFetch<PlatformTokens>('/platform/auth/refresh/', { method: 'POST' })
+}
+
+export function logoutPlatformStaff() {
   return apiFetch<void>('/platform/auth/logout/', {
     method: 'POST',
-    body: { refresh },
     token: getAccessToken(),
   })
 }
 
 export function fetchTenants() {
-  return apiFetch<Tenant[]>('/core/tenants/', { token: getAccessToken() })
+  return apiFetch<Tenant[]>('/core/tenants/', { token: getAccessToken(), unwrapPagination: true })
 }
 
 export function fetchTenant(id: number) {
@@ -201,7 +204,7 @@ export function cancelTenant(id: number, reason: string) {
 }
 
 export function fetchPlans() {
-  return apiFetch<Plan[]>('/core/plans/', { token: getAccessToken() })
+  return apiFetch<Plan[]>('/core/plans/', { token: getAccessToken(), unwrapPagination: true })
 }
 
 export interface PlanPayload {
@@ -222,13 +225,13 @@ export function updatePlan(id: number, payload: Partial<PlanPayload>) {
   return apiFetch<Plan>(`/core/plans/${id}/`, {
     method: 'PATCH',
     body: payload,
-    token: getAccessToken(),
+    token: getAccessToken(), unwrapPagination: true,
   })
 }
 
 export function fetchPlanFeatures(planId: number) {
   return apiFetch<PlanFeature[]>(`/core/plan-features/?plan=${planId}`, {
-    token: getAccessToken(),
+    token: getAccessToken(), unwrapPagination: true,
   })
 }
 
@@ -236,7 +239,7 @@ export function createPlanFeature(plan: number, featureCode: PlanFeatureCode, is
   return apiFetch<PlanFeature>('/core/plan-features/', {
     method: 'POST',
     body: { plan, feature_code: featureCode, is_enabled: isEnabled },
-    token: getAccessToken(),
+    token: getAccessToken(), unwrapPagination: true,
   })
 }
 
@@ -259,6 +262,7 @@ export function fetchSubscriptions(filters: SubscriptionFilters = {}) {
   if (filters.status) params.set('status', filters.status)
   return apiFetch<Subscription[]>(`/core/subscriptions/?${params.toString()}`, {
     token: getAccessToken(),
+    unwrapPagination: true,
   })
 }
 
@@ -284,6 +288,7 @@ export function fetchPayments(filters: PaymentFilters = {}) {
   if (filters.status) params.set('status', filters.status)
   return apiFetch<SubscriptionPayment[]>(`/core/subscription-payments/?${params.toString()}`, {
     token: getAccessToken(),
+    unwrapPagination: true,
   })
 }
 
@@ -311,7 +316,7 @@ export function confirmPayment(id: number) {
 }
 
 export function fetchStaff() {
-  return apiFetch<PlatformStaffRecord[]>('/core/platform-staff/', { token: getAccessToken() })
+  return apiFetch<PlatformStaffRecord[]>('/core/platform-staff/', { token: getAccessToken(), unwrapPagination: true })
 }
 
 export interface StaffPayload {
@@ -326,7 +331,7 @@ export function createStaff(payload: StaffPayload) {
   return apiFetch<PlatformStaffRecord>('/core/platform-staff/', {
     method: 'POST',
     body: payload,
-    token: getAccessToken(),
+    token: getAccessToken(), unwrapPagination: true,
   })
 }
 
@@ -334,13 +339,13 @@ export function updateStaff(id: number, payload: Partial<StaffPayload>) {
   return apiFetch<PlatformStaffRecord>(`/core/platform-staff/${id}/`, {
     method: 'PATCH',
     body: payload,
-    token: getAccessToken(),
+    token: getAccessToken(), unwrapPagination: true,
   })
 }
 
 export function fetchTenantSettings(tenantId: number) {
   return apiFetch<TenantSettingsRecord[]>(`/core/tenant-settings/?tenant=${tenantId}`, {
-    token: getAccessToken(),
+    token: getAccessToken(), unwrapPagination: true,
   })
 }
 
@@ -361,7 +366,7 @@ export function updateTenantSettings(
   return apiFetch<TenantSettingsRecord>(`/core/tenant-settings/${id}/`, {
     method: 'PATCH',
     body: data,
-    token: getAccessToken(),
+      token: getAccessToken(), unwrapPagination: true,
   })
 }
 
@@ -435,6 +440,7 @@ export interface TenantFeatureOverride {
 export function fetchTenantFeatureOverrides(tenantId: number) {
   return apiFetch<TenantFeatureOverride[]>(`/core/tenants/${tenantId}/feature-overrides/`, {
     token: getAccessToken(),
+    unwrapPagination: true,
   })
 }
 
@@ -467,6 +473,7 @@ export interface TenantNote {
 export function fetchTenantNotes(tenantId: number) {
   return apiFetch<TenantNote[]>(`/core/tenants/${tenantId}/notes/`, {
     token: getAccessToken(),
+    unwrapPagination: true,
   })
 }
 
@@ -499,7 +506,7 @@ export interface CreateDiscountPayload {
 export function fetchSubscriptionDiscounts(subscriptionId: number) {
   return apiFetch<SubscriptionDiscount[]>(
     `/core/subscription-discounts/?subscription=${subscriptionId}`,
-    { token: getAccessToken() },
+    { token: getAccessToken(), unwrapPagination: true },
   )
 }
 

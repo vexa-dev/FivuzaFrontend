@@ -6,7 +6,7 @@ import { ApiError } from '../../shared/utils/apiClient'
 import { ThemeProvider } from '../../theme/ThemeContext'
 import { AuthProvider } from './hooks/AuthContext'
 import { LoginPage } from './LoginPage'
-import { loginTenantUser } from './api'
+import { loginTenantUser, restoreTenantSession } from './api'
 
 jest.mock('./api')
 
@@ -28,6 +28,10 @@ function renderLoginPage() {
 }
 
 describe('LoginPage (ERP de tenant)', () => {
+  beforeEach(() => {
+    jest.mocked(restoreTenantSession).mockRejectedValue(new Error('Sin sesión'))
+  })
+
   it('muestra un error cuando se envía el formulario sin correo ni contraseña', async () => {
     renderLoginPage()
     const user = userEvent.setup()
@@ -59,7 +63,6 @@ describe('LoginPage (ERP de tenant)', () => {
   it('llama a loginTenantUser con las credenciales ingresadas', async () => {
     jest.mocked(loginTenantUser).mockResolvedValueOnce({
       access: 'access-token',
-      refresh: 'refresh-token',
       user: { id: 1, email: 'admin@negocio.com', role: 'admin', permissions: [] },
     })
     renderLoginPage()

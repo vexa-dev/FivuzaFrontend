@@ -8,10 +8,13 @@ export function loginTenantUser(email: string, password: string) {
   })
 }
 
-export function logoutTenantUser(refresh: string) {
+export function restoreTenantSession() {
+  return tenantApiFetch<TenantSession>('/auth/refresh/', { method: 'POST' })
+}
+
+export function logoutTenantUser() {
   return tenantApiFetch<void>('/auth/logout/', {
     method: 'POST',
-    body: { refresh },
     token: getAccessToken(),
   })
 }

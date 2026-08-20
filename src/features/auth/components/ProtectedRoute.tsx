@@ -11,7 +11,9 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ requirePermission }: ProtectedRouteProps) {
-  const { isAuthenticated, hasPermission } = useAuth()
+  const { isAuthenticated, hasPermission, isRestoring } = useAuth()
+
+  if (isRestoring) return null
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />

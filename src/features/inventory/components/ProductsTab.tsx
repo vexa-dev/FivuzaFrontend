@@ -1,130 +1,74 @@
-import { CheckCircle2, LayoutGrid, List, Package, Pencil, Search, Trash2, XCircle } from 'lucide-react'
-import { useLayoutEffect, useMemo, useRef, useState } from 'react'
+import {
+  ArrowDownUp,
+  BadgeCheck,
+  Clock3,
+  ChevronLeft,
+  ChevronRight,
+  CircleDollarSign,
+  Coins,
+  Columns3,
+  Layers3,
+  List,
+  Package,
+  PanelRight,
+  Pencil,
+  RotateCcw,
+  Search,
+  SlidersHorizontal,
+  Trash2,
+  Tags,
+  Truck,
+  Warehouse as WarehouseIcon,
+  XCircle,
+} from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import type {
+  CSSProperties,
+  KeyboardEvent as ReactKeyboardEvent,
+  PointerEvent as ReactPointerEvent,
+} from 'react'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { formatCurrency, formatQuantity, formatRelativeTime } from '../../../shared/utils/format'
 import type { Attribute, Brand, Category, Product, StockRecord, Supplier, Warehouse } from '../api'
 import { attributeValueLabels, attributeValueOnly, primaryAttributeForCategory } from '../hooks/useAttributes'
+import { ProductInsights } from './ProductInsights'
+import {
+  COLUMNS_KEY,
+  DEFAULT_OPTIONAL_COLUMNS,
+  LIST_COLUMNS,
+  MASTER_WIDTH_DEFAULT,
+  MASTER_WIDTH_KEY,
+  MASTER_WIDTH_MAX,
+  MASTER_WIDTH_MIN,
+  OPTIONAL_COLUMNS,
+  PAGE_SIZE_KEY,
+  PAGE_SIZE_OPTIONS,
+  TYPE_LABELS,
+  UNIT_LABELS,
+  VIEW_MODE_KEY,
+  clampMasterWidth,
+  formatCostRange,
+  formatPriceRange,
+  productImage,
+  readStoredColumns,
+  readStoredMasterWidth,
+  readStoredPageSize,
+  readStoredViewMode,
+  sortVariantsByPrimary,
+} from './ProductsTab.model'
+import type {
+  ListColumn,
+  OptionalColumnId,
+  ProductVariant,
+  SortOption,
+  StatusFilter,
+  StockStatusFilter,
+  SupplierFilter,
+  TypeFilter,
+  VariantRow,
+  ViewMode,
+} from './ProductsTab.model'
 import './ProductsTab.css'
-
-type ProductVariant = Product['variants'][number]
-
-// Ordena las variantes de UN producto por el valor del atributo
-// "principal" de su categoria (ej. Talla) -pedido explicito: cada
-// combinacion es su propia fila independiente ("Talla M Color Rojo",
-// "Talla M Color Verde"...), pero agrupadas visualmente por Talla al
-// quedar adyacentes, sin una fila-resumen ni una grilla separada de por
-// medio. Sin atributo principal configurado, el orden original alcanza.
-function sortVariantsByPrimary(
-  variants: ProductVariant[],
-  primary: Attribute | null,
-): ProductVariant[] {
-  if (!primary) return variants
-  const order = new Map(primary.values.map((value, index) => [value.id, index]))
-  const indexOf = (variant: ProductVariant) => {
-    const match = variant.attribute_values.find((av) => order.has(av.attribute_value))
-    return match ? (order.get(match.attribute_value) ?? 0) : Number.MAX_SAFE_INTEGER
-  }
-  return [...variants].sort((a, b) => indexOf(a) - indexOf(b))
-}
-
-type ViewMode = 'cards' | 'list'
-type StatusFilter = 'all' | 'active' | 'inactive'
-type SupplierFilter = number | 'none' | ''
-type TypeFilter = Product['type'] | 'all'
-// Universal para cualquier rubro (ropa, abarrotes, ferreteria...): el
-// stock bajo/agotado es una alerta que le importa a CUALQUIER negocio que
-// maneje inventario, a diferencia de un filtro por atributo especifico
-// (Talla, Color) que solo tendria sentido para algunas categorias.
-type StockStatusFilter = 'all' | 'low' | 'out'
-
-const VIEW_MODE_KEY = 'fivuza-products-view'
-
-const TYPE_LABELS: Record<Product['type'], string> = {
-  PRODUCT: 'Producto',
-  SERVICE: 'Servicio',
-  ASSET: 'Activo fijo',
-}
-
-const UNIT_LABELS: Record<Product['unit_of_measure'], string> = {
-  UND: 'Und',
-  KG: 'Kg',
-}
-
-function readStoredViewMode(): ViewMode {
-  const stored = localStorage.getItem(VIEW_MODE_KEY)
-  return stored === 'cards' ? 'cards' : 'list'
-}
-
-// Ancho + titulo de cada columna, UNA sola fuente de verdad para el
-// <colgroup> (que gobierna el ancho real de las celdas del <tbody>) y
-// para el <thead> (que ahora es display:flex, no display:table-row -ver
-// nota en ProductsTab.css sobre por que position:sticky no funciona
-// sobre <th>/<thead> en algunos motores de renderizado). Si estos dos
-// arrancaran de fuentes separadas, un cambio de ancho en uno se
-// desalinearia del otro sin que nada avisara.
-const PRODUCT_COLUMNS: { width: number; label: string; title?: string; grow?: boolean }[] = [
-  { width: 40, label: '' },
-  { width: 170, label: 'Nombre', grow: true },
-  { width: 100, label: 'Categoría' },
-  { width: 90, label: 'Marca' },
-  { width: 130, label: 'Proveedor' },
-  { width: 70, label: 'U.M.' },
-  { width: 110, label: 'SKU' },
-  { width: 150, label: 'Código de barras' },
-  { width: 80, label: 'Costo' },
-  { width: 80, label: 'Precio' },
-  { width: 90, label: 'Stock mínimo' },
-  { width: 70, label: 'Stock' },
-  { width: 90, label: 'Estado' },
-  { width: 100, label: 'Actualiz.', title: 'Actualizado' },
-  { width: 70, label: '' },
-]
-
-// Tope de cuanto puede crecer la columna Nombre (la unica flexible, ver
-// `grow` arriba) en pantallas anchas -sin esto absorbia TODO el espacio
-// sobrante y quedaba desproporcionadamente ancha frente al resto de
-// columnas angostas de al lado.
-const PRODUCT_NAME_MAX_WIDTH = 320
-
-// Suma de PRODUCT_COLUMNS -el ANCHO MINIMO de la tabla (todas las columnas
-// en su ancho base, incluida Nombre). En pantallas angostas la tabla no
-// encoge mas alla de esto (aparece scroll horizontal, igual que antes).
-const PRODUCT_TABLE_WIDTH = PRODUCT_COLUMNS.reduce((sum, col) => sum + col.width, 0)
-
-// Suma de las columnas fijas (todas menos Nombre) -base para repartir el
-// sobrante que Nombre ya no puede absorber (ver computeProductColumnWidths).
-const PRODUCT_FIXED_COLUMNS_WIDTH =
-  PRODUCT_TABLE_WIDTH - (PRODUCT_COLUMNS.find((col) => col.grow)?.width ?? 0)
-
-// Ancho de cada columna para un contenedor de `containerWidth` px.
-// - Si el contenedor es mas angosto que PRODUCT_TABLE_WIDTH: cada columna
-//   se queda en su ancho base (aparece scroll horizontal, igual que
-//   siempre).
-// - Si sobra espacio: Nombre lo absorbe primero, pero topado en
-//   PRODUCT_NAME_MAX_WIDTH (sin esto quedaba desproporcionadamente ancha
-//   frente al resto). Si TODAVIA sobra despues de ese tope, ese resto se
-//   reparte proporcionalmente entre las demas columnas -sin este segundo
-//   reparto quedaba una franja vacia a la derecha de la tabla (pedido
-//   explicito: "no dejes espacio a la derecha").
-function computeProductColumnWidths(containerWidth: number) {
-  const surplus = Math.max(0, containerWidth - PRODUCT_TABLE_WIDTH)
-  const nameBaseWidth = PRODUCT_COLUMNS.find((col) => col.grow)?.width ?? 0
-  const nameGrowth = Math.min(surplus, PRODUCT_NAME_MAX_WIDTH - nameBaseWidth)
-  const remainingSurplus = surplus - nameGrowth
-  const scale = remainingSurplus > 0 ? 1 + remainingSurplus / PRODUCT_FIXED_COLUMNS_WIDTH : 1
-  return PRODUCT_COLUMNS.map((col) => (col.grow ? nameBaseWidth + nameGrowth : col.width * scale))
-}
-
-// Imagen del producto -no existe un campo de imagen a nivel Product, solo
-// por variante (ver ProductVariant.image_url en api.ts). Se usa la de la
-// variante predeterminada, o la primera variante que tenga alguna, en vez
-// de inventar un campo que el backend no tiene.
-function productImage(product: Product): string | null {
-  const withImage =
-    product.variants.find((variant) => variant.is_default && variant.image_url) ??
-    product.variants.find((variant) => variant.image_url)
-  return withImage?.image_url ?? null
-}
 
 interface ProductsTabProps {
   products: Product[] | undefined
@@ -142,12 +86,6 @@ interface ProductsTabProps {
   onDeleteProduct: (product: Product) => void
 }
 
-/** Catalogo de productos: vista cards y vista lista sobre los MISMOS datos
- * (ningun campo se muestra en una vista y se omite en la otra) -el usuario
- * elige la densidad que prefiere, no dos pantallas con distinta
- * informacion. Todo lo que se muestra viene directo de Product/
- * ProductVariant (api.ts); no se inventa ningun dato que el backend no
- * entregue (ver auditoria previa del dashboard, mismo criterio aca). */
 export function ProductsTab({
   products,
   loading,
@@ -164,8 +102,14 @@ export function ProductsTab({
   onDeleteProduct,
 }: ProductsTabProps) {
   const [viewMode, setViewMode] = useState<ViewMode>(readStoredViewMode)
-  const attributeLabels = useMemo(() => attributeValueLabels(attributes), [attributes])
-  const attributeValues = useMemo(() => attributeValueOnly(attributes), [attributes])
+  const [visibleOptionalColumns, setVisibleOptionalColumns] = useState<OptionalColumnId[]>(readStoredColumns)
+  const [pageSize, setPageSize] = useState(readStoredPageSize)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [selectedProductId, setSelectedProductId] = useState<number | null>(null)
+  const [masterListWidth, setMasterListWidth] = useState(readStoredMasterWidth)
+  const [isResizingMaster, setIsResizingMaster] = useState(false)
+  const [tableContainerWidth, setTableContainerWidth] = useState(0)
+  const [productsPanelHeight, setProductsPanelHeight] = useState<number | null>(null)
   const [categoryFilter, setCategoryFilter] = useState<number | ''>('')
   const [brandFilter, setBrandFilter] = useState<number | ''>('')
   const [supplierFilter, setSupplierFilter] = useState<SupplierFilter>('')
@@ -173,132 +117,63 @@ export function ProductsTab({
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all')
   const [stockWarehouseFilter, setStockWarehouseFilter] = useState<number | ''>('')
   const [stockStatusFilter, setStockStatusFilter] = useState<StockStatusFilter>('all')
-
-  const setViewModePersisted = (mode: ViewMode) => {
-    setViewMode(mode)
-    localStorage.setItem(VIEW_MODE_KEY, mode)
-  }
-
-  // Distancia entre el tope del viewport y donde arranca la region con
-  // scroll propio de abajo (titulo "Inventario", sub-tabs, fila de
-  // acciones, y ahora tambien el toolbar de filtros -que vive FUERA de
-  // esta region, en flujo normal, por eso no necesita ser el mismo sticky)
-  // -necesaria para acotarle la altura. No se puede usar
-  // <main class="erp-content"> como el scroll real: tiene overflow-x:auto
-  // (ErpLayout.css), lo que por regla del modulo CSS Overflow fuerza
-  // tambien overflow-y:auto, pero como esa altura no esta acotada nunca
-  // llega a desbordar DE VERDAD (el documento/html es quien scrollea en la
-  // practica) -eso vuelve inerte cualquier position:sticky adentro (el
-  // contenedor "de referencia" nunca mueve su propio scrollTop). La unica
-  // forma confiable de un header pegajoso es que ESTA region tenga su
-  // propia altura acotada y su propio overflow:auto genuino, en vez de
-  // depender del scroll de la pagina.
-  const scrollRegionRef = useRef<HTMLDivElement>(null)
-  const [regionTop, setRegionTop] = useState(0)
-  useLayoutEffect(() => {
-    const el = scrollRegionRef.current
-    if (!el) return
-    const measure = () => setRegionTop(el.getBoundingClientRect().top)
-    measure()
-    window.addEventListener('resize', measure)
-    return () => window.removeEventListener('resize', measure)
-  }, [])
-
-  // Ancho real (en px) de cada columna de la tabla de lista -no se puede
-  // lograr con CSS puro (max-width en un <col> de una tabla con
-  // table-layout:fixed se ignora, confirmado en el navegador: el <td>
-  // seguia estirandose sin tope aunque el header si respetaba el limite,
-  // desalineando ambos). Se mide el ancho disponible del contenedor con
-  // ResizeObserver y se calcula a mano (computeProductColumnWidths) cuanto
-  // le corresponde a cada columna -mismos numeros aplicados como <col>
-  // width real (no max-width) tanto en el header como en el tbody.
+  const [sortOption, setSortOption] = useState<SortOption>('name')
+  const [sortDescending, setSortDescending] = useState(false)
+  const productsCardRef = useRef<HTMLDivElement>(null)
   const tableScrollRef = useRef<HTMLDivElement>(null)
-  const [columnWidths, setColumnWidths] = useState(() =>
-    PRODUCT_COLUMNS.map((col) => col.width),
-  )
-  useLayoutEffect(() => {
-    const el = tableScrollRef.current
-    if (!el) return
-    const measure = () => setColumnWidths(computeProductColumnWidths(el.clientWidth))
-    measure()
-    const observer = new ResizeObserver(measure)
-    observer.observe(el)
-    return () => observer.disconnect()
-    // viewMode Y products como dependencias a proposito -esta tabla (y su
-    // ref) solo existen en el DOM cuando viewMode === 'list' Y ADEMAS ya
-    // hay productos cargados (filteredProducts.length > 0). Si el efecto
-    // corre en el primer render (viewMode ya es 'list' por localStorage,
-    // pero products todavia es undefined mientras carga), el ref esta en
-    // null y el efecto no vuelve a correr solo porque viewMode no cambio
-    // despues -dejaba columnWidths fijo en sus anchos base para siempre
-    // (el bug reportado: la columna Nombre no crecia en pantallas
-    // anchas). products -no filteredProducts, que se recalcula cada
-    // render con un array nuevo y dispararia el efecto sin necesidad en
-    // cada re-render.
-  }, [viewMode, products])
+  const masterResizeStart = useRef({ pointerX: 0, width: MASTER_WIDTH_DEFAULT })
+  const masterResizing = useRef(false)
+  const masterPendingWidth = useRef(masterListWidth)
 
-  // Ancho total real de la tabla -suma de columnWidths (ya calculada
-  // arriba, cada columna con su ancho final). Se usa como width
-  // EXPLICITO -no '100%'- tanto en <table> como en .products-header-row:
-  // con width:100%, table-layout:fixed reparte cualquier sobrante entre
-  // TODAS las columnas del <colgroup> de nuevo por su cuenta, ademas del
-  // reparto ya hecho a mano -volviendo a desalinear todo. Con un numero
-  // exacto en vez de 100%, la tabla nunca se estira mas alla de lo que
-  // sus columnas realmente suman.
-  const productTableWidth = columnWidths.reduce((sum, width) => sum + width, 0)
+  const attributeLabels = useMemo(() => attributeValueLabels(attributes), [attributes])
+  const attributeValues = useMemo(() => attributeValueOnly(attributes), [attributes])
+  const stockByVariant = useMemo(() => {
+    const result = new Map<number, { warehouseId: number; quantity: number }[]>()
+    allStock?.forEach((record) => {
+      const rows = result.get(record.variant) ?? []
+      rows.push({ warehouseId: record.warehouse, quantity: Number(record.quantity) })
+      result.set(record.variant, rows)
+    })
+    return result
+  }, [allStock])
 
-  const categoryName = (id: number) => categories.find((c) => c.id === id)?.name ?? '—'
+  const categoryName = (id: number) => categories.find((category) => category.id === id)?.name ?? '—'
   const supplierName = (id: number | null) =>
-    id === null ? null : (suppliers.find((s) => s.id === id)?.company_name ?? `Proveedor #${id}`)
+    id === null ? null : (suppliers.find((supplier) => supplier.id === id)?.company_name ?? `Proveedor #${id}`)
   const brandName = (id: number | null) =>
-    id === null ? null : (brands.find((b) => b.id === id)?.name ?? `Marca #${id}`)
-
-  // variantId -> [{warehouseId, quantity}] -construido una vez del stock
-  // completo del tenant, no un fetch por variante.
-  const stockByVariant = new Map<number, { warehouseId: number; quantity: string }[]>()
-  allStock?.forEach((record) => {
-    const list = stockByVariant.get(record.variant) ?? []
-    list.push({ warehouseId: record.warehouse, quantity: record.quantity })
-    stockByVariant.set(record.variant, list)
-  })
-
-  const variantStockRows = (variantId: number) => {
-    const rows = stockByVariant.get(variantId) ?? []
-    return stockWarehouseFilter ? rows.filter((row) => row.warehouseId === stockWarehouseFilter) : rows
-  }
+    id === null ? null : (brands.find((brand) => brand.id === id)?.name ?? `Marca #${id}`)
   const variantStockTotal = (variantId: number) =>
-    variantStockRows(variantId).reduce((sum, row) => sum + Number(row.quantity), 0)
-
-  // ["Talla: M", "Color: Azul"] -uno por atributo que la variante tenga
-  // asignado (ver AttributesTab); si el negocio los sigue metiendo a mano
-  // en el SKU, esto simplemente no devuelve nada extra. Una columna por
-  // atributo (Talla, Color, Talla de calzado...) se probo y no escala: un
-  // catalogo con varios tipos de producto (ropa, calzado, abarrotes...)
-  // terminaria con una columna por cada atributo de CUALQUIER categoria,
-  // casi todas vacias para la mayoria de las filas. Chips en UNA sola
-  // columna "Atributos" no crecen con la cantidad de atributos del
-  // catalogo, solo con los que ESA variante puntual realmente tiene.
-  const variantAttributeChips = (
-    variant: ProductVariant,
-    primary: Attribute | null,
-    excludePrimary = false,
-  ) => {
-    const primaryValueIds = new Set(primary?.values.map((value) => value.id) ?? [])
-    return variant.attribute_values
-      .filter((av) => !excludePrimary || !primaryValueIds.has(av.attribute_value))
-      .map((av) => ({
-        id: av.id,
-        label: attributeValues.get(av.attribute_value),
-        title: attributeLabels.get(av.attribute_value),
+    (stockByVariant.get(variantId) ?? [])
+      .filter((row) => !stockWarehouseFilter || row.warehouseId === stockWarehouseFilter)
+      .reduce((total, row) => total + row.quantity, 0)
+  const productStockTotal = (product: Product) =>
+    product.variants.reduce((total, variant) => total + variantStockTotal(variant.id), 0)
+  const productStockAtWarehouse = (product: Product, warehouseId: number) =>
+    product.variants.reduce(
+      (total, variant) =>
+        total +
+        (stockByVariant.get(variant.id) ?? [])
+          .filter((row) => row.warehouseId === warehouseId)
+          .reduce((sum, row) => sum + row.quantity, 0),
+      0,
+    )
+  const productHasLowStock = (product: Product) =>
+    product.variants.some((variant) => {
+      const minimum = Number(variant.min_stock)
+      return minimum > 0 && variantStockTotal(variant.id) <= minimum
+    })
+  const variantAttributeChips = (variant: ProductVariant) =>
+    variant.attribute_values
+      .map((value) => ({
+        id: value.id,
+        label: attributeValues.get(value.attribute_value),
+        title: attributeLabels.get(value.attribute_value),
       }))
       .filter(
-        (chip): chip is { id: number; label: string; title: string | undefined } =>
-          Boolean(chip.label),
+        (chip): chip is { id: number; label: string; title: string | undefined } => Boolean(chip.label),
       )
-  }
 
   const typesPresent = new Set((products ?? []).map((product) => product.type))
-
   const filteredProducts = (products ?? []).filter((product) => {
     if (categoryFilter && product.category !== categoryFilter) return false
     if (brandFilter && product.brand !== brandFilter) return false
@@ -310,24 +185,254 @@ export function ProductsTab({
     if (stockStatusFilter !== 'all') {
       const matches = product.variants.some((variant) => {
         const stock = variantStockTotal(variant.id)
-        const minStock = Number(variant.min_stock)
-        if (stockStatusFilter === 'out') return stock <= 0
-        return minStock > 0 && stock <= minStock
+        const minimum = Number(variant.min_stock)
+        return stockStatusFilter === 'out' ? stock <= 0 : minimum > 0 && stock <= minimum
       })
       if (!matches) return false
     }
     return true
   })
 
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    let comparison = 0
+    if (sortOption === 'name') {
+      comparison = a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })
+    } else if (sortOption === 'price') {
+      const minimumPrice = (product: Product) =>
+        product.variants.length ? Math.min(...product.variants.map((variant) => Number(variant.price))) : 0
+      comparison = minimumPrice(a) - minimumPrice(b)
+    } else if (sortOption === 'stock') {
+      comparison = productStockTotal(a) - productStockTotal(b)
+    } else {
+      comparison = new Date(a.updated_at).getTime() - new Date(b.updated_at).getTime()
+    }
+    return sortDescending ? -comparison : comparison
+  })
+
+  const variantRows: VariantRow[] = sortedProducts.flatMap((product) => {
+    const primary = primaryAttributeForCategory(product.category, categories, attributes)
+    return sortVariantsByPrimary(product.variants, primary).map((variant, index) => ({
+      product,
+      variant,
+      productStart: index === 0,
+    }))
+  })
+  const pageCount = Math.max(1, Math.ceil(variantRows.length / pageSize))
+  const pageRows = variantRows.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+  const pageStart = variantRows.length === 0 ? 0 : (currentPage - 1) * pageSize + 1
+  const pageEnd = Math.min(currentPage * pageSize, variantRows.length)
+  const selectedProduct = sortedProducts.find((product) => product.id === selectedProductId) ?? sortedProducts[0] ?? null
+  const effectiveSelectedProductId = selectedProduct?.id ?? null
+  const activeOptionalColumns = new Set(visibleOptionalColumns)
+  const visibleColumns = LIST_COLUMNS.filter(
+    (column) => !column.optional || activeOptionalColumns.has(column.id as OptionalColumnId),
+  )
+  const tableMinimumWidth = visibleColumns.reduce((total, column) => total + column.width, 0)
+  const availableSurplus = Math.max(0, tableContainerWidth - tableMinimumWidth)
+  const totalGrow = visibleColumns.reduce((total, column) => total + column.grow, 0)
+  const columnWidths = visibleColumns.map((column) =>
+    column.width + (totalGrow > 0 ? (availableSurplus * column.grow) / totalGrow : 0),
+  )
+  const tableWidth = Math.max(tableMinimumWidth, tableContainerWidth)
+  const advancedFilterCount = [
+    Boolean(brandFilter),
+    Boolean(supplierFilter),
+    statusFilter !== 'all',
+    typeFilter !== 'all',
+    Boolean(stockWarehouseFilter),
+  ].filter(Boolean).length
+  const selectedWarehouse = warehouses.find((warehouse) => warehouse.id === stockWarehouseFilter)
+  const stockMetricLabel = selectedWarehouse ? `Stock en ${selectedWarehouse.name}` : 'Stock total'
+  const selectedStockAlerts = selectedProduct
+    ? selectedProduct.variants.reduce(
+        (summary, variant) => {
+          const stock = variantStockTotal(variant.id)
+          const minimum = Number(variant.min_stock)
+          if (stock <= 0) summary.out += 1
+          else if (minimum > 0 && stock <= minimum) summary.low += 1
+          return summary
+        },
+        { out: 0, low: 0 },
+      )
+    : { out: 0, low: 0 }
+  const selectedInventoryInsights = selectedProduct
+    ? selectedProduct.variants.reduce(
+        (summary, variant) => {
+          const stock = variantStockTotal(variant.id)
+          const positiveStock = Math.max(0, stock)
+          const shortage = Math.max(0, Number(variant.min_stock) - stock)
+          summary.costValue += positiveStock * Number(variant.cost)
+          summary.saleValue += positiveStock * Number(variant.price)
+          summary.reorderUnits += shortage
+          summary.missingImages += variant.image_url ? 0 : 1
+          summary.missingBarcodes += variant.barcode ? 0 : 1
+          summary.inactiveVariants += variant.is_active ? 0 : 1
+          if (shortage > summary.mostUrgent.shortage) {
+            summary.mostUrgent = { sku: variant.sku, shortage }
+          }
+          return summary
+        },
+        {
+          costValue: 0,
+          saleValue: 0,
+          reorderUnits: 0,
+          missingImages: 0,
+          missingBarcodes: 0,
+          inactiveVariants: 0,
+          mostUrgent: { sku: '', shortage: 0 },
+        },
+      )
+    : {
+        costValue: 0,
+        saleValue: 0,
+        reorderUnits: 0,
+        missingImages: 0,
+        missingBarcodes: 0,
+        inactiveVariants: 0,
+        mostUrgent: { sku: '', shortage: 0 },
+      }
+  const selectedWarehouseStock = selectedProduct
+    ? warehouses.map((warehouse) => ({
+        ...warehouse,
+        quantity: productStockAtWarehouse(selectedProduct, warehouse.id),
+      }))
+    : []
+  const maximumWarehouseStock = Math.max(
+    1,
+    ...selectedWarehouseStock.map((warehouse) => Math.max(0, warehouse.quantity)),
+  )
+  const masterDetailStyle = {
+    '--products-master-width': `${masterListWidth}px`,
+  } as CSSProperties
+  const productsCardStyle = productsPanelHeight
+    ? ({ '--products-panel-height': `${productsPanelHeight}px` } as CSSProperties)
+    : undefined
+
+  useEffect(() => {
+    setSelectedProductId(effectiveSelectedProductId)
+  }, [effectiveSelectedProductId])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [search, categoryFilter, brandFilter, supplierFilter, statusFilter, typeFilter, stockWarehouseFilter, stockStatusFilter, sortOption, sortDescending, pageSize])
+
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, pageCount))
+  }, [pageCount])
+
+  useEffect(() => {
+    if (viewMode !== 'list' || variantRows.length === 0) return
+    const element = tableScrollRef.current
+    if (!element) return
+    const measure = () => setTableContainerWidth(element.clientWidth)
+    measure()
+    if (typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(measure)
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [viewMode, variantRows.length])
+
+  useEffect(() => {
+    const measureAvailableHeight = () => {
+      if (window.matchMedia?.('(max-width: 1023px)').matches) {
+        setProductsPanelHeight(null)
+        return
+      }
+      const element = productsCardRef.current
+      if (!element) return
+      const availableHeight = Math.max(
+        420,
+        Math.floor(window.innerHeight - element.getBoundingClientRect().top - 56),
+      )
+      setProductsPanelHeight(availableHeight)
+    }
+
+    measureAvailableHeight()
+    window.addEventListener('resize', measureAvailableHeight)
+    window.visualViewport?.addEventListener('resize', measureAvailableHeight)
+    return () => {
+      window.removeEventListener('resize', measureAvailableHeight)
+      window.visualViewport?.removeEventListener('resize', measureAvailableHeight)
+    }
+  }, [])
+
+  const setViewModePersisted = (mode: ViewMode) => {
+    setViewMode(mode)
+    localStorage.setItem(VIEW_MODE_KEY, mode)
+  }
+
+  const toggleColumn = (column: OptionalColumnId) => {
+    setVisibleOptionalColumns((current) => {
+      const next = current.includes(column) ? current.filter((item) => item !== column) : [...current, column]
+      localStorage.setItem(COLUMNS_KEY, JSON.stringify(next))
+      return next
+    })
+  }
+
+  const resetColumns = () => {
+    setVisibleOptionalColumns(DEFAULT_OPTIONAL_COLUMNS)
+    localStorage.setItem(COLUMNS_KEY, JSON.stringify(DEFAULT_OPTIONAL_COLUMNS))
+  }
+
+  const changePageSize = (size: number) => {
+    setPageSize(size)
+    localStorage.setItem(PAGE_SIZE_KEY, String(size))
+  }
+
+  const persistMasterWidth = (width: number) => {
+    const clamped = clampMasterWidth(width)
+    setMasterListWidth(clamped)
+    localStorage.setItem(MASTER_WIDTH_KEY, String(clamped))
+  }
+
+  const handleMasterPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    event.currentTarget.setPointerCapture(event.pointerId)
+    masterResizeStart.current = { pointerX: event.clientX, width: masterListWidth }
+    masterPendingWidth.current = masterListWidth
+    masterResizing.current = true
+    setIsResizingMaster(true)
+  }
+
+  const handleMasterPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (!masterResizing.current) return
+    const nextWidth = masterResizeStart.current.width + event.clientX - masterResizeStart.current.pointerX
+    masterPendingWidth.current = clampMasterWidth(nextWidth)
+    setMasterListWidth(masterPendingWidth.current)
+  }
+
+  const handleMasterPointerEnd = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (!masterResizing.current) return
+    masterResizing.current = false
+    setIsResizingMaster(false)
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId)
+    }
+    persistMasterWidth(masterPendingWidth.current)
+  }
+
+  const handleMasterKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    let nextWidth: number | null = null
+    if (event.key === 'ArrowLeft') nextWidth = masterListWidth - 16
+    if (event.key === 'ArrowRight') nextWidth = masterListWidth + 16
+    if (event.key === 'Home') nextWidth = MASTER_WIDTH_MIN
+    if (event.key === 'End') nextWidth = MASTER_WIDTH_MAX
+    if (nextWidth === null) return
+    event.preventDefault()
+    persistMasterWidth(nextWidth)
+  }
+
+  const selectProduct = (product: Product) => {
+    if (window.matchMedia?.('(max-width: 1023px)').matches) {
+      onViewProduct(product.id)
+      return
+    }
+    setSelectedProductId(product.id)
+  }
+
   const hasActiveFilters = Boolean(
-    search ||
-      categoryFilter ||
-      brandFilter ||
-      supplierFilter ||
-      statusFilter !== 'all' ||
-      typeFilter !== 'all' ||
-      stockWarehouseFilter ||
-      stockStatusFilter !== 'all',
+    search || categoryFilter || brandFilter || supplierFilter || statusFilter !== 'all' ||
+    typeFilter !== 'all' || stockWarehouseFilter || stockStatusFilter !== 'all',
   )
 
   const clearFilters = () => {
@@ -341,476 +446,349 @@ export function ProductsTab({
     setStockStatusFilter('all')
   }
 
+  const renderListCell = (column: ListColumn, row: VariantRow) => {
+    const { product, variant } = row
+    const stock = variantStockTotal(variant.id)
+    const minimum = Number(variant.min_stock)
+    const stockAlert = stock <= 0 || (minimum > 0 && stock <= minimum)
+    const suffix = variantAttributeChips(variant).map((chip) => chip.label).join(' ')
+    const active = product.is_active && variant.is_active
+
+    switch (column.id) {
+      case 'product': {
+        const image = productImage(product)
+        return (
+          <div className="products-list-product">
+            <span className="products-list-thumb">
+              {image ? <img src={image} alt="" loading="lazy" /> : <Package size={14} />}
+            </span>
+            <span className="products-list-product-copy">
+              <strong>{product.name}{suffix ? ` ${suffix}` : ''}</strong>
+              {product.type !== 'PRODUCT' && <small>{TYPE_LABELS[product.type]}</small>}
+            </span>
+          </div>
+        )
+      }
+      case 'category': return categoryName(product.category)
+      case 'brand': return brandName(product.brand) ?? 'Sin marca'
+      case 'supplier': return supplierName(product.supplier) ?? 'Sin proveedor'
+      case 'unit': return UNIT_LABELS[product.unit_of_measure]
+      case 'sku': return <strong>{variant.sku}</strong>
+      case 'cost': return formatCurrency(variant.cost)
+      case 'price': return <strong>{formatCurrency(variant.price)}</strong>
+      case 'barcode': return variant.barcode ?? '—'
+      case 'stock':
+        return <strong className={stockAlert ? 'products-stock-low' : ''}>{formatQuantity(stock)}</strong>
+      case 'minStock':
+        return <span className="products-min-stock-badge" aria-label={`Stock mínimo ${formatQuantity(variant.min_stock)}`}>Mín. {formatQuantity(variant.min_stock)}</span>
+      case 'status':
+        return <span className={`badge ${active ? 'badge-success' : 'badge-danger'}`}>{active ? 'Activa' : 'Inactiva'}</span>
+      case 'updated':
+        return <span title={product.updated_at}>{formatRelativeTime(product.updated_at)}</span>
+      case 'actions':
+        return (
+          <div className="row-actions">
+            <button type="button" className="btn btn-ghost btn-sm btn-icon" title={canManage ? 'Gestionar variantes' : 'Ver detalle'} aria-label={`${canManage ? 'Gestionar' : 'Ver'} ${product.name}`} onClick={() => onViewProduct(product.id)}><Pencil /></button>
+            {canManage && <button type="button" className="btn btn-danger-ghost btn-sm btn-icon products-row-delete" title="Eliminar producto" aria-label={`Eliminar ${product.name}`} onClick={() => onDeleteProduct(product)}><Trash2 /></button>}
+          </div>
+        )
+    }
+  }
+
   return (
-    <div className="card core-table-card">
+    <div className="card core-table-card products-card" ref={productsCardRef} style={productsCardStyle}>
       <div className="table-toolbar products-toolbar">
-        <div className="products-toolbar-filters">
+        <div className="products-toolbar-primary">
           <div className="search-input">
             <Search />
-            <input
-              value={search}
-              onChange={(event) => onSearchChange(event.target.value)}
-              placeholder="Buscar por nombre..."
-            />
+            <input value={search} onChange={(event) => onSearchChange(event.target.value)} placeholder="Buscar por nombre..." />
           </div>
           {categories.length > 0 && (
-            <select
-              value={categoryFilter}
-              onChange={(event) => setCategoryFilter(Number(event.target.value) || '')}
-              aria-label="Filtrar por categoría"
-            >
+            <select value={categoryFilter} onChange={(event) => setCategoryFilter(Number(event.target.value) || '')} aria-label="Filtrar por categoría">
               <option value="">Todas las categorías</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
+              {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
             </select>
           )}
-          {brands.length > 0 && (
-            <select
-              value={brandFilter}
-              onChange={(event) => setBrandFilter(Number(event.target.value) || '')}
-              aria-label="Filtrar por marca"
-            >
-              <option value="">Todas las marcas</option>
-              {brands.map((brand) => (
-                <option key={brand.id} value={brand.id}>
-                  {brand.name}
-                </option>
-              ))}
-            </select>
-          )}
-          {suppliers.length > 0 && (
-            <select
-              value={supplierFilter}
-              onChange={(event) => {
-                const value = event.target.value
-                setSupplierFilter(value === 'none' ? 'none' : Number(value) || '')
-              }}
-              aria-label="Filtrar por proveedor"
-            >
-              <option value="">Todos los proveedores</option>
-              <option value="none">Sin proveedor</option>
-              {suppliers.map((supplier) => (
-                <option key={supplier.id} value={supplier.id}>
-                  {supplier.company_name}
-                </option>
-              ))}
-            </select>
-          )}
-          {typesPresent.size > 1 && (
-            <select
-              value={typeFilter}
-              onChange={(event) => setTypeFilter(event.target.value as TypeFilter)}
-              aria-label="Filtrar por tipo"
-            >
-              <option value="all">Todos los tipos</option>
-              {Array.from(typesPresent).map((type) => (
-                <option key={type} value={type}>
-                  {TYPE_LABELS[type]}
-                </option>
-              ))}
-            </select>
-          )}
-          <select
-            value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
-            aria-label="Filtrar por estado"
-          >
-            <option value="all">Activos e inactivos</option>
-            <option value="active">Solo activos</option>
-            <option value="inactive">Solo inactivos</option>
-          </select>
-          {warehouses.length > 1 && (
-            <select
-              value={stockWarehouseFilter}
-              onChange={(event) => setStockWarehouseFilter(Number(event.target.value) || '')}
-              aria-label="Filtrar stock por almacén"
-            >
-              <option value="">Stock: todos los almacenes</option>
-              {warehouses.map((warehouse) => (
-                <option key={warehouse.id} value={warehouse.id}>
-                  Stock: {warehouse.name}
-                </option>
-              ))}
-            </select>
-          )}
-          {/* Bajo stock / agotado -util para cualquier rubro que maneje
-              inventario (ropa, abarrotes, ferreteria, gimnasio con
-              merchandising...), a diferencia de un filtro por atributo
-              especifico que no aplicaria a todas las categorias por igual. */}
-          <select
-            value={stockStatusFilter}
-            onChange={(event) => setStockStatusFilter(event.target.value as StockStatusFilter)}
-            aria-label="Filtrar por nivel de stock"
-          >
+          <select value={stockStatusFilter} onChange={(event) => setStockStatusFilter(event.target.value as StockStatusFilter)} aria-label="Filtrar por nivel de stock">
             <option value="all">Cualquier nivel de stock</option>
             <option value="low">Stock bajo</option>
             <option value="out">Sin stock</option>
           </select>
-          {hasActiveFilters && (
-            <button type="button" className="btn btn-ghost btn-sm" onClick={clearFilters}>
-              <XCircle size={14} strokeWidth={2} />
-              Limpiar filtros
-            </button>
-          )}
+          <details className="products-popover products-more-filters">
+            <summary>
+              <SlidersHorizontal size={14} />
+              Más filtros
+              {advancedFilterCount > 0 && <span className="products-filter-count">{advancedFilterCount}</span>}
+            </summary>
+            <div className="products-popover-panel products-more-filters-panel">
+              {brands.length > 0 && (
+                <label className="products-filter-field">
+                  <span>Marca</span>
+                  <select value={brandFilter} onChange={(event) => setBrandFilter(Number(event.target.value) || '')}>
+                    <option value="">Todas las marcas</option>
+                    {brands.map((brand) => <option key={brand.id} value={brand.id}>{brand.name}</option>)}
+                  </select>
+                </label>
+              )}
+              {suppliers.length > 0 && (
+                <label className="products-filter-field">
+                  <span>Proveedor</span>
+                  <select value={supplierFilter} onChange={(event) => { const value = event.target.value; setSupplierFilter(value === 'none' ? 'none' : Number(value) || '') }}>
+                    <option value="">Todos los proveedores</option>
+                    <option value="none">Sin proveedor</option>
+                    {suppliers.map((supplier) => <option key={supplier.id} value={supplier.id}>{supplier.company_name}</option>)}
+                  </select>
+                </label>
+              )}
+              {typesPresent.size > 1 && (
+                <label className="products-filter-field">
+                  <span>Tipo</span>
+                  <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value as TypeFilter)}>
+                    <option value="all">Todos los tipos</option>
+                    {Array.from(typesPresent).map((type) => <option key={type} value={type}>{TYPE_LABELS[type]}</option>)}
+                  </select>
+                </label>
+              )}
+              <label className="products-filter-field">
+                <span>Estado</span>
+                <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}>
+                  <option value="all">Activos e inactivos</option><option value="active">Solo activos</option><option value="inactive">Solo inactivos</option>
+                </select>
+              </label>
+              {warehouses.length > 1 && (
+                <label className="products-filter-field">
+                  <span>Almacén</span>
+                  <select value={stockWarehouseFilter} onChange={(event) => setStockWarehouseFilter(Number(event.target.value) || '')}>
+                    <option value="">Todos los almacenes</option>
+                    {warehouses.map((warehouse) => <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>)}
+                  </select>
+                </label>
+              )}
+            </div>
+          </details>
+          {hasActiveFilters && <button type="button" className="btn btn-ghost btn-sm" onClick={clearFilters}><XCircle size={14} />Limpiar filtros</button>}
         </div>
 
-        <div className="view-toggle" role="group" aria-label="Cambiar vista">
-          <button
-            type="button"
-            className={`view-toggle-btn ${viewMode === 'list' ? 'view-toggle-btn-active' : ''}`}
-            onClick={() => setViewModePersisted('list')}
-            aria-pressed={viewMode === 'list'}
-            title="Vista de lista"
-          >
-            <List size={15} strokeWidth={2} />
-            Lista
-          </button>
-          <button
-            type="button"
-            className={`view-toggle-btn ${viewMode === 'cards' ? 'view-toggle-btn-active' : ''}`}
-            onClick={() => setViewModePersisted('cards')}
-            aria-pressed={viewMode === 'cards'}
-            title="Vista de tarjetas"
-          >
-            <LayoutGrid size={15} strokeWidth={2} />
-            Cards
-          </button>
+        <div className="products-toolbar-actions">
+          <label className="products-sort-control">
+            <ArrowDownUp size={14} /><span className="sr-only">Ordenar productos</span>
+            <select value={sortOption} onChange={(event) => setSortOption(event.target.value as SortOption)} aria-label="Ordenar productos">
+              <option value="name">Nombre</option><option value="price">Precio</option><option value="stock">Stock</option><option value="updated">Actualización</option>
+            </select>
+            <button type="button" className="products-sort-direction" onClick={() => setSortDescending((value) => !value)} aria-label={sortDescending ? 'Orden ascendente' : 'Orden descendente'} title={sortDescending ? 'Orden ascendente' : 'Orden descendente'}>{sortDescending ? '↓' : '↑'}</button>
+          </label>
+          {viewMode === 'list' && (
+            <details className="products-popover products-columns-menu">
+              <summary><Columns3 size={14} />Columnas</summary>
+              <div className="products-popover-panel products-columns-panel">
+                <strong>Columnas visibles</strong>
+                {OPTIONAL_COLUMNS.map((column) => (
+                  <label key={column.id}><input type="checkbox" checked={activeOptionalColumns.has(column.id)} onChange={() => toggleColumn(column.id)} />{column.label}</label>
+                ))}
+                <button type="button" className="btn btn-ghost btn-sm" onClick={resetColumns}><RotateCcw size={13} />Restablecer columnas</button>
+              </div>
+            </details>
+          )}
+
+          <div className="view-toggle" role="group" aria-label="Cambiar vista">
+            <button type="button" className={`view-toggle-btn ${viewMode === 'list' ? 'view-toggle-btn-active' : ''}`} onClick={() => setViewModePersisted('list')} aria-pressed={viewMode === 'list'}><List size={15} />Lista</button>
+            <button type="button" className={`view-toggle-btn ${viewMode === 'detail' ? 'view-toggle-btn-active' : ''}`} onClick={() => setViewModePersisted('detail')} aria-pressed={viewMode === 'detail'}><PanelRight size={15} />Detalle</button>
+          </div>
         </div>
+
+        {hasActiveFilters && (
+          <div className="products-active-filters" aria-label="Filtros activos">
+            {search && <button type="button" onClick={() => onSearchChange('')}>Búsqueda: {search}<XCircle size={12} /></button>}
+            {categoryFilter && <button type="button" onClick={() => setCategoryFilter('')}>{categoryName(categoryFilter)}<XCircle size={12} /></button>}
+            {brandFilter && <button type="button" onClick={() => setBrandFilter('')}>{brandName(brandFilter)}<XCircle size={12} /></button>}
+            {supplierFilter && <button type="button" onClick={() => setSupplierFilter('')}>{supplierFilter === 'none' ? 'Sin proveedor' : supplierName(supplierFilter)}<XCircle size={12} /></button>}
+            {statusFilter !== 'all' && <button type="button" onClick={() => setStatusFilter('all')}>{statusFilter === 'active' ? 'Solo activos' : 'Solo inactivos'}<XCircle size={12} /></button>}
+            {typeFilter !== 'all' && <button type="button" onClick={() => setTypeFilter('all')}>{TYPE_LABELS[typeFilter]}<XCircle size={12} /></button>}
+            {stockWarehouseFilter && <button type="button" onClick={() => setStockWarehouseFilter('')}>Stock: {warehouses.find((warehouse) => warehouse.id === stockWarehouseFilter)?.name ?? 'almacén'}<XCircle size={12} /></button>}
+            {stockStatusFilter !== 'all' && <button type="button" onClick={() => setStockStatusFilter('all')}>{stockStatusFilter === 'low' ? 'Stock bajo' : 'Sin stock'}<XCircle size={12} /></button>}
+          </div>
+        )}
       </div>
 
-      <div
-        className="products-scroll-region"
-        ref={scrollRegionRef}
-        style={{ maxHeight: `calc(100vh - ${regionTop}px)`, overflow: 'auto' }}
-      >
-      {loading && (
-        <div className="loading-row">
-          <span className="spinner" />
-          Cargando...
-        </div>
-      )}
+      <div className={`products-content ${viewMode === 'detail' ? 'products-content-detail' : ''}`}>
+        {loading && <div className="loading-row"><span className="spinner" />Cargando...</div>}
+        {products && filteredProducts.length === 0 && (
+          <EmptyState icon={<Package />} title={hasActiveFilters ? 'Sin resultados' : 'Todavía no hay productos'} subtitle={hasActiveFilters ? 'Prueba con otros filtros.' : canManage ? 'Crea el primero con "Nuevo producto".' : 'Cuando se agreguen productos, aparecerán aquí.'} />
+        )}
 
-      {products && filteredProducts.length === 0 && (
-        <EmptyState
-          icon={<Package />}
-          title={hasActiveFilters ? 'Sin resultados' : 'Todavía no hay productos'}
-          subtitle={
-            hasActiveFilters
-              ? 'Prueba con otros filtros.'
-              : canManage
-                ? 'Crea el primero con "Nuevo producto".'
-                : 'Cuando se agreguen productos, aparecerán aquí.'
-          }
-        />
-      )}
+        {viewMode === 'detail' && sortedProducts.length > 0 && (
+          <div className={`products-master-detail ${isResizingMaster ? 'products-master-detail-resizing' : ''}`} style={masterDetailStyle}>
+            <aside className="products-master-list" id="products-master-list" aria-label="Productos">
+              <div className="products-master-count">{sortedProducts.length} productos</div>
+              {sortedProducts.map((product) => {
+                const image = productImage(product)
+                const stock = productStockTotal(product)
+                const lowStock = productHasLowStock(product)
+                const partner = brandName(product.brand) ?? supplierName(product.supplier)
+                return (
+                  <button type="button" key={product.id} className={`products-master-item ${selectedProduct?.id === product.id ? 'products-master-item-active' : ''}`} onClick={() => selectProduct(product)} aria-current={selectedProduct?.id === product.id ? 'true' : undefined}>
+                    <span className="products-master-thumb">{image ? <img src={image} alt="" loading="lazy" /> : <Package size={17} />}</span>
+                    <span className="products-master-copy">
+                      <strong>{product.name}</strong>
+                      <small>{categoryName(product.category)}{partner ? ` · ${partner}` : ''}</small>
+                      <span className="products-master-metrics"><span>{product.variants.length} variantes</span><span>{formatPriceRange(product.variants)}</span><span className={lowStock ? 'products-stock-low' : ''}>{formatQuantity(stock)} stock</span></span>
+                    </span>
+                    <ChevronRight className="products-master-chevron" size={16} />
+                  </button>
+                )
+              })}
+            </aside>
 
-      {viewMode === 'cards' && filteredProducts.length > 0 && (
-        <div className="product-cards-grid">
-          {filteredProducts.map((product) => {
-            const image = productImage(product)
-            const supplier = supplierName(product.supplier)
-            const brand = brandName(product.brand)
-            const hasMultipleVariants = product.variants.length > 1
-            const primary = primaryAttributeForCategory(product.category, categories, attributes)
-            const orderedVariants = sortVariantsByPrimary(product.variants, primary)
+            <div
+              className="products-master-resizer"
+              role="separator"
+              tabIndex={0}
+              aria-label="Cambiar ancho de la lista de productos"
+              aria-controls="products-master-list products-detail-panel"
+              aria-orientation="vertical"
+              aria-valuemin={MASTER_WIDTH_MIN}
+              aria-valuemax={MASTER_WIDTH_MAX}
+              aria-valuenow={Math.round(masterListWidth)}
+              onPointerDown={handleMasterPointerDown}
+              onPointerMove={handleMasterPointerMove}
+              onPointerUp={handleMasterPointerEnd}
+              onPointerCancel={handleMasterPointerEnd}
+              onKeyDown={handleMasterKeyDown}
+              onDoubleClick={() => persistMasterWidth(MASTER_WIDTH_DEFAULT)}
+              title="Arrastra para cambiar el ancho. Doble clic para restablecer."
+            >
+              <span />
+            </div>
 
-            const renderVariantRow = (variant: ProductVariant) => {
-              const stock = variantStockTotal(variant.id)
-              const minStock = Number(variant.min_stock)
-              const isLowStock = minStock > 0 && stock <= minStock
-              const chips = variantAttributeChips(variant, primary, false)
-              return (
-                <div className="product-card-variant-row" key={variant.id}>
-                  <span className="product-card-variant-identity">
-                    <span className="product-card-variant-sku">
-                      {variant.sku}
-                      {variant.is_default && hasMultipleVariants && (
-                        <CheckCircle2 size={12} strokeWidth={2} color="var(--success)" />
+            {selectedProduct && (
+              <section className="products-detail-panel" id="products-detail-panel" aria-label={`Detalle de ${selectedProduct.name}`}>
+                <header className="products-detail-header">
+                  <span className="products-detail-image">{productImage(selectedProduct) ? <img src={productImage(selectedProduct) ?? ''} alt="" /> : <Package size={26} />}</span>
+                  <span className="products-detail-title">
+                    <span className="products-detail-title-line"><h3>{selectedProduct.name}</h3><span className={`badge ${selectedProduct.is_active ? 'badge-success' : 'badge-danger'}`}>{selectedProduct.is_active ? 'Activo' : 'Inactivo'}</span></span>
+                    <span className="products-detail-tags" aria-label="Clasificación del producto">
+                      <span className="products-detail-tag products-detail-tag-category"><Tags size={12} />{categoryName(selectedProduct.category)}</span>
+                      <span className={`products-detail-tag ${brandName(selectedProduct.brand) ? 'products-detail-tag-brand' : 'products-detail-tag-muted'}`}><BadgeCheck size={12} />{brandName(selectedProduct.brand) ?? 'Sin marca'}</span>
+                      <span className={`products-detail-tag ${supplierName(selectedProduct.supplier) ? 'products-detail-tag-supplier' : 'products-detail-tag-muted'}`}><Truck size={12} />{supplierName(selectedProduct.supplier) ?? 'Sin proveedor'}</span>
+                    </span>
+                    {selectedProduct.description && <small>{selectedProduct.description}</small>}
+                  </span>
+                  <div className="products-detail-actions">
+                    <button type="button" className="btn btn-primary btn-sm" onClick={() => onViewProduct(selectedProduct.id)}>{canManage ? 'Gestionar variantes' : 'Ver detalle'}</button>
+                    {canManage && <button type="button" className="btn btn-danger-ghost btn-sm btn-icon products-row-delete" aria-label={`Eliminar ${selectedProduct.name}`} title="Eliminar producto" onClick={() => onDeleteProduct(selectedProduct)}><Trash2 /></button>}
+                  </div>
+                </header>
+
+                <div className="products-detail-summary" aria-label="Métricas del producto">
+                  <div className="products-detail-metric">
+                    <span className="products-detail-metric-icon"><Layers3 size={16} /></span>
+                    <span className="products-detail-metric-copy"><span>Variantes</span><strong>{selectedProduct.variants.length}</strong></span>
+                  </div>
+                  <div className="products-detail-metric">
+                    <span className="products-detail-metric-icon"><Coins size={16} /></span>
+                    <span className="products-detail-metric-copy"><span>Costo</span><strong>{formatCostRange(selectedProduct.variants)}</strong></span>
+                  </div>
+                  <div className="products-detail-metric">
+                    <span className="products-detail-metric-icon"><CircleDollarSign size={16} /></span>
+                    <span className="products-detail-metric-copy"><span>Precio</span><strong>{formatPriceRange(selectedProduct.variants)}</strong></span>
+                  </div>
+                  <div className="products-detail-metric">
+                    <span className="products-detail-metric-icon"><WarehouseIcon size={16} /></span>
+                    <span className="products-detail-metric-copy"><span>{stockMetricLabel}</span><strong className={productHasLowStock(selectedProduct) ? 'products-stock-low' : ''}>{formatQuantity(productStockTotal(selectedProduct))}</strong></span>
+                  </div>
+                  <div className="products-detail-metric">
+                    <span className="products-detail-metric-icon"><Clock3 size={16} /></span>
+                    <span className="products-detail-metric-copy"><span>Actualización</span><strong>{formatRelativeTime(selectedProduct.updated_at)}</strong></span>
+                  </div>
+                </div>
+
+                <div className="products-detail-body">
+                  <div className="products-detail-main">
+                    {selectedProduct.variants.length === 0 ? (
+                      <div className="products-detail-empty"><Package /><strong>Producto sin variantes</strong><span>Gestiona el producto para añadir su primera variante.</span></div>
+                    ) : (
+                      <div className="products-detail-variants">
+                        <table className="core-table">
+                          <thead><tr><th>Atributos</th><th>SKU</th><th>Costo</th><th>Precio</th><th>Stock</th><th>Stock mínimo</th><th>Estado</th></tr></thead>
+                          <tbody>
+                            {sortVariantsByPrimary(selectedProduct.variants, primaryAttributeForCategory(selectedProduct.category, categories, attributes)).map((variant) => {
+                              const stock = variantStockTotal(variant.id)
+                              const minimum = Number(variant.min_stock)
+                              const stockAlert = stock <= 0 || (minimum > 0 && stock <= minimum)
+                              const chips = variantAttributeChips(variant)
+                              return (
+                                <tr key={variant.id}>
+                                  <td>{chips.length ? <span className="products-attribute-chips">{chips.map((chip) => <span className="badge badge-neutral" key={chip.id} title={chip.title}>{chip.label}</span>)}</span> : '—'}</td>
+                                  <td className="core-table-strong">{variant.sku}</td>
+                                  <td className="products-cost-cell">{formatCurrency(variant.cost)}</td>
+                                  <td className="products-price-cell">{formatCurrency(variant.price)}</td>
+                                  <td><strong className={stockAlert ? 'products-stock-low' : ''}>{formatQuantity(stock)}</strong></td>
+                                  <td><span className="products-min-stock-badge" aria-label={`Stock mínimo ${formatQuantity(variant.min_stock)}`}>Mín. {formatQuantity(variant.min_stock)}</span></td>
+                                  <td><span className={`badge ${variant.is_active ? 'badge-success' : 'badge-danger'}`}>{variant.is_active ? 'Activa' : 'Inactiva'}</span></td>
+                                </tr>
+                              )
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+
+                    <section className="products-warehouse-footer" aria-label="Stock por almacén">
+                      <header><span><WarehouseIcon size={15} /><strong>Stock por almacén</strong></span><small>Distribución total</small></header>
+                      {selectedWarehouseStock.length > 0 ? (
+                        <div className="products-warehouse-cards" role="list">
+                          {selectedWarehouseStock.map((warehouse) => (
+                            <article className={`products-warehouse-card ${warehouse.id === stockWarehouseFilter ? 'products-warehouse-card-active' : ''}`} key={warehouse.id} role="listitem" aria-current={warehouse.id === stockWarehouseFilter ? 'true' : undefined}>
+                              <span><span>{warehouse.name}</span>{warehouse.id === stockWarehouseFilter && <small>Seleccionado</small>}</span>
+                              <strong>{formatQuantity(warehouse.quantity)}</strong>
+                              <span className="products-warehouse-track" aria-hidden="true"><span style={{ width: `${(Math.max(0, warehouse.quantity) / maximumWarehouseStock) * 100}%` }} /></span>
+                            </article>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="products-warehouse-empty">No hay almacenes disponibles.</p>
                       )}
-                      {!variant.is_active && <span className="badge badge-danger">Inactiva</span>}
-                    </span>
-                    {chips.length > 0 && (
-                      <span className="product-card-variant-chips">
-                        {chips.map((chip) => (
-                          <span className="badge badge-neutral" key={chip.id} title={chip.title}>
-                            {chip.label}
-                          </span>
-                        ))}
-                      </span>
-                    )}
-                  </span>
-                  <span className="product-card-variant-price">{formatCurrency(variant.price)}</span>
-                  <span
-                    className={`product-card-variant-stock ${isLowStock ? 'product-card-stock-low' : ''}`}
-                  >
-                    {formatQuantity(stock)}
-                  </span>
+                    </section>
+                  </div>
+
+                  <ProductInsights
+                    product={selectedProduct}
+                    selectedWarehouse={selectedWarehouse}
+                    stockAlerts={selectedStockAlerts}
+                    inventory={selectedInventoryInsights}
+                  />
                 </div>
-              )
-            }
-
-            return (
-              <div className="card product-card" key={product.id}>
-                <div className="product-card-image">
-                  {image ? (
-                    <img src={image} alt={product.name} loading="lazy" />
-                  ) : (
-                    <Package size={28} strokeWidth={1.5} />
-                  )}
-                </div>
-
-                <div className="product-card-body">
-                  <div className="product-card-header">
-                    <span className="product-card-name">{product.name}</span>
-                    {product.type !== 'PRODUCT' && (
-                      <span className="badge badge-neutral">{TYPE_LABELS[product.type]}</span>
-                    )}
-                  </div>
-
-                  {product.description && (
-                    <p className="product-card-description">{product.description}</p>
-                  )}
-
-                  <p className="product-card-meta">
-                    {categoryName(product.category)}
-                    {brand ? ` · ${brand}` : ''}
-                    {supplier ? ` · ${supplier}` : ''} · {UNIT_LABELS[product.unit_of_measure]}
-                  </p>
-
-                  <div className="product-card-badges">
-                    <span className={`badge ${product.is_active ? 'badge-success' : 'badge-danger'}`}>
-                      {product.is_active ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
-                      {product.is_active ? 'Activo' : 'Inactivo'}
-                    </span>
-                    <span className={`badge ${product.is_for_sale ? 'badge-success' : 'badge-neutral'}`}>
-                      {product.is_for_sale ? 'En venta' : 'No en venta'}
-                    </span>
-                  </div>
-
-                  {/* Cada combinacion (Talla+Color) es su propia fila
-                      independiente y completa -pedido explicito, en vez de
-                      una fila-resumen o una grilla aparte. Se agrupan
-                      visualmente quedando ADYACENTES por Talla (ver
-                      sortVariantsByPrimary) dentro del mismo borde
-                      compartido de .product-card-variants. */}
-                  <div
-                    className={`product-card-variants ${hasMultipleVariants ? 'product-card-variants-grouped' : ''}`}
-                  >
-                    {orderedVariants.map((variant) => renderVariantRow(variant))}
-                  </div>
-
-                  <div className="product-card-footer">
-                    <span className="product-card-updated" title={product.updated_at}>
-                      Actualizado {formatRelativeTime(product.updated_at)}
-                    </span>
-                  </div>
-
-                  <div className="product-card-actions">
-                    <button
-                      type="button"
-                      className="btn btn-ghost btn-sm"
-                      onClick={() => onViewProduct(product.id)}
-                    >
-                      Editar variantes
-                    </button>
-                    {canManage && (
-                      <button
-                        type="button"
-                        className="btn btn-danger-ghost btn-sm btn-icon products-row-delete"
-                        title="Eliminar"
-                        aria-label={`Eliminar ${product.name}`}
-                        onClick={() => onDeleteProduct(product)}
-                      >
-                        <Trash2 />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
-
-      {/* Cada combinacion (Talla+Color) es su propia fila, completa e
-          independiente -sin acordeon, sin fila-resumen: para un producto
-          de 1 variante se lee igual que una tabla plana de siempre; para
-          2+, quedan ADYACENTES y ordenadas por Talla (sortVariantsByPrimary)
-          con las columnas de producto (imagen, nombre, categoria...) en
-          blanco salvo la primera fila, asi el ojo agrupa las filas por
-          compartir ese bloque en vez de tener que abrir algo. */}
-      {viewMode === 'list' && filteredProducts.length > 0 && (
-        // Sin overflow propio a proposito -el scroll (horizontal y
-        // vertical) lo maneja .products-scroll-region como UNICO
-        // contenedor con scroll real; un overflow-x:auto aca (aunque sea
-        // solo para el eje horizontal) fuerza -por regla del modulo CSS
-        // Overflow- que el eje Y tambien pase a 'auto', convirtiendo a
-        // ESTE div en el contenedor de referencia para el thead sticky de
-        // abajo en vez de la region exterior -y como este div nunca
-        // desborda verticalmente por si mismo, el sticky queda inerte
-        // (confirmado en el navegador: con este div cargando
-        // overflowX:auto, el thead dejaba de pegarse al hacer scroll).
-        <div className="products-table-scroll" ref={tableScrollRef}>
-          {/* Encabezado como <div> normal, FUERA del <table> -no como
-              <thead>. Un <thead> con width:100% no resuelve su ancho de
-              forma confiable dentro del algoritmo de layout de una tabla
-              (confirmado en el navegador: se quedaba fijo en su
-              min-width, sin importar que el <table> padre si se
-              estirara), mientras que un <div> normal con width:100%
-              relativo a .products-table-scroll (un contenedor de bloque
-              comun) SI funciona de forma predecible -mismo motivo por el
-              que position:sticky tambien se saca de <th>/<thead> mas
-              abajo (ver .products-header-row en ProductsTab.css). Las
-              columnas siguen viniendo de PRODUCT_COLUMNS, la misma fuente
-              que <colgroup>, para que ambos sigan sincronizados. */}
-          <div className="products-header-row" role="row" style={{ width: productTableWidth }}>
-            {PRODUCT_COLUMNS.map((col, index) => (
-              <div
-                key={index}
-                className="products-header-cell"
-                role="columnheader"
-                style={{ width: columnWidths[index] }}
-                title={col.title}
-              >
-                {col.label}
-              </div>
-            ))}
+              </section>
+            )}
           </div>
-          {/* width explicito en px (productTableWidth, la misma suma que
-              usa .products-header-row de arriba) -NO '100%': con
-              width:100%, table-layout:fixed reparte cualquier sobrante
-              entre TODAS las columnas del <colgroup> por igual (ya
-              ninguna es "auto", todas tienen un ancho fijo -Nombre incluye
-              el suyo, ya calculado con su propio tope mas arriba),
-              volviendo a desalinear todo con el header -mismo sintoma
-              reportado antes, con otra causa. Con un numero exacto en vez
-              de 100%, la tabla nunca se estira mas alla de lo que sus
-              columnas realmente suman. */}
-          <table
-            className="core-table products-grouped-table"
-            style={{ width: productTableWidth }}
-          >
-            {/* table-layout:fixed + colgroup -sin esto, el ancho de cada
-                columna se recalcula por fila segun su contenido; con
-                nombres/descripciones de largo variable entre filas, eso
-                hace que la misma columna no caiga siempre en la misma
-                posicion X. Anchos fijos = misma columna, mismo lugar,
-                siempre (salvo Nombre, la unica flexible -ver arriba). */}
-            <colgroup>
-              {columnWidths.map((width, index) => (
-                <col key={index} style={{ width }} />
-              ))}
-            </colgroup>
-            <tbody>
-              {/* Cada VARIANTE es su propia fila completa e independiente
-                  ("Polo M", "Polo L", "Polo S"...) con su propio nombre,
-                  categoria, marca, etc. -pedido explicito: nada de
-                  agrupar bajo un "Polo" con Talla M/L/S como sub-filas en
-                  blanco, porque el usuario igual va a filtrar para
-                  encontrar lo que busca, no a leer la tabla de arriba
-                  hacia abajo por producto. El nombre de cada fila suma el
-                  producto + sus atributos (Talla, Color...) para que se
-                  lea "Polo Deportivo M Rojo" de un vistazo, sin tener que
-                  cruzar con la columna Atributos de al lado (que igual se
-                  mantiene, para filtrar/escanear por separado). */}
-              {filteredProducts
-                .flatMap((product) => {
-                  const primary = primaryAttributeForCategory(product.category, categories, attributes)
-                  const orderedVariants = sortVariantsByPrimary(product.variants, primary)
-                  return orderedVariants.map((variant) => ({ product, variant, primary }))
-                })
-                .map(({ product, variant, primary }, rowIndex) => {
-                  const image = productImage(product)
-                  const supplier = supplierName(product.supplier)
-                  const brand = brandName(product.brand)
-                  const stock = variantStockTotal(variant.id)
-                  const minStock = Number(variant.min_stock)
-                  const isLowStock = minStock > 0 && stock <= minStock
-                  const chips = variantAttributeChips(variant, primary, false)
-                  const variantSuffix = chips.map((chip) => chip.label).join(' ')
-                  return (
-                    <tr key={variant.id} className={rowIndex % 2 === 1 ? 'products-zebra' : ''}>
-                      <td>
-                        <div className="products-list-thumb">
-                          {image ? <img src={image} alt="" loading="lazy" /> : <Package size={14} />}
-                        </div>
-                      </td>
-                      <td className="core-table-strong products-name-cell">
-                        {product.name}
-                        {variantSuffix && ` ${variantSuffix}`}
-                        {product.type !== 'PRODUCT' && (
-                          <span className="badge badge-neutral" style={{ marginLeft: 8 }}>
-                            {TYPE_LABELS[product.type]}
-                          </span>
-                        )}
-                        {(!product.is_active || !product.is_for_sale) && (
-                          <div style={{ display: 'flex', gap: 4, marginTop: 4, flexWrap: 'wrap' }}>
-                            {!product.is_active && <span className="badge badge-danger">Inactivo</span>}
-                            {!product.is_for_sale && (
-                              <span className="badge badge-neutral">No en venta</span>
-                            )}
-                          </div>
-                        )}
-                        {product.description && (
-                          <p className="products-list-description">{product.description}</p>
-                        )}
-                      </td>
-                      <td>{categoryName(product.category)}</td>
-                      <td>{brand ?? '—'}</td>
-                      <td>{supplier ?? '—'}</td>
-                      <td>{UNIT_LABELS[product.unit_of_measure]}</td>
-                      <td className="core-table-strong">{variant.sku}</td>
-                      <td className="products-nowrap-cell" title={variant.barcode ?? undefined}>
-                        {variant.barcode ?? '—'}
-                      </td>
-                      <td>{formatCurrency(variant.cost)}</td>
-                      <td className="products-price-cell">{formatCurrency(variant.price)}</td>
-                      <td className="products-min-stock-cell">{formatQuantity(variant.min_stock)}</td>
-                      <td
-                        className={`products-stock-cell ${isLowStock ? 'product-card-stock-low' : ''}`}
-                      >
-                        {formatQuantity(stock)}
-                      </td>
-                      <td>
-                        <span className={`badge ${variant.is_active ? 'badge-success' : 'badge-danger'}`}>
-                          {variant.is_active ? 'Activa' : 'Inactiva'}
-                        </span>
-                      </td>
-                      <td title={product.updated_at}>{formatRelativeTime(product.updated_at)}</td>
-                      <td>
-                        <div className="row-actions">
-                          <button
-                            type="button"
-                            className="btn btn-ghost btn-sm btn-icon"
-                            title="Editar"
-                            aria-label={`Editar ${product.name}`}
-                            onClick={() => onViewProduct(product.id)}
-                          >
-                            <Pencil />
-                          </button>
-                          {canManage && (
-                            <button
-                              type="button"
-                              className="btn btn-danger-ghost btn-sm btn-icon products-row-delete"
-                              title="Eliminar"
-                              aria-label={`Eliminar ${product.name}`}
-                              onClick={() => onDeleteProduct(product)}
-                            >
-                              <Trash2 />
-                            </button>
-                          )}
-                        </div>
-                      </td>
+        )}
+
+        {viewMode === 'list' && variantRows.length > 0 && (
+          <div className="products-list-view">
+            <div className="products-table-scroll" ref={tableScrollRef} tabIndex={0} aria-label="Tabla de productos desplazable">
+              <table className="core-table products-list-table" style={{ width: tableWidth, minWidth: tableWidth }}>
+                <colgroup>{visibleColumns.map((column, index) => <col key={column.id} style={{ width: columnWidths[index] }} />)}</colgroup>
+                <thead><tr>{visibleColumns.map((column) => <th key={column.id} className={`products-column-${column.id}`}>{column.label}</th>)}</tr></thead>
+                <tbody>
+                  {pageRows.map((row, rowIndex) => (
+                    <tr key={row.variant.id} className={`${rowIndex % 2 ? 'products-zebra ' : ''}${row.productStart ? 'products-product-start' : ''}`}>
+                      {visibleColumns.map((column) => <td key={column.id} className={`products-column-${column.id}`}>{renderListCell(column, row)}</td>)}
                     </tr>
-                  )
-                })}
-            </tbody>
-          </table>
-        </div>
-      )}
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="products-pagination">
+              <span>Mostrando {pageStart}–{pageEnd} de {variantRows.length} variantes</span>
+              <label>Filas<select value={pageSize} onChange={(event) => changePageSize(Number(event.target.value))} aria-label="Filas por página">{PAGE_SIZE_OPTIONS.map((size) => <option key={size} value={size}>{size}</option>)}</select></label>
+              <div className="products-pagination-controls">
+                <button type="button" className="btn btn-ghost btn-sm btn-icon" onClick={() => setCurrentPage((page) => Math.max(1, page - 1))} disabled={currentPage === 1} aria-label="Página anterior"><ChevronLeft /></button>
+                <span>Página {currentPage} de {pageCount}</span>
+                <button type="button" className="btn btn-ghost btn-sm btn-icon" onClick={() => setCurrentPage((page) => Math.min(pageCount, page + 1))} disabled={currentPage === pageCount} aria-label="Página siguiente"><ChevronRight /></button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

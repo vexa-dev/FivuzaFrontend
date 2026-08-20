@@ -99,7 +99,11 @@ export function InventoryPage() {
   const [tab, setTab] = useState<Tab>('productos')
   const [search, setSearch] = useState('')
 
-  const { data: categories, isLoading: loadingCategories } = useCategories()
+  const {
+    data: categories,
+    isLoading: loadingCategories,
+    refetch: refetchCategories,
+  } = useCategories()
   const { data: brands, isLoading: loadingBrands } = useBrands()
   const { data: suppliers, isLoading: loadingSuppliers } = useSuppliers()
   const { data: warehouses, isLoading: loadingWarehouses } = useWarehouses()
@@ -158,7 +162,14 @@ export function InventoryPage() {
   let primaryAction: ReactNode = null
   if (tab === 'productos' && canManage) {
     primaryAction = (
-      <button type="button" className="btn btn-primary" onClick={() => setShowProductForm(true)}>
+      <button
+        type="button"
+        className="btn btn-primary"
+        onClick={() => {
+          setShowProductForm(true)
+          void refetchCategories()
+        }}
+      >
         <Plus size={15} strokeWidth={2.5} />
         Nuevo producto
       </button>
@@ -556,6 +567,7 @@ export function InventoryPage() {
           brands={brands ?? []}
           suppliers={suppliers ?? []}
           attributes={attributes ?? []}
+          onConfigureCategory={setEditingCategory}
           onClose={() => setShowProductForm(false)}
         />
       )}

@@ -1,72 +1,70 @@
-/* El toolbar vive FUERA de .products-scroll-region (mas abajo, alrededor
-   de la tabla/cards) -pedido explicito de que el encabezado no
-   desaparezca al hacer scroll, resuelto NO con sticky (ver por que en
-   .products-scroll-region) sino dejando el toolbar en flujo normal,
-   antes de la region que scrollea: como el toolbar nunca esta DENTRO del
-   contenedor con scroll, sencillamente nunca se mueve, sin necesitar
-   position:sticky ni sus bugs de calculo de offset. */
+.products-card {
+  display: flex;
+  flex-direction: column;
+  height: var(--products-panel-height, auto);
+  min-height: 420px;
+  overflow: visible;
+}
+
 .products-toolbar {
-  flex-wrap: wrap;
-  padding: 16px 16px 12px;
-}
-
-/* Region con scroll propio, contiene la tabla/cards (el toolbar de
-   arriba queda afuera, ver .products-toolbar) -no se puede usar el
-   scroll de la pagina para el header pegajoso: <main class="erp-content">
-   tiene overflow-x:auto (ErpLayout.css), lo que por regla del modulo CSS
-   Overflow fuerza tambien overflow-y:auto, pero como su alto no esta
-   acotado nunca desborda DE VERDAD (el documento/html es quien scrollea
-   en la practica) -eso vuelve inerte cualquier position:sticky adentro,
-   porque el contenedor "de referencia" nunca mueve su propio scrollTop.
-   Confirmado en el navegador: con el thead pegado directo contra ese
-   scroll no funcional, terminaba mal posicionado. Por eso esta region
-   tiene su PROPIA altura acotada (calc(100vh - <su posicion en la
-   pagina>), medida en ProductsTab.tsx) y su propio overflow:auto genuino
-   -asi el thead de la tabla se pega contra ESTE scroll, que si funciona.
-   El overflow:hidden de .core-table-card (CorePage.css) sigue intacto y
-   sigue recortando las esquinas redondeadas: esta region entera cabe
-   dentro de esa caja, no necesita escapar de sus bordes. */
-.products-scroll-region {
-  padding-bottom: 4px;
-}
-
-.products-toolbar-filters {
   display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
   flex-wrap: wrap;
+  overflow: visible;
+}
+
+.products-toolbar-primary {
+  display: flex;
+  align-items: center;
+  flex: 1 1 760px;
+  min-width: 0;
   gap: 8px;
-  flex: 1 1 auto;
+  flex-wrap: wrap;
 }
 
-.products-toolbar-filters select {
-  width: auto;
-  max-width: 200px;
-}
-
-/* Selector de vista -mismo lenguaje que .tabs/.tab (par de botones
-   segmentados) pero mas chico, porque no es navegacion de pagina sino una
-   preferencia de despliegue dentro de la misma pestaña. */
-.view-toggle {
+.products-toolbar-actions {
   display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 0 1 auto;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.products-toolbar-primary .search-input {
+  flex: 1 1 210px;
+  min-width: 180px;
+  max-width: 300px;
+}
+
+.products-toolbar-primary select {
+  min-height: 36px;
+  max-width: 190px;
+}
+
+.view-toggle {
+  display: inline-flex;
+  flex: 0 0 auto;
+  margin-left: 0;
   border: 1px solid var(--border-default);
   border-radius: var(--radius-sm);
   overflow: hidden;
-  flex-shrink: 0;
 }
 
 .view-toggle-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 7px 12px;
-  border: none;
+  min-height: 34px;
+  padding: 0 11px;
+  border: 0;
   background: transparent;
   color: var(--text-secondary);
-  font-size: 0.8125rem;
-  font-weight: 600;
+  font-size: 0.75rem;
   cursor: pointer;
-  transition:
-    background 0.15s,
-    color 0.15s;
 }
 
 .view-toggle-btn + .view-toggle-btn {
@@ -74,253 +72,985 @@
 }
 
 .view-toggle-btn:hover {
-  background: var(--bg-surface-hover);
   color: var(--text-primary);
+  background: var(--bg-surface-hover);
 }
 
 .view-toggle-btn-active,
 .view-toggle-btn-active:hover {
+  color: var(--primary);
   background: var(--primary-subtle-bg);
+}
+
+.products-active-filters {
+  display: flex;
+  flex: 1 1 100%;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.products-active-filters button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border: 1px solid var(--border-default);
+  border-radius: 999px;
+  background: var(--bg-surface-secondary);
+  color: var(--text-secondary);
+  font-size: 0.6875rem;
+  cursor: pointer;
+}
+
+.products-active-filters button:hover {
+  border-color: var(--primary);
   color: var(--primary);
 }
 
-/* Vista de cards -mismo criterio de grilla que el catalogo del POS
-   (auto-fill, minmax) pero mas ancha por card porque aca cabe mucho mas
-   dato por producto (descripcion, badges de estado, precio, stock...). */
-.product-cards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 14px;
-  padding: 16px;
+.products-popover {
+  position: relative;
+  flex: 0 0 auto;
 }
 
-.product-card {
-  display: flex;
-  flex-direction: column;
-  padding: 0;
-  overflow: hidden;
-}
-
-.product-card-image {
-  display: flex;
+.products-popover summary {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 100%;
-  aspect-ratio: 16 / 10;
-  background: var(--bg-surface-secondary);
-  color: var(--text-muted);
-  flex-shrink: 0;
-}
-
-.product-card-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.product-card-body {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 14px;
-  flex: 1;
-}
-
-.product-card-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.product-card-name {
-  font-weight: 700;
-  font-size: 0.9375rem;
-  color: var(--text-primary);
-  line-height: 1.3;
-}
-
-/* line-clamp -la descripcion de un producto puede ser un parrafo entero;
-   2 lineas alcanzan para dar contexto sin que una card se estire mucho
-   mas alto que sus vecinas por tener una descripcion larga. */
-.product-card-description {
-  font-size: 0.8125rem;
-  color: var(--text-secondary);
-  margin: 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.product-card-meta {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  margin: 0;
-}
-
-.product-card-badges {
-  display: flex;
-  flex-wrap: wrap;
   gap: 6px;
-}
-
-.product-card-footer {
-  margin-top: 4px;
-}
-
-/* Lista de variantes dentro de la card -sin acordeon: 1 variante se lee
-   como una fila normal; 2+ comparten un borde envolvente
-   (.product-card-variants-grouped) que las lee como "un mismo grupo" sin
-   necesitar abrir nada para confirmarlo. */
-.product-card-variants {
-  display: flex;
-  flex-direction: column;
-}
-
-.product-card-variants-grouped {
-  border: 1px solid var(--border-subtle);
+  min-height: 36px;
+  padding: 0 11px;
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-sm);
-  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+  white-space: nowrap;
 }
 
-.product-card-variant-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 0;
+.products-popover summary::-webkit-details-marker {
+  display: none;
 }
 
-.product-card-variants-grouped .product-card-variant-row {
-  padding: 7px 10px;
+.products-popover[open] summary,
+.products-popover summary:hover {
+  color: var(--text-primary);
+  background: var(--bg-surface-hover);
 }
 
-.product-card-variants-grouped .product-card-variant-row + .product-card-variant-row {
-  border-top: 1px solid var(--border-subtle);
+.products-popover-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  z-index: 30;
+  padding: 10px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-lg);
 }
 
-.product-card-variant-identity {
+.products-more-filters-panel {
+  left: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  gap: 10px 12px;
+  min-width: 420px;
+  max-width: min(640px, calc(100vw - 32px));
+}
+
+.products-filter-field {
   display: flex;
   flex-direction: column;
-  gap: 1px;
-  flex: 1;
+  gap: 5px;
   min-width: 0;
 }
 
-.product-card-variant-sku {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: var(--text-primary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* Chips de atributos ("Talla: M", "Color: Rojo") -solo aparecen cuando la
-   variante tiene atributos asignados (ver AttributesTab). Chips en vez de
-   texto mudo: se leen mejor y no dependen de que la fila sea ancha para
-   no verse amontonados (flex-wrap los acomoda en 2 lineas si hace falta). */
-.product-card-variant-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 2px;
-}
-
-.product-card-variant-sku .badge,
-.product-card-variant-chips .badge {
-  padding: 2px 8px;
-  font-size: 0.625rem;
-}
-
-/* Chips de atributos sin relleno solido -.badge-neutral usa
-   --bg-surface-secondary de fondo, que es justo el mismo tono que se usaba
-   para la cebra por producto (ya removida). Contra una fila sin ningun
-   otro tinte, ese relleno se lee como un bloque de color que "sobresale"
-   sin razon (mas notorio en chips de una sola linea corta, ej. una talla
-   numerica). Se cambia a solo borde para que el chip se lea como una
-   etiqueta discreta, no como una mancha de color. */
-.product-card-variant-chips .badge,
-.products-attribute-chips .badge {
-  background: transparent;
-  border: 1px solid var(--border-default);
-}
-
-.product-card-variant-price {
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.product-card-variant-stock {
-  min-width: 44px;
-  text-align: right;
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.product-card-stock-low {
-  color: var(--danger);
-  font-weight: 600;
-}
-
-.product-card-updated {
-  font-size: 0.6875rem;
+.products-filter-field > span {
   color: var(--text-muted);
-  white-space: nowrap;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
-.product-card-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-top: 6px;
-  padding-top: 10px;
-  border-top: 1px solid var(--border-subtle);
+.products-filter-field select {
+  width: 100%;
+  max-width: none;
 }
 
-/* Miniatura en la vista de lista -misma imagen que la card, a escala de
-   fila de tabla, para no perder el dato visual en la vista densa. */
-.products-list-thumb {
-  display: flex;
+.products-filter-count {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-sm);
-  background: var(--bg-surface-secondary);
-  color: var(--text-muted);
-  overflow: hidden;
-  flex-shrink: 0;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.625rem;
+  line-height: 1;
 }
 
+.products-columns-panel {
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 210px;
+}
+
+.products-columns-panel > strong {
+  margin-bottom: 2px;
+  color: var(--text-primary);
+  font-size: 0.75rem;
+}
+
+.products-columns-panel label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.products-columns-panel .btn {
+  justify-content: flex-start;
+  margin-top: 4px;
+}
+
+.products-sort-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 36px;
+  color: var(--text-muted);
+}
+
+.products-sort-control select {
+  width: auto;
+  max-width: 145px;
+}
+
+.products-sort-direction {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.products-sort-direction:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+  background: var(--primary-subtle-bg);
+}
+
+.products-content {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.products-content-detail {
+  height: 100%;
+  min-height: 0;
+}
+
+.products-master-detail {
+  display: grid;
+  grid-template-columns: var(--products-master-width, 400px) 8px minmax(0, 1fr);
+  height: 100%;
+  min-height: 0;
+}
+
+.products-master-list {
+  min-width: 0;
+  overflow-y: auto;
+  background: var(--bg-surface-secondary);
+  scrollbar-color: var(--border-default) transparent;
+  scrollbar-width: thin;
+}
+
+.products-master-resizer {
+  position: relative;
+  z-index: 9;
+  width: 8px;
+  cursor: col-resize;
+  touch-action: none;
+  background: var(--bg-surface);
+  outline: none;
+}
+
+.products-master-resizer::before {
+  position: absolute;
+  inset: 0 3px;
+  content: '';
+  background: var(--border-default);
+  transition: background 120ms ease, inset 120ms ease;
+}
+
+.products-master-resizer:hover::before,
+.products-master-resizer:focus-visible::before,
+.products-master-detail-resizing .products-master-resizer::before {
+  inset: 0 2px;
+  background: var(--primary);
+}
+
+.products-master-resizer span {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 3px;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--text-muted);
+  transform: translate(-50%, -50%);
+  opacity: 0.45;
+}
+
+.products-master-detail-resizing {
+  cursor: col-resize;
+  user-select: none;
+}
+
+.products-master-count {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--border-default);
+  background: var(--bg-surface-secondary);
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.products-master-item {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) 16px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 76px;
+  padding: 10px 12px;
+  border: 0;
+  border-bottom: 1px solid var(--border-subtle);
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.products-master-item:hover {
+  background: var(--bg-surface-hover);
+}
+
+.products-master-item-active,
+.products-master-item-active:hover {
+  background: var(--primary-subtle-bg);
+  box-shadow: inset 3px 0 0 var(--primary);
+}
+
+.products-master-thumb,
+.products-detail-image,
+.products-list-thumb {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  color: var(--text-muted);
+}
+
+.products-master-thumb {
+  width: 40px;
+  height: 40px;
+}
+
+.products-master-thumb img,
+.products-detail-image img,
 .products-list-thumb img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.products-list-description {
-  font-size: 0.75rem;
-  font-weight: 400;
-  color: var(--text-muted);
-  margin: 4px 0 0;
-  max-width: 260px;
+.products-master-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
 }
 
-/* Chips de atributos en la vista de lista -UNA sola columna "Atributos"
-   para cualquier cantidad de atributos que el catalogo use (Talla, Color,
-   Talla de calzado...), en vez de una columna nueva por cada uno. Con
-   flex-wrap, 2+ chips pasan a una segunda linea en vez de angostar el
-   resto de la fila. */
+.products-master-copy > strong,
+.products-master-copy > small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.products-master-copy > strong {
+  color: var(--text-primary);
+  font-size: 0.8125rem;
+}
+
+.products-master-copy > small {
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+}
+
+.products-master-metrics {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.products-master-metrics span + span::before {
+  content: '·';
+  margin-right: 8px;
+  color: var(--text-muted);
+}
+
+.products-master-chevron {
+  color: var(--text-muted);
+}
+
+.products-detail-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--bg-surface);
+  container-type: inline-size;
+}
+
+.products-detail-header {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 14px;
+  padding: 18px;
+  border-bottom: 1px solid var(--border-default);
+}
+
+.products-detail-image {
+  width: 64px;
+  height: 64px;
+  background: var(--bg-surface-secondary);
+}
+
+.products-detail-title {
+  min-width: 0;
+}
+
+.products-detail-title-line {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.products-detail-title h3 {
+  overflow: hidden;
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 1rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.products-detail-title small {
+  display: block;
+  overflow: hidden;
+  margin: 5px 0 0;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.products-detail-title small {
+  display: -webkit-box;
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.products-detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.products-detail-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  padding: 3px 8px;
+  border: 1px solid var(--border-default);
+  border-radius: 999px;
+  color: var(--text-secondary);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.products-detail-tag svg {
+  flex: 0 0 auto;
+}
+
+.products-detail-tag-category {
+  border-color: var(--primary-subtle-bg);
+  background: var(--primary-subtle-bg);
+  color: var(--primary);
+}
+
+.products-detail-tag-brand {
+  background: var(--bg-surface-secondary);
+}
+
+.products-detail-tag-supplier {
+  border-color: var(--warning-subtle-bg);
+  background: var(--warning-subtle-bg);
+  color: var(--warning);
+}
+
+.products-detail-tag-muted {
+  border-style: dashed;
+  background: transparent;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.products-detail-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.products-detail-summary {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border-default);
+  background: transparent;
+}
+
+.products-detail-metric {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 2px 16px;
+  border-left: 1px solid var(--border-subtle);
+}
+
+.products-detail-metric:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.products-detail-metric-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--primary-subtle-bg);
+  color: var(--primary);
+}
+
+.products-detail-metric:nth-child(2) .products-detail-metric-icon {
+  background: var(--bg-surface-secondary);
+  color: var(--text-secondary);
+}
+
+.products-detail-metric:nth-child(3) .products-detail-metric-icon {
+  background: var(--success-subtle-bg);
+  color: var(--success);
+}
+
+.products-detail-metric:nth-child(4) .products-detail-metric-icon {
+  background: var(--warning-subtle-bg);
+  color: var(--warning);
+}
+
+.products-detail-metric:nth-child(5) .products-detail-metric-icon {
+  background: var(--bg-surface-secondary);
+  color: var(--text-secondary);
+}
+
+.products-detail-metric-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.products-detail-metric-copy > span {
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.products-detail-metric-copy strong {
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.products-detail-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  flex: 1;
+  min-height: 0;
+}
+
+.products-detail-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.products-detail-variants {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  scrollbar-color: var(--border-default) transparent;
+  scrollbar-width: thin;
+}
+
+.products-detail-variants .core-table {
+  width: 100%;
+  min-width: 880px;
+}
+
+.products-detail-variants th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--bg-surface);
+}
+
+.products-detail-variants td {
+  padding-top: 9px;
+  padding-bottom: 9px;
+}
+
+.products-detail-empty {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 32px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.products-warehouse-footer {
+  flex: 0 0 auto;
+  min-width: 0;
+  padding: 10px 14px 12px;
+  border-top: 1px solid var(--border-default);
+  background: var(--bg-surface);
+}
+
+.products-warehouse-footer > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.products-warehouse-footer > header > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--text-primary);
+  font-size: 0.75rem;
+}
+
+.products-warehouse-footer > header svg {
+  color: var(--primary);
+}
+
+.products-warehouse-footer > header small,
+.products-warehouse-empty {
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+}
+
+.products-warehouse-cards {
+  display: grid;
+  grid-auto-columns: minmax(150px, 1fr);
+  grid-auto-flow: column;
+  gap: 8px;
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: none;
+}
+
+.products-warehouse-cards::-webkit-scrollbar {
+  display: none;
+}
+
+.products-warehouse-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 5px 10px;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface-secondary);
+}
+
+.products-warehouse-card > span:first-child {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  color: var(--text-secondary);
+  font-size: 0.6875rem;
+}
+
+.products-warehouse-card > span:first-child > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.products-warehouse-card > span:first-child small {
+  margin-top: 1px;
+  color: var(--primary);
+  font-size: 0.5625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.products-warehouse-card > strong {
+  color: var(--text-primary);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.products-warehouse-card .products-warehouse-track {
+  grid-column: 1 / -1;
+}
+
+.products-warehouse-card-active {
+  border-color: var(--primary);
+  background: var(--primary-subtle-bg);
+}
+
+.products-warehouse-empty {
+  margin: 0;
+}
+
+.products-detail-insights {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px;
+  overflow-y: auto;
+  scrollbar-color: var(--border-default) transparent;
+  scrollbar-width: thin;
+  border-left: 1px solid var(--border-default);
+  background: transparent;
+}
+
+.products-insight-card {
+  padding: 13px;
+  border: 1px solid var(--border-default);
+  border-radius: 10px;
+  background: var(--bg-surface);
+}
+
+.products-insight-card > header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: var(--text-primary);
+  font-size: 0.75rem;
+}
+
+.products-insight-card > header svg {
+  box-sizing: content-box;
+  padding: 5px;
+  border-radius: 50%;
+  background: var(--primary-subtle-bg);
+  color: var(--primary);
+}
+
+.products-alert-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.products-alert-summary > span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface-secondary);
+}
+
+.products-alert-summary strong {
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.products-alert-summary small,
+.products-insight-ok {
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+}
+
+.products-insight-ok {
+  margin: 9px 0 0;
+  color: var(--success);
+}
+
+.products-replenishment {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.products-replenishment > span {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.products-replenishment small,
+.products-replenishment p,
+.products-insight-context {
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+}
+
+.products-replenishment > span strong {
+  color: var(--danger);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.products-replenishment p {
+  overflow: hidden;
+  margin: 6px 0 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.products-replenishment p strong {
+  color: var(--text-secondary);
+}
+
+.products-insight-context {
+  margin: -4px 0 10px;
+}
+
+.products-warehouse-track {
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--border-subtle);
+}
+
+.products-warehouse-track > span {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+  border-radius: inherit;
+  background: var(--primary);
+}
+
+.products-commercial-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+}
+
+.products-commercial-list > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.products-commercial-list dt {
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+}
+
+.products-commercial-list dd {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: right;
+}
+
+.products-inventory-value-list {
+  gap: 9px;
+}
+
+.products-value-highlight {
+  margin-top: 2px;
+  padding-top: 9px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.products-value-highlight dd {
+  color: var(--success);
+  font-size: 0.8125rem;
+}
+
+.products-quality-summary {
+  margin-top: 12px;
+  padding-top: 11px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.products-quality-summary-standalone {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.products-quality-summary > span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--text-primary);
+  font-size: 0.6875rem;
+}
+
+.products-quality-summary > span small {
+  color: var(--text-muted);
+  font-size: 0.625rem;
+  font-weight: 500;
+}
+
+.products-quality-summary ul {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin: 9px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.products-quality-summary li {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  padding: 7px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface-secondary);
+}
+
+.products-quality-summary li span {
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 0.625rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.products-quality-summary li strong {
+  color: var(--success);
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.products-quality-summary li .products-quality-warning {
+  color: var(--danger);
+}
+
+@container (max-width: 980px) {
+  .products-detail-body {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .products-detail-insights {
+    grid-row: 1;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    overflow: visible;
+    border-bottom: 1px solid var(--border-default);
+    border-left: 0;
+  }
+}
+
+@container (max-width: 720px) {
+  .products-detail-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 0;
+  }
+
+  .products-detail-metric:nth-child(odd) {
+    padding-left: 0;
+    border-left: 0;
+  }
+}
+
+@container (max-width: 620px) {
+  .products-detail-insights {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.products-detail-empty strong {
+  color: var(--text-primary);
+}
+
+.products-detail-empty span {
+  font-size: 0.8125rem;
+}
+
 .products-attribute-chips {
   display: flex;
   flex-wrap: wrap;
@@ -328,154 +1058,382 @@
 }
 
 .products-attribute-chips .badge {
-  padding: 2px 8px;
-  font-size: 0.6875rem;
+  padding: 2px 7px;
+  border: 1px solid var(--border-default);
+  background: transparent;
+  font-size: 0.625rem;
 }
 
-/* table-layout:fixed -obliga a respetar los anchos del <colgroup> (ver
-   ProductsTab.tsx) en vez de recalcular el ancho de columna por fila,
-   que es lo que rompia la alineacion en cuanto una fila traia un colSpan
-   y otras no. overflow-wrap para que nombres/descripciones largas no
-   estiren la columna, ahora que su ancho es fijo. */
-.products-grouped-table {
-  table-layout: fixed;
-  /* border-collapse:separate (no collapse, el default de .core-table) +
-     border-spacing:0 -limitacion real de CSS, no un capricho: position:
-     sticky sobre <th>/<td> simplemente NO funciona con border-collapse:
-     collapse (confirmado en el navegador: el thead dejaba de pegarse al
-     hacer scroll, aunque la geometria "en reposo" se viera bien). spacing
-     en 0 para que, con separate, las celdas sigan tocandose sin dejar
-     huecos blancos entre ellas. */
-  border-collapse: separate;
-  border-spacing: 0;
+.products-price-cell {
+  color: var(--text-primary);
+  font-weight: 700;
 }
 
-.products-grouped-table td {
-  overflow-wrap: break-word;
-}
-
-/* Encabezado como <div> normal (.products-header-row), NO <thead> -dos
-   problemas reales de renderizado, no caprichos:
-   1) position:sticky no funciona sobre partes de tabla (<thead>, <th>)
-      en varios motores de renderizado -confirmado en el navegador: con
-      sticky puesto directo sobre cada <th> (o sobre el <thead>), el
-      encabezado simplemente scrolleaba de largo con el resto, aunque
-      geometricamente todo se viera bien "en reposo". Sticky SI funciona
-      de forma confiable sobre cajas de bloque normales.
-   2) un <thead> con width:100% (para poder crecer igual que el <table>
-      padre en pantallas anchas, ver la columna Nombre `grow` mas abajo)
-      tampoco resuelve ese ancho de forma confiable dentro del algoritmo
-      de layout de una tabla -confirmado en el navegador: se quedaba fijo
-      en su min-width sin importar que el <table> si se estirara. Un
-      <div> normal, con width:100% relativo a .products-table-scroll (un
-      contenedor de bloque comun), no tiene ninguno de estos dos
-      problemas. Las columnas siguen viniendo de PRODUCT_COLUMNS, la
-      misma fuente que <colgroup>, para que ambos queden sincronizados. */
-.products-header-row {
-  display: flex;
-  position: sticky;
-  top: 0;
-  z-index: 5;
-  width: 100%;
-  /* Fondo opaco en el propio contenedor, no solo en cada celda -y
-     will-change para forzar su propia capa de composicion. Sin esto, el
-     navegador a veces no repinta a tiempo el area cubierta por un sticky
-     mientras se scrollea rapido dentro de un contenedor con overflow,
-     dejando un frame "fantasma" de la fila anterior asomando debajo del
-     encabezado (confirmado en el navegador: un chip de una fila ya
-     scrolleada se veia colado justo debajo del header). */
-  background: var(--bg-surface);
-  will-change: transform;
-}
-
-/* Replica manual de .core-table th (CorePage.css) -esta celda ya no es
-   un <th> real, asi que el selector por tag no la alcanza. */
-.products-header-cell {
-  flex: 0 0 auto;
-  box-sizing: border-box;
-  text-align: left;
-  color: var(--text-muted);
+.products-cost-cell {
+  color: var(--text-secondary);
   font-weight: 600;
-  font-size: 0.6875rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 10px 16px;
-  border-bottom: 1px solid var(--border-default);
 }
 
-/* Codigo de barras -numero de longitud fija; envolverlo a 2 lineas (ej.
-   "775000100014" / "9") se lee como dos numeros distintos. Una sola linea
-   con elipsis (el title en el <td> conserva el valor completo al hacer
-   hover) en vez de partirlo. */
-.products-nowrap-cell {
-  overflow: hidden;
-  text-overflow: ellipsis;
+.products-stock-low,
+.products-stock-low strong {
+  color: var(--danger) !important;
+}
+
+.products-min-stock-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 2px 8px;
+  border: 1px solid var(--danger-subtle-bg);
+  border-radius: 999px;
+  background: var(--danger-subtle-bg);
+  color: var(--danger);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
-/* Nombre, Precio y Stock actual son los 3 datos que mas se consultan de
-   un vistazo en esta tabla -pedido explicito de resaltarlos mas que el
-   resto de columnas (categoria, proveedor, costo...), que quedan como
-   dato de apoyo secundario. */
-/* Especificidad td.clase (no solo .clase) a proposito: la regla base
-   ".core-table td { color: var(--text-secondary) }" (CorePage.css) tiene
-   especificidad (clase + elemento) mayor que una clase sola, asi que un
-   .products-price-cell suelto pierde el color contra ella. Iguala esa
-   especificidad para que el color SI se aplique. */
-.products-grouped-table td.products-name-cell {
-  font-weight: 700;
-  font-size: 0.9375rem;
-  color: var(--text-primary);
-}
-
-.products-grouped-table td.products-price-cell {
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.products-grouped-table td.products-stock-cell {
-  font-weight: 700;
-  color: var(--text-primary);
+.products-column-stock,
+.products-column-minStock {
   font-variant-numeric: tabular-nums;
 }
 
-/* Stock bajo le gana al color de arriba por tener una clase mas
-   (mayor especificidad), no por orden de aparicion en el archivo. */
-.products-grouped-table td.products-stock-cell.product-card-stock-low {
-  color: var(--danger);
-}
-
-/* Stock minimo -no es un dato "positivo" a destacar como el stock actual,
-   es un umbral de alerta: se resalta distinto (rojizo, no negrita) para
-   que se lea como referencia de riesgo, no se confunda con el stock
-   actual de al lado ni compita con el mismo peso visual. */
-.products-grouped-table td.products-min-stock-cell {
-  color: var(--danger);
-}
-
-/* Boton de eliminar de la fila -rojo siempre, no solo al hacer hover
-   (.btn-danger-ghost por defecto es gris, se pone rojo recien al pasar el
-   mouse; "eliminar" en una fila de tabla debe distinguirse a simple
-   vista, no requerir hover para saber cual boton es el destructivo). */
 .products-row-delete {
   color: var(--danger);
   border-color: var(--danger-subtle-bg);
 }
 
-/* Cebra clasica tipo "tabla de Word", regida por FILA -pedido explicito:
-   cada variante es su propia fila independiente (ver ProductsTab.tsx,
-   "Polo M"/"Polo L"/"Polo S" en vez de agrupadas bajo un "Polo" comun),
-   asi que el tinte alterna fila por fila, sin noción de "producto" que
-   agrupe varias filas bajo un mismo tinte. */
-.products-grouped-table tbody tr.products-zebra td {
+.products-list-view {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.products-table-scroll {
+  flex: 1;
+  max-height: none;
+  min-height: 0;
+  overflow: auto;
+  outline: none;
+  overscroll-behavior: contain;
+  scrollbar-color: var(--border-default) transparent;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+}
+
+.products-table-scroll:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--primary);
+}
+
+.products-table-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 0;
+}
+
+.products-table-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.products-table-scroll::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: var(--border-default);
+  background-clip: padding-box;
+}
+
+.products-list-table {
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.products-list-table th {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--bg-surface);
+}
+
+.products-list-table td {
+  height: 46px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.products-list-table tbody tr.products-zebra td {
   background: var(--bg-surface-secondary);
 }
 
-/* El hover SIEMPRE debe ganarle a la cebra -sin esta regla, hover pierde
-   contra el tinte por selector mas especifico (mismo problema reportado:
-   "que el hover no se pierda"). Mismo selector base + :hover, para que su
-   especificidad sea estrictamente mayor que la de la cebra sola. */
-.products-grouped-table tbody tr.products-zebra:hover td {
+.products-list-table tbody tr:hover td {
   background: var(--bg-surface-hover);
 }
 
+.products-list-table tbody tr.products-product-start:not(:first-child) td {
+  border-top: 1px solid var(--border-default);
+}
+
+.products-list-table .products-column-product {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  background: var(--bg-surface);
+  box-shadow: 6px 0 8px -8px var(--border-default);
+}
+
+.products-list-table th.products-column-product {
+  z-index: 7;
+}
+
+.products-list-table .products-column-actions {
+  position: sticky;
+  right: 0;
+  z-index: 3;
+  background: var(--bg-surface);
+  box-shadow: -6px 0 8px -8px var(--border-default);
+}
+
+.products-list-table th.products-column-actions {
+  z-index: 7;
+}
+
+.products-list-table tbody tr.products-zebra .products-column-product,
+.products-list-table tbody tr.products-zebra .products-column-actions {
+  background: var(--bg-surface-secondary);
+}
+
+.products-list-table tbody tr:hover .products-column-product,
+.products-list-table tbody tr:hover .products-column-actions {
+  background: var(--bg-surface-hover);
+}
+
+.products-list-product {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.products-list-thumb {
+  width: 32px;
+  height: 32px;
+  background: var(--bg-surface-secondary);
+}
+
+.products-list-product-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.products-list-product-copy strong,
+.products-list-product-copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.products-list-product-copy strong {
+  color: var(--text-primary);
+  font-size: 0.8125rem;
+}
+
+.products-list-product-copy small {
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: 0.625rem;
+}
+
+.products-column-barcode,
+.products-column-sku,
+.products-column-updated {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.products-pagination {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 18px;
+  min-height: 48px;
+  padding: 7px 14px;
+  border-top: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+
+.products-pagination > span {
+  margin-right: auto;
+}
+
+.products-pagination label,
+.products-pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.products-pagination select {
+  min-height: 30px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.products-pagination-controls > span {
+  min-width: 90px;
+  text-align: center;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 1200px) {
+  .products-toolbar-primary {
+    flex-basis: 100%;
+  }
+
+  .products-toolbar-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .products-detail-header {
+    grid-template-columns: 56px minmax(0, 1fr);
+  }
+
+  .products-detail-image {
+    width: 56px;
+    height: 56px;
+  }
+
+  .products-detail-actions {
+    grid-column: 2;
+  }
+}
+
+@media (max-width: 1023px) {
+  .products-card {
+    height: auto;
+    min-height: 0;
+  }
+
+  .products-content {
+    min-height: 240px;
+    overflow: visible;
+  }
+
+  .products-list-view {
+    height: auto;
+  }
+
+  .products-table-scroll {
+    flex: none;
+    max-height: none;
+    min-height: 260px;
+    overflow-y: visible;
+  }
+
+  .products-content-detail {
+    height: min(680px, calc(100vh - 280px));
+    min-height: 420px;
+  }
+
+  .products-master-detail {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .products-master-resizer {
+    display: none;
+  }
+
+  .products-master-list {
+    border-right: 0;
+  }
+
+  .products-detail-panel {
+    display: none;
+  }
+
+  .products-master-item {
+    min-height: 70px;
+  }
+
+  .products-master-chevron {
+    display: block;
+  }
+}
+
+@media (max-width: 720px) {
+  .products-toolbar-primary .search-input {
+    flex-basis: 100%;
+    max-width: none;
+  }
+
+  .products-toolbar-primary > select {
+    flex: 1 1 180px;
+    max-width: none;
+  }
+
+  .products-toolbar-actions {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .products-popover-panel {
+    position: fixed;
+    top: auto;
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    max-width: none;
+  }
+
+  .products-more-filters-panel select {
+    flex: 1 1 180px;
+    max-width: none;
+  }
+
+  .products-more-filters-panel {
+    grid-template-columns: minmax(0, 1fr);
+    min-width: 0;
+  }
+
+  .view-toggle {
+    margin-left: 0;
+  }
+
+  .products-pagination {
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px 12px;
+  }
+
+  .products-pagination > span {
+    flex: 1 1 100%;
+    margin-right: 0;
+  }
+
+  .products-master-metrics span:nth-child(2) {
+    display: none;
+  }
+}

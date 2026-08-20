@@ -223,7 +223,8 @@ button.card:disabled {
   background: currentColor;
 }
 
-input {
+input,
+textarea {
   font-family: var(--font-base);
   padding: 10px 12px;
   border-radius: 8px;
@@ -236,16 +237,19 @@ input {
   transition: border-color 0.15s;
 }
 
-input:hover:not(:disabled, :focus) {
+input:hover:not(:disabled, :focus),
+textarea:hover:not(:disabled, :focus) {
   border-color: var(--text-muted);
 }
 
-input:focus {
+input:focus,
+textarea:focus {
   border-color: var(--focus-ring);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus-ring) 25%, transparent);
 }
 
-input::placeholder {
+input::placeholder,
+textarea::placeholder {
   color: var(--text-muted);
 }
 

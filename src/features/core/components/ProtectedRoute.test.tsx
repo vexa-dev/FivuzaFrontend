@@ -1,12 +1,17 @@
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { AuthProvider } from '../hooks/AuthContext'
-import { saveTokens, type PlatformStaffInfo } from '../hooks/session'
+import { type PlatformStaffInfo } from '../hooks/session'
+import { restorePlatformSession } from '../api'
 import { ProtectedRoute } from './ProtectedRoute'
+
+jest.mock('../api')
 
 function renderWithSession(staff: PlatformStaffInfo | null, requireRole?: PlatformStaffInfo['role'][]) {
   if (staff) {
-    saveTokens({ access: 'token', refresh: 'refresh', staff })
+    jest.mocked(restorePlatformSession).mockResolvedValueOnce({ access: 'token', staff })
+  } else {
+    jest.mocked(restorePlatformSession).mockRejectedValueOnce(new Error('Sin sesión'))
   }
   return render(
     <MemoryRouter initialEntries={['/protegida']}>
@@ -32,24 +37,24 @@ describe('ProtectedRoute (panel de plataforma)', () => {
     localStorage.clear()
   })
 
-  it('redirige a /admin/login cuando no hay staff autenticado', () => {
+  it('redirige a /admin/login cuando no hay staff autenticado', async () => {
     renderWithSession(null)
-    expect(screen.getByText('Pantalla de login')).toBeInTheDocument()
+    expect(await screen.findByText('Pantalla de login')).toBeInTheDocument()
   })
 
-  it('muestra el contenido cuando esta autenticado y no se requiere un rol especifico', () => {
+  it('muestra el contenido cuando esta autenticado y no se requiere un rol especifico', async () => {
     renderWithSession(staff('SUPPORT'))
-    expect(screen.getByText('Contenido protegido')).toBeInTheDocument()
+    expect(await screen.findByText('Contenido protegido')).toBeInTheDocument()
   })
 
-  it('muestra el contenido cuando el rol del staff esta entre los requeridos', () => {
+  it('muestra el contenido cuando el rol del staff esta entre los requeridos', async () => {
     renderWithSession(staff('SUPER_ADMIN'), ['SUPER_ADMIN', 'BILLING'])
-    expect(screen.getByText('Contenido protegido')).toBeInTheDocument()
+    expect(await screen.findByText('Contenido protegido')).toBeInTheDocument()
   })
 
-  it('redirige a /admin/resumen cuando el rol del staff no esta entre los requeridos', () => {
+  it('redirige a /admin/resumen cuando el rol del staff no esta entre los requeridos', async () => {
     renderWithSession(staff('SUPPORT'), ['SUPER_ADMIN', 'BILLING'])
-    expect(screen.getByText('Resumen')).toBeInTheDocument()
+    expect(await screen.findByText('Resumen')).toBeInTheDocument()
     expect(screen.queryByText('Contenido protegido')).not.toBeInTheDocument()
   })
 })

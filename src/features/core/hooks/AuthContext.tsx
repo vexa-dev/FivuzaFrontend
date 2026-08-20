@@ -1,7 +1,7 @@
-import { createContext, useState, type ReactNode } from 'react'
+import { createContext, useEffect, useState, type ReactNode } from 'react'
+import { restorePlatformSession } from '../api'
 import {
   clearTokens,
-  getStoredStaff,
   saveTokens,
   type PlatformStaffInfo,
   type PlatformTokens,
@@ -13,12 +13,24 @@ interface AuthContextValue {
   login: (tokens: PlatformTokens) => void
   logout: () => void
   hasRole: (...roles: PlatformStaffInfo['role'][]) => boolean
+  isRestoring: boolean
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [staff, setStaff] = useState<PlatformStaffInfo | null>(() => getStoredStaff())
+  const [staff, setStaff] = useState<PlatformStaffInfo | null>(null)
+  const [isRestoring, setIsRestoring] = useState(true)
+
+  useEffect(() => {
+    restorePlatformSession()
+      .then((tokens) => {
+        saveTokens(tokens)
+        setStaff(tokens.staff)
+      })
+      .catch(clearTokens)
+      .finally(() => setIsRestoring(false))
+  }, [])
 
   const login = (tokens: PlatformTokens) => {
     saveTokens(tokens)
@@ -35,7 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ isAuthenticated: staff !== null, staff, login, logout, hasRole }}
+      value={{ isAuthenticated: staff !== null, staff, login, logout, hasRole, isRestoring }}
     >
       {children}
     </AuthContext.Provider>

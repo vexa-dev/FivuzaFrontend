@@ -1,4 +1,5 @@
 import { ApiError } from './apiClient'
+import { isPaginatedResponse } from './pagination'
 
 const API_PORT = import.meta.env.VITE_API_PORT ?? '8000'
 
@@ -54,15 +55,29 @@ async function rawFetch<T>(path: string, options: RequestOptions): Promise<T> {
     method: options.method ?? 'GET',
     headers,
     body,
+    credentials: 'include',
   })
 
   const isJson = response.headers.get('content-type')?.includes('application/json')
-  const data = isJson ? await response.json() : null
+  let data = isJson ? await response.json() : null
 
   if (!response.ok) {
     throw new ApiError(response.status, data)
   }
 
+  if (isPaginatedResponse<unknown>(data)) {
+    const results = [...data.results]
+    let next = data.next
+    while (next) {
+      const pageResponse = await fetch(next, { headers, credentials: 'include' })
+      if (!pageResponse.ok) throw new ApiError(pageResponse.status, null)
+      const page = await pageResponse.json()
+      if (!isPaginatedResponse<unknown>(page)) break
+      results.push(...page.results)
+      next = page.next
+    }
+    data = results
+  }
   return data as T
 }
 
@@ -143,27 +158,25 @@ export async function tenantApiFetch<T>(
       throw error
     }
 
-    const { getRefreshToken, setAccessToken, clearSession } = await import(
+    const { setAccessToken, clearSession } = await import(
       '../../features/auth/hooks/session'
     )
-    const refresh = getRefreshToken()
-    if (!refresh) {
-      throw error
-    }
-
-    let newAccess: string
+    let refreshed: { access: string }
     try {
-      const refreshed = await rawFetch<{ access: string }>('/auth/refresh/', {
+      tenantRefreshPromise ??= rawFetch<{ access: string }>('/auth/refresh/', {
         method: 'POST',
-        body: { refresh },
+      }).finally(() => {
+        tenantRefreshPromise = null
       })
-      newAccess = refreshed.access
+      refreshed = await tenantRefreshPromise
     } catch {
       clearSession()
       throw error
     }
 
-    setAccessToken(newAccess)
-    return rawFetch<T>(path, { ...options, token: newAccess })
+    setAccessToken(refreshed.access)
+    return rawFetch<T>(path, { ...options, token: refreshed.access })
   }
 }
+
+let tenantRefreshPromise: Promise<{ access: string }> | null = null

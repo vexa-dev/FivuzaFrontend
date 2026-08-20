@@ -15,9 +15,10 @@ interface RequestOptions {
   method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
   body?: unknown
   token?: string | null
+  unwrapPagination?: boolean
 }
 
-export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
+async function rawApiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
   if (options.token) {
     headers.Authorization = `Bearer ${options.token}`
@@ -27,6 +28,7 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
     method: options.method ?? 'GET',
     headers,
     body: options.body ? JSON.stringify(options.body) : undefined,
+    credentials: 'include',
   })
 
   const isJson = response.headers.get('content-type')?.includes('application/json')
@@ -36,5 +38,33 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
     throw new ApiError(response.status, data)
   }
 
+  if (options.unwrapPagination && isPaginatedResponse<unknown>(data)) {
+    return data.results as T
+  }
   return data as T
 }
+
+let platformRefreshPromise: Promise<{ access: string }> | null = null
+
+export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  try {
+    return await rawApiFetch<T>(path, options)
+  } catch (error) {
+    if (!(error instanceof ApiError) || error.status !== 401 || !options.token) throw error
+    const { setAccessToken, clearTokens } = await import('../../features/core/hooks/session')
+    try {
+      platformRefreshPromise ??= rawApiFetch<{ access: string }>('/platform/auth/refresh/', {
+        method: 'POST',
+      }).finally(() => {
+        platformRefreshPromise = null
+      })
+      const refreshed = await platformRefreshPromise
+      setAccessToken(refreshed.access)
+      return rawApiFetch<T>(path, { ...options, token: refreshed.access })
+    } catch {
+      clearTokens()
+      throw error
+    }
+  }
+}
+import { isPaginatedResponse } from './pagination'

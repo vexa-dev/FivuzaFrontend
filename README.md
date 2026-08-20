@@ -1,5 +1,10 @@
 # Fivuza — Frontend
 
+> Tenant y plataforma restauran sesión mediante cookies HttpOnly separadas. El
+> access vive solo en memoria; los clientes HTTP usan `credentials: "include"`
+> y refresh single-flight. Durante la transición se aceptan arreglos o páginas
+> estándar de DRF.
+
 [![Frontend CI](https://github.com/vexa-dev/FivuzaFrontend/actions/workflows/ci.yml/badge.svg)](https://github.com/vexa-dev/FivuzaFrontend/actions/workflows/ci.yml)
 
 Frontend del **ERP SaaS multi-tenant** de Fivuza, orientado a pequeños y medianos negocios (bodegas, gimnasios, tiendas de retail). Construido con React + TypeScript + Vite.
@@ -42,7 +47,7 @@ Frontend del **ERP SaaS multi-tenant** de Fivuza, orientado a pequeños y median
 Este frontend sirve a dos audiencias completamente separadas por autenticación, pero dentro del **mismo código base**:
 
 - **`/admin/*`** — panel interno de Fivuza, usado por `platform_staff` (el equipo de Fivuza) para gestionar tenants, planes y suscripciones. Se autentica contra `POST /api/v1/platform/auth/login/`.
-- **El resto de rutas** (pendiente de construir) — el ERP real que usa cada negocio cliente (inventario, ventas, caja), resuelto por subdominio de tenant. Se autentica contra `POST /api/v1/auth/login/`.
+- **El resto de rutas** — el ERP de cada negocio cliente (dashboard, inventario, ventas, caja, usuarios, RR. HH. y gimnasio), resuelto por subdominio de tenant. Se autentica contra `POST /api/v1/auth/login/`.
 
 Ambos flujos usan JWT, pero nunca comparten token ni lógica de autenticación entre sí.
 
@@ -75,10 +80,10 @@ FivuzaFrontend/
   src/
     features/
       core/                   panel interno de platform_staff (/admin/*)
-      inventory/              ERP del tenant (pendiente)
-      sales/                  ERP del tenant (pendiente)
-      users/                  ERP del tenant (pendiente)
-      dashboard/              ERP del tenant (pendiente)
+      inventory/              catálogo, compras, stock y Kardex del tenant
+      sales/                  POS, ventas, caja, clientes y devoluciones
+      users/                  usuarios, roles, almacenes y RR. HH.
+      dashboard/              métricas operativas del tenant
     shared/
       components/             componentes genericos (Logo, ThemeToggle...)
       styles/                  CSS compartido (botones, badges, cards)

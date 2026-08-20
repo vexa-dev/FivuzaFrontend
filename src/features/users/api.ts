@@ -28,6 +28,7 @@ export interface TenantUserRecord {
   is_active: boolean
   last_login: string | null
   created_at: string
+  warehouse_ids?: number[]
 }
 
 export interface UserPermissionOverride {
@@ -58,12 +59,23 @@ function authed<T>(path: string, init: Parameters<typeof tenantApiFetch>[1] = {}
 
 export const fetchUsers = () => authed<TenantUserRecord[]>('/usuarios/users/')
 
-export const createUser = (data: { email: string; role: number; password: string }) =>
+export const createUser = (data: {
+  email: string
+  role: number
+  password: string
+  warehouse_ids: number[]
+}) =>
   authed<TenantUserRecord>('/usuarios/users/', { method: 'POST', body: data })
 
 export const updateUser = (
   id: number,
-  data: Partial<{ email: string; role: number; is_active: boolean; password: string }>,
+  data: Partial<{
+    email: string
+    role: number
+    is_active: boolean
+    password: string
+    warehouse_ids: number[]
+  }>,
 ) => authed<TenantUserRecord>(`/usuarios/users/${id}/`, { method: 'PATCH', body: data })
 
 export const deleteUser = (id: number) =>
