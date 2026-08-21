@@ -25,11 +25,6 @@ export function UserFormModal({ roles, editingUser, onClose, warehouses }: UserF
   const isAdmin = Boolean(
     selectedRole?.is_system_default && selectedRole.name.toLowerCase() === 'admin',
   )
-  const wasAdmin = Boolean(
-    editingUser &&
-      roles.find((role) => role.id === editingUser.role)?.is_system_default &&
-      roles.find((role) => role.id === editingUser.role)?.name.toLowerCase() === 'admin',
-  )
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
@@ -43,7 +38,7 @@ export function UserFormModal({ roles, editingUser, onClose, warehouses }: UserF
       setError('La contraseña es requerida para un usuario nuevo.')
       return
     }
-    if (editingUser && wasAdmin && !isAdmin && warehouseIds.length === 0) {
+    if (!isAdmin && warehouseIds.length === 0) {
       setError('Asigna al menos un almacén al cambiar el rol administrador.')
       return
     }

@@ -1,3 +1,6 @@
+import { collectAllPages, isPaginatedResponse } from './pagination'
+import { createSingleFlightRefresher } from './singleFlightRefresh'
+
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api/v1'
 
 export class ApiError extends Error {
@@ -16,6 +19,16 @@ interface RequestOptions {
   body?: unknown
   token?: string | null
   unwrapPagination?: boolean
+}
+
+async function fetchJson(url: string, headers: Record<string, string>): Promise<unknown> {
+  const response = await fetch(url, { headers, credentials: 'include' })
+  const isJson = response.headers.get('content-type')?.includes('application/json')
+  const data = isJson ? await response.json() : null
+  if (!response.ok) {
+    throw new ApiError(response.status, data)
+  }
+  return data
 }
 
 async function rawApiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
@@ -39,32 +52,39 @@ async function rawApiFetch<T>(path: string, options: RequestOptions = {}): Promi
   }
 
   if (options.unwrapPagination && isPaginatedResponse<unknown>(data)) {
-    return data.results as T
+    return (await collectAllPages(data, (next) => fetchJson(next, headers))) as T
   }
   return data as T
 }
 
-let platformRefreshPromise: Promise<{ access: string }> | null = null
+const refreshPlatformSession = createSingleFlightRefresher(() =>
+  rawApiFetch<{ access: string }>('/platform/auth/refresh/', { method: 'POST' }),
+)
 
 export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
   try {
     return await rawApiFetch<T>(path, options)
   } catch (error) {
     if (!(error instanceof ApiError) || error.status !== 401 || !options.token) throw error
-    const { setAccessToken, clearTokens } = await import('../../features/core/hooks/session')
+
+    const { setAccessToken, clearTokens, getSessionEpoch } = await import(
+      '../../features/core/hooks/session'
+    )
+    const epochBeforeRefresh = getSessionEpoch()
+    let refreshed: { access: string }
     try {
-      platformRefreshPromise ??= rawApiFetch<{ access: string }>('/platform/auth/refresh/', {
-        method: 'POST',
-      }).finally(() => {
-        platformRefreshPromise = null
-      })
-      const refreshed = await platformRefreshPromise
-      setAccessToken(refreshed.access)
-      return rawApiFetch<T>(path, { ...options, token: refreshed.access })
+      refreshed = await refreshPlatformSession()
     } catch {
       clearTokens()
       throw error
     }
+
+    if (getSessionEpoch() !== epochBeforeRefresh) {
+      // La sesion se cerro (u otro refresh la reemplazo) mientras este
+      // esperaba -no revivirla con un token que ya no corresponde.
+      throw error
+    }
+    setAccessToken(refreshed.access)
+    return rawApiFetch<T>(path, { ...options, token: refreshed.access })
   }
 }
-import { isPaginatedResponse } from './pagination'

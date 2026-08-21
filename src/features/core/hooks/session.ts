@@ -12,6 +12,11 @@ export interface PlatformTokens {
 
 let accessToken: string | null = null
 
+// Incrementa en cada clearTokens() -apiClient.ts la lee antes de esperar un
+// refresh en vuelo, para descartar el resultado si la sesion ya se cerro
+// mientras tanto (evita revivir el token tras un logout).
+let sessionEpoch = 0
+
 for (const key of [
   'fivuza_platform_access',
   'fivuza_platform_refresh',
@@ -32,6 +37,11 @@ export function setAccessToken(access: string) {
   accessToken = access
 }
 
+export function getSessionEpoch(): number {
+  return sessionEpoch
+}
+
 export function clearTokens() {
   accessToken = null
+  sessionEpoch += 1
 }

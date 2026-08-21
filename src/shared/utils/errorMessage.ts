@@ -24,10 +24,14 @@ export function getErrorMessage(error: unknown, fallback: string): string {
   return fallback
 }
 
+// Solo acepta un string encontrado DENTRO de un array -el shape real de un
+// error de validacion de DRF es {"campo": ["mensaje"]}. Un string suelto a
+// nivel raiz (ej. un "code"/"trace_id" del mismo body) no es un mensaje de
+// validacion y no deberia poder "ganarle" al mensaje real.
 function firstValidationMessage(value: unknown): string | null {
-  if (typeof value === 'string') return value
   if (Array.isArray(value)) {
     for (const item of value) {
+      if (typeof item === 'string') return item
       const message = firstValidationMessage(item)
       if (message) return message
     }

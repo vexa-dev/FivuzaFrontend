@@ -174,6 +174,36 @@ test('usa el atributo principal como compatibilidad con categorías del contrato
   expect(screen.getByLabelText('Color de variante 1')).toBeInTheDocument()
 })
 
+test('handleCategoryChange tambien usa el atributo principal como fallback legado', async () => {
+  const legacyCategory = {
+    id: 5,
+    name: 'Calzado',
+    is_active: true,
+    primary_attribute: 1,
+  } as Category
+
+  render(
+    <ProductFormModal
+      categories={[categories[0], legacyCategory]}
+      brands={brands}
+      suppliers={suppliers}
+      attributes={attributes}
+      onConfigureCategory={jest.fn()}
+      onClose={jest.fn()}
+    />,
+  )
+  const user = userEvent.setup()
+
+  // La categoria inicial (Ropa) permite Talla -selecciona un valor antes
+  // de cambiar a la categoria legada, para probar que handleCategoryChange
+  // (no solo el useMemo de allowedAttributes) tambien aplica el fallback.
+  await user.selectOptions(screen.getByLabelText('Talla de variante 1'), '11')
+  await user.selectOptions(screen.getByLabelText('Categoría *'), '5')
+
+  expect(screen.getByLabelText('Talla de variante 1')).toBeInTheDocument()
+  expect(screen.getByLabelText('Talla de variante 1')).toHaveValue('11')
+})
+
 test('permite configurar una categoría vacía sin desmontar ni limpiar el producto', async () => {
   const emptyCategory: Category = {
     id: 4,

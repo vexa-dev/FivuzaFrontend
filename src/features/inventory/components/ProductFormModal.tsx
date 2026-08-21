@@ -3,6 +3,7 @@ import { useMemo, useState, type ChangeEvent, type FormEvent } from 'react'
 import { Modal } from '../../../shared/components/Modal'
 import { getErrorMessage } from '../../../shared/utils/errorMessage'
 import type { Attribute, Brand, Category, NewVariantInput, Supplier } from '../api'
+import { resolveAllowedAttributeIds } from '../hooks/useAttributes'
 import { useCreateProduct } from '../hooks/useProducts'
 import './ProductFormModal.css'
 
@@ -57,15 +58,7 @@ export function ProductFormModal({
   const createProduct = useCreateProduct()
   const selectedCategory = activeCategories.find((category) => category.id === categoryId)
   const allowedAttributes = useMemo(() => {
-    // Durante un despliegue el QueryClient puede conservar temporalmente
-    // categorías obtenidas con el contrato anterior, sin allowed_attributes.
-    // En ese único caso usamos el atributo principal hasta que termine el
-    // refetch; una lista vacía explícita sigue significando "sin atributos".
-    const configuredIds = selectedCategory?.allowed_attributes
-    const legacyFallback = selectedCategory?.primary_attribute
-      ? [selectedCategory.primary_attribute]
-      : []
-    const allowedIds = new Set(configuredIds ?? legacyFallback)
+    const allowedIds = resolveAllowedAttributeIds(selectedCategory)
     return attributes
       .filter((attribute) => allowedIds.has(attribute.id))
       .sort((a, b) => {
@@ -110,7 +103,7 @@ export function ProductFormModal({
 
   const handleCategoryChange = (nextCategoryId: number) => {
     const nextCategory = activeCategories.find((category) => category.id === nextCategoryId)
-    const allowedAttributeIds = new Set(nextCategory?.allowed_attributes ?? [])
+    const allowedAttributeIds = resolveAllowedAttributeIds(nextCategory)
     const allowedValueIds = new Set(
       attributes
         .filter((attribute) => allowedAttributeIds.has(attribute.id))
