@@ -11,7 +11,9 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ requireRole }: ProtectedRouteProps) {
-  const { isAuthenticated, hasRole } = useAuth()
+  const { isAuthenticated, hasRole, isRestoring } = useAuth()
+
+  if (isRestoring) return null
 
   if (!isAuthenticated) {
     return <Navigate to="/admin/login" replace />

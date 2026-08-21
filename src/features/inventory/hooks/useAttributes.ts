@@ -52,6 +52,19 @@ export function attributeValueOnly(attributes: Attribute[] | undefined) {
 // propia Talla numerica, y "Abarrotes" no agrupar nada (ver
 // Category.primary_attribute en api.ts, configurable desde la pestaña
 // Categorías). ProductsTab.tsx llama esto por producto, no una vez global.
+// IDs de attribute_value permitidos para una categoria, con el mismo
+// fallback legado que ambos call sites de ProductFormModal.tsx necesitaban
+// por separado (y con el riesgo de que quedaran desincronizados): durante un
+// despliegue el QueryClient puede conservar temporalmente una categoria
+// obtenida con el contrato anterior, sin allowed_attributes -en ese unico
+// caso se usa el atributo principal hasta que termine el refetch; una lista
+// vacia explicita sigue significando "sin atributos".
+export function resolveAllowedAttributeIds(category: Category | undefined): Set<number> {
+  const configuredIds = category?.allowed_attributes
+  const legacyFallback = category?.primary_attribute ? [category.primary_attribute] : []
+  return new Set(configuredIds ?? legacyFallback)
+}
+
 export function primaryAttributeForCategory(
   categoryId: number,
   categories: Category[],

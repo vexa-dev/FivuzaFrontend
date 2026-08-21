@@ -6,10 +6,42 @@ import { ApiError } from './apiClient'
  * directo a un toast sin repetir el cast en cada archivo. */
 export function getErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof ApiError) {
-    const body = error.body as { error?: { message?: string } } | null
+    const body = error.body as {
+      error?: { message?: string }
+      message?: string
+      detail?: string
+      [key: string]: unknown
+    } | null
     if (body?.error?.message) {
       return body.error.message
     }
+    if (typeof body?.message === 'string') return body.message
+    if (typeof body?.detail === 'string') return body.detail
+
+    const fieldMessage = firstValidationMessage(body)
+    if (fieldMessage) return fieldMessage
   }
   return fallback
+}
+
+// Solo acepta un string encontrado DENTRO de un array -el shape real de un
+// error de validacion de DRF es {"campo": ["mensaje"]}. Un string suelto a
+// nivel raiz (ej. un "code"/"trace_id" del mismo body) no es un mensaje de
+// validacion y no deberia poder "ganarle" al mensaje real.
+function firstValidationMessage(value: unknown): string | null {
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      if (typeof item === 'string') return item
+      const message = firstValidationMessage(item)
+      if (message) return message
+    }
+    return null
+  }
+  if (value && typeof value === 'object') {
+    for (const item of Object.values(value)) {
+      const message = firstValidationMessage(item)
+      if (message) return message
+    }
+  }
+  return null
 }

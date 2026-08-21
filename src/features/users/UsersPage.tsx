@@ -3,6 +3,7 @@ import { useMemo, useState, type CSSProperties } from 'react'
 import '../core/CorePage.css'
 import { EmptyState } from '../../shared/components/EmptyState'
 import { useAuth } from '../auth/hooks/useAuth'
+import { useWarehouses } from '../inventory/hooks/useWarehouses'
 import { AnimatedTabs } from './components/AnimatedTabs'
 import { DataExportsTab } from './components/DataExportsTab'
 import { RolesManager } from './components/RolesManager'
@@ -34,6 +35,7 @@ export function UsersPage() {
   const [tab, setTab] = useState<Tab>('usuarios')
   const { data: users, isLoading, error } = useUsers()
   const { data: roles } = useRoles()
+  const { data: warehouses } = useWarehouses()
   const deleteUser = useDeleteUser()
 
   const [editingUser, setEditingUser] = useState<TenantUserRecord | null>(null)
@@ -165,6 +167,7 @@ export function UsersPage() {
         <UserFormModal
           roles={roles ?? []}
           editingUser={editingUser}
+          warehouses={warehouses ?? []}
           onClose={() => setShowForm(false)}
         />
       )}

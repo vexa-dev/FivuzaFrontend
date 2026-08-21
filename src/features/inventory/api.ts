@@ -23,6 +23,7 @@ export interface Category {
   // cada categoria necesita su propio criterio de agrupacion, o ninguno
   // (ver ProductsTab.tsx).
   primary_attribute: number | null
+  allowed_attributes: number[]
 }
 
 export interface Brand {
@@ -158,7 +159,11 @@ export const deleteWarehouse = (id: number) =>
 export const fetchCategories = (search?: string) =>
   authed<Category[]>(`/inventario/categories/${search ? `?search=${search}` : ''}`)
 
-export const createCategory = (data: { name: string; primary_attribute?: number | null }) =>
+export const createCategory = (data: {
+  name: string
+  primary_attribute?: number | null
+  allowed_attributes?: number[]
+}) =>
   authed<Category>('/inventario/categories/', { method: 'POST', body: data })
 
 export const updateCategory = (id: number, data: Partial<Category>) =>
@@ -228,7 +233,9 @@ export const createProduct = (data: {
   brand?: number | null
   supplier?: number | null
   unit_of_measure: Product['unit_of_measure']
-  variants_input?: NewVariantInput[]
+  is_for_sale?: boolean
+  is_active?: boolean
+  variants_input: NewVariantInput[]
 }) => authed<Product>('/inventario/products/', { method: 'POST', body: data })
 
 export const updateProduct = (id: number, data: Partial<Product>) =>

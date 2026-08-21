@@ -132,3 +132,60 @@
     animation: none;
   }
 }
+.user-warehouse-fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.user-warehouse-fieldset legend {
+  margin-bottom: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.user-warehouse-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.user-warehouse-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--surface-subtle);
+}
+
+.user-warehouse-option input {
+  width: auto;
+}
+
+.user-warehouse-admin,
+.user-warehouse-warning {
+  margin: 0;
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--radius-md);
+  font-size: 0.8rem;
+}
+
+.user-warehouse-admin {
+  color: var(--success-text);
+  background: var(--success-soft);
+}
+
+.user-warehouse-warning {
+  margin-top: 0.5rem;
+  color: var(--warning-text);
+  background: var(--warning-soft);
+}
+
+@media (max-width: 640px) {
+  .user-warehouse-options {
+    grid-template-columns: 1fr;
+  }
+}

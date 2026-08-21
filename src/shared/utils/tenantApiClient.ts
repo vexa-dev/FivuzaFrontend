@@ -1,4 +1,6 @@
 import { ApiError } from './apiClient'
+import { collectAllPages, isPaginatedResponse } from './pagination'
+import { createSingleFlightRefresher } from './singleFlightRefresh'
 
 const API_PORT = import.meta.env.VITE_API_PORT ?? '8000'
 
@@ -29,6 +31,16 @@ interface RequestOptions {
   method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
   body?: unknown
   token?: string | null
+  /** Sigue `next` y devuelve todos los resultados concatenados. Default
+   * `true` (preserva el comportamiento historico) -pasar `false` cuando el
+   * llamador quiere el sobre de paginacion crudo (solo la pagina 1). */
+  unwrapPagination?: boolean
+}
+
+async function fetchJson(url: string, headers: Record<string, string>): Promise<unknown> {
+  const pageResponse = await fetch(url, { headers, credentials: 'include' })
+  if (!pageResponse.ok) throw new ApiError(pageResponse.status, null)
+  return pageResponse.json()
 }
 
 async function rawFetch<T>(path: string, options: RequestOptions): Promise<T> {
@@ -54,15 +66,19 @@ async function rawFetch<T>(path: string, options: RequestOptions): Promise<T> {
     method: options.method ?? 'GET',
     headers,
     body,
+    credentials: 'include',
   })
 
   const isJson = response.headers.get('content-type')?.includes('application/json')
-  const data = isJson ? await response.json() : null
+  let data = isJson ? await response.json() : null
 
   if (!response.ok) {
     throw new ApiError(response.status, data)
   }
 
+  if ((options.unwrapPagination ?? true) && isPaginatedResponse<unknown>(data)) {
+    data = await collectAllPages(data, (next) => fetchJson(next, headers))
+  }
   return data as T
 }
 
@@ -125,6 +141,10 @@ export async function tenantApiFetchTextPost(
   return response.text()
 }
 
+const refreshTenantSession = createSingleFlightRefresher(() =>
+  rawFetch<{ access: string }>('/auth/refresh/', { method: 'POST' }),
+)
+
 /**
  * Igual que rawFetch, pero si la respuesta es 401 (access token vencido) y
  * hay un refresh token disponible, intenta renovarlo UNA sola vez y repite
@@ -143,27 +163,30 @@ export async function tenantApiFetch<T>(
       throw error
     }
 
-    const { getRefreshToken, setAccessToken, clearSession } = await import(
-      '../../features/auth/hooks/session'
-    )
-    const refresh = getRefreshToken()
-    if (!refresh) {
+    const { setAccessToken, clearSession, getSessionEpoch, isImpersonationExpired } =
+      await import('../../features/auth/hooks/session')
+
+    if (isImpersonationExpired()) {
+      // El backend es quien de verdad decide si el refresh procede -esto
+      // solo corta antes, del lado cliente, un caso que ya sabemos invalido
+      // (impersonar por mas del tope permitido).
+      clearSession()
       throw error
     }
 
-    let newAccess: string
+    const epochBeforeRefresh = getSessionEpoch()
+    let refreshed: { access: string }
     try {
-      const refreshed = await rawFetch<{ access: string }>('/auth/refresh/', {
-        method: 'POST',
-        body: { refresh },
-      })
-      newAccess = refreshed.access
+      refreshed = await refreshTenantSession()
     } catch {
       clearSession()
       throw error
     }
 
-    setAccessToken(newAccess)
-    return rawFetch<T>(path, { ...options, token: newAccess })
+    if (getSessionEpoch() !== epochBeforeRefresh) {
+      throw error
+    }
+    setAccessToken(refreshed.access)
+    return rawFetch<T>(path, { ...options, token: refreshed.access })
   }
 }

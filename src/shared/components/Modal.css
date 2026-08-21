@@ -35,6 +35,10 @@
   max-width: 56rem;
 }
 
+.modal-card-xl {
+  max-width: 64rem;
+}
+
 .modal-card-closing {
   animation: modal-slide-out 0.16s var(--ease-in-out) forwards;
 }
