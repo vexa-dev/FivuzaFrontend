@@ -39,6 +39,7 @@ test('guarda atributos permitidos y limita a ellos el atributo principal', async
     name: 'Ropa',
     primary_attribute: 1,
     allowed_attributes: [1],
+    is_active: true,
   }))
   expect(onClose).toHaveBeenCalled()
 })
@@ -54,4 +55,32 @@ test('limpia el atributo principal cuando deja de estar permitido', async () => 
   const user = userEvent.setup()
   await user.click(screen.getByRole('checkbox', { name: 'Talla' }))
   expect(screen.getByLabelText('Atributo de agrupación (opcional)')).toHaveValue('')
+})
+
+test('permite desactivar una categoría existente', async () => {
+  const onClose = jest.fn()
+  render(
+    <CategoryFormModal
+      editingCategory={{ id: 1, name: 'Ropa', is_active: true, primary_attribute: null, allowed_attributes: [] }}
+      attributes={attributes}
+      onClose={onClose}
+    />,
+  )
+  const user = userEvent.setup()
+
+  await user.click(screen.getByRole('checkbox', { name: /Categoría activa/ }))
+  await user.click(screen.getByText('Guardar'))
+
+  await waitFor(() =>
+    expect(updateAsync).toHaveBeenCalledWith({
+      id: 1,
+      data: {
+        name: 'Ropa',
+        primary_attribute: null,
+        allowed_attributes: [],
+        is_active: false,
+      },
+    }),
+  )
+  expect(onClose).toHaveBeenCalled()
 })

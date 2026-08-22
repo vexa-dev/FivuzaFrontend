@@ -289,20 +289,37 @@ export function InventoryPage() {
 
       {tab === 'categorias' && (
         <div className="card core-table-card">
+          {categories && categories.length > 0 && (
+            <p className="core-page-subtitle" style={{ padding: '16px 16px 0' }}>
+              Organiza tu catálogo en categorías y define qué atributos aplican a cada una.
+            </p>
+          )}
           {loadingCategories && <LoadingRow />}
           {categories && categories.length === 0 && (
-            <EmptyState icon={<PackageSearch />} title="Todavía no hay categorías" />
+            <EmptyState
+              icon={<PackageSearch />}
+              title="Todavía no hay categorías"
+              subtitle={
+                canManage
+                  ? 'Crea tu primera categoría para empezar a organizar el catálogo.'
+                  : 'Cuando se configuren categorías, aparecerán aquí.'
+              }
+            />
           )}
           {categories && categories.length > 0 && (
             <table className="core-table">
               <thead>
                 <tr>
                   <th>Nombre</th>
+                  <th title="Atributos que se pueden asignar a las variantes de productos de esta categoría.">
+                    Atributos permitidos
+                  </th>
                   <th
                     title="Los productos de esta categoría se agrupan en la tabla de Productos por el valor de este atributo (ej. Talla). Cada categoría puede usar uno distinto, o ninguno."
                   >
                     Atributo de agrupación
                   </th>
+                  <th>Estado</th>
                   {canManage && <th></th>}
                 </tr>
               </thead>
@@ -310,6 +327,19 @@ export function InventoryPage() {
                 {categories.map((category) => (
                   <tr key={category.id}>
                     <td className="core-table-strong">{category.name}</td>
+                    <td>
+                      {category.allowed_attributes.length > 0 ? (
+                        <div className="attribute-values-row">
+                          {category.allowed_attributes.map((attributeId) => (
+                            <span className="attribute-value-chip" key={attributeId}>
+                              {attributes?.find((a) => a.id === attributeId)?.name ?? '—'}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span style={{ color: 'var(--text-muted)' }}>Ninguno</span>
+                      )}
+                    </td>
                     <td>
                       {canManage ? (
                         <select
@@ -337,6 +367,11 @@ export function InventoryPage() {
                       ) : (
                         (attributes?.find((a) => a.id === category.primary_attribute)?.name ?? '—')
                       )}
+                    </td>
+                    <td>
+                      <span className={`badge ${category.is_active ? 'badge-success' : 'badge-danger'}`}>
+                        {category.is_active ? 'Activa' : 'Inactiva'}
+                      </span>
                     </td>
                     {canManage && (
                       <td>

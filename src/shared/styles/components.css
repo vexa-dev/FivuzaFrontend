@@ -216,6 +216,65 @@ button.card:disabled {
   color: var(--text-secondary);
 }
 
+.attribute-values-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Chip -mismo lenguaje visual que .badge (pill, mismo padding vertical)
+   pero sin mayusculas/tracking, para no mezclar "esto es informativo"
+   (badges de estado en toda la app) con "esto es una etiqueta de dato"
+   (atributos/valores). Usado por AttributesTab (valores, removible) y por
+   la pestaña Categorías (atributos permitidos, solo lectura). */
+.attribute-value-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 6px 4px 10px;
+  border-radius: 20px;
+  background: var(--bg-surface-secondary);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Fila "switch" de un formulario -checkbox + titulo + descripcion, en una
+   tarjeta clickeable. Usado por ProductFormModal (disponible para venta /
+   producto activo) y CategoryFormModal (categoria activa). */
+.product-form-switch {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  background: var(--bg-surface-secondary);
+}
+
+.product-form-switch input {
+  margin-top: 2px;
+}
+
+.product-form-switch span {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.product-form-switch strong {
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.product-form-switch small {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
 .dot {
   width: 6px;
   height: 6px;
