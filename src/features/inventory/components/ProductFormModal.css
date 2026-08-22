@@ -98,38 +98,13 @@
   line-height: 1.4;
 }
 
+/* .product-form-switch vive en shared/styles/components.css -lo usa
+   tambien el modal de Categorías (activa/inactiva). */
 .product-form-switches {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   margin-top: 16px;
-}
-
-.product-form-switch {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 12px;
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  background: var(--bg-surface-secondary);
-}
-
-.product-form-switch input { margin-top: 2px; }
-
-.product-form-switch span {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.product-form-switch strong { color: var(--text-primary); font-size: 13px; }
-
-.product-form-switch small {
-  color: var(--text-muted);
-  font-size: 12px;
-  line-height: 1.35;
 }
 
 .product-form-variants-heading > div { flex: 1; }

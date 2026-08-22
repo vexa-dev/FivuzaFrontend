@@ -1,6 +1,7 @@
 import { Pencil, PackageSearch, Plus, Trash2 } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import '../core/CorePage.css'
+import './components/CategoriesTab.css'
 import { ConfirmDialog } from '../../shared/components/ConfirmDialog'
 import { EmptyState } from '../../shared/components/EmptyState'
 import { useAuth } from '../auth/hooks/useAuth'
@@ -288,82 +289,109 @@ export function InventoryPage() {
       )}
 
       {tab === 'categorias' && (
-        <div className="card core-table-card">
+        <div className="card">
+          {categories && categories.length > 0 && (
+            <p className="core-page-subtitle" style={{ margin: '0 0 16px' }}>
+              Organiza tu catálogo en categorías y define qué atributos aplican a cada una.
+            </p>
+          )}
           {loadingCategories && <LoadingRow />}
           {categories && categories.length === 0 && (
-            <EmptyState icon={<PackageSearch />} title="Todavía no hay categorías" />
+            <EmptyState
+              icon={<PackageSearch />}
+              title="Todavía no hay categorías"
+              subtitle={
+                canManage
+                  ? 'Crea tu primera categoría para empezar a organizar el catálogo.'
+                  : 'Cuando se configuren categorías, aparecerán aquí.'
+              }
+            />
           )}
           {categories && categories.length > 0 && (
-            <table className="core-table">
-              <thead>
-                <tr>
-                  <th>Nombre</th>
-                  <th
-                    title="Los productos de esta categoría se agrupan en la tabla de Productos por el valor de este atributo (ej. Talla). Cada categoría puede usar uno distinto, o ninguno."
-                  >
-                    Atributo de agrupación
-                  </th>
-                  {canManage && <th></th>}
-                </tr>
-              </thead>
-              <tbody>
-                {categories.map((category) => (
-                  <tr key={category.id}>
-                    <td className="core-table-strong">{category.name}</td>
-                    <td>
-                      {canManage ? (
-                        <select
-                          value={category.primary_attribute ?? ''}
-                          onChange={(event) =>
-                            updateCategory.mutate({
-                              id: category.id,
-                              data: {
-                                primary_attribute: event.target.value
-                                  ? Number(event.target.value)
-                                  : null,
-                              },
-                            })
-                          }
-                          aria-label={`Atributo de agrupación de ${category.name}`}
-                          style={{ maxWidth: 180 }}
-                        >
-                          <option value="">Sin agrupar</option>
-                          {attributes?.map((attribute) => (
-                            <option key={attribute.id} value={attribute.id}>
-                              {attribute.name}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        (attributes?.find((a) => a.id === category.primary_attribute)?.name ?? '—')
-                      )}
-                    </td>
-                    {canManage && (
-                      <td>
-                        <div className="row-actions">
-                          <button
-                            type="button"
-                            className="btn btn-ghost btn-sm btn-icon"
-                            aria-label={`Editar ${category.name}`}
-                            onClick={() => setEditingCategory(category)}
-                          >
-                            <Pencil />
-                          </button>
-                          <button
-                            type="button"
-                            className="btn btn-danger-ghost btn-sm btn-icon"
-                            aria-label={`Eliminar ${category.name}`}
-                            onClick={() => setDeletingCategory(category)}
-                          >
-                            <Trash2 />
-                          </button>
-                        </div>
-                      </td>
+            <div className="category-grid">
+              {categories.map((category) => (
+                <div className="card category-card" key={category.id}>
+                  <div className="category-card-header">
+                    <h3 className="card-title">{category.name}</h3>
+                    <span className={`badge ${category.is_active ? 'badge-success' : 'badge-danger'}`}>
+                      {category.is_active ? 'Activa' : 'Inactiva'}
+                    </span>
+                  </div>
+
+                  <div className="category-card-field">
+                    <span className="category-card-label">Atributos permitidos</span>
+                    {category.allowed_attributes.length > 0 ? (
+                      <div className="attribute-values-row">
+                        {category.allowed_attributes.map((attributeId) => (
+                          <span className="attribute-value-chip" key={attributeId}>
+                            {attributes?.find((a) => a.id === attributeId)?.name ?? '—'}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span style={{ color: 'var(--text-muted)' }}>Ninguno</span>
                     )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                  </div>
+
+                  <div className="category-card-field">
+                    <span
+                      className="category-card-label"
+                      title="Los productos de esta categoría se agrupan en la tabla de Productos por el valor de este atributo (ej. Talla). Cada categoría puede usar uno distinto, o ninguno."
+                    >
+                      Atributo de agrupación
+                    </span>
+                    {canManage ? (
+                      <select
+                        value={category.primary_attribute ?? ''}
+                        onChange={(event) =>
+                          updateCategory.mutate({
+                            id: category.id,
+                            data: {
+                              primary_attribute: event.target.value
+                                ? Number(event.target.value)
+                                : null,
+                            },
+                          })
+                        }
+                        aria-label={`Atributo de agrupación de ${category.name}`}
+                      >
+                        <option value="">Sin agrupar</option>
+                        {attributes?.map((attribute) => (
+                          <option key={attribute.id} value={attribute.id}>
+                            {attribute.name}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span>
+                        {attributes?.find((a) => a.id === category.primary_attribute)?.name ?? '—'}
+                      </span>
+                    )}
+                  </div>
+
+                  {canManage && (
+                    <div className="row-actions category-card-actions">
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-sm btn-icon"
+                        aria-label={`Editar ${category.name}`}
+                        onClick={() => setEditingCategory(category)}
+                      >
+                        <Pencil />
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-danger-ghost btn-sm btn-icon"
+                        aria-label={`Eliminar ${category.name}`}
+                        onClick={() => setDeletingCategory(category)}
+                      >
+                        <Trash2 />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           )}
         </div>
       )}
