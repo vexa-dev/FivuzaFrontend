@@ -1,5 +1,5 @@
 import { X } from 'lucide-react'
-import { useState, type ReactNode } from 'react'
+import { useId, useState, type ReactNode } from 'react'
 import './Modal.css'
 
 const CLOSE_ANIMATION_MS = 160
@@ -18,6 +18,7 @@ interface ModalProps {
 
 export function Modal({ title, onClose, children, size = 'md', className = '' }: ModalProps) {
   const [closing, setClosing] = useState(false)
+  const titleId = useId()
   const cardClassName = [
     'modal-card card',
     size === 'lg' ? 'modal-card-lg' : '',
@@ -39,10 +40,15 @@ export function Modal({ title, onClose, children, size = 'md', className = '' }:
     <div className={`modal-overlay ${closing ? 'modal-overlay-closing' : ''}`} onClick={requestClose}>
       <div
         className={cardClassName}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
         onClick={(event) => event.stopPropagation()}
       >
         <div className="modal-header">
-          <h2 className="modal-title">{title}</h2>
+          <h2 id={titleId} className="modal-title">
+            {title}
+          </h2>
           <button
             type="button"
             className="modal-close"

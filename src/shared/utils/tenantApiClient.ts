@@ -144,7 +144,15 @@ export async function tenantApiFetchTextPost(
   return response.text()
 }
 
-const refreshTenantSession = createSingleFlightRefresher(() =>
+/**
+ * Unico refresh de sesion del tenant, compartido por la restauracion al
+ * cargar la app (AuthContext) y por el reintento ante 401. El refresh rota
+ * y bloquea el token anterior: si dos llamadas salian en paralelo (ej. el
+ * doble montaje de StrictMode, o la restauracion y un 401 simultaneo), la
+ * segunda recibia 401 y su catch borraba la sesion que la primera acababa
+ * de restaurar.
+ */
+export const refreshTenantSession = createSingleFlightRefresher(() =>
   rawFetch<{ access: string }>('/auth/refresh/', { method: 'POST' }),
 )
 

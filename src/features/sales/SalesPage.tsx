@@ -98,7 +98,11 @@ function CurrentCashTab() {
   const { data: sessions, isLoading } = useOpenCashSessions()
   const { data: registers } = useCashRegisters()
   const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null)
-  const [showClose, setShowClose] = useState(false)
+  // La sesion que se esta cerrando se guarda aparte de la seleccion: al
+  // cerrar, la lista de cajas abiertas se refresca y la sesion desaparece
+  // de ella; si el modal dependiera de selectedSession se desmontaria antes
+  // de mostrar el resultado del arqueo (esperado, contado, diferencia).
+  const [closingSession, setClosingSession] = useState<CashSession | null>(null)
   const [showAddMovement, setShowAddMovement] = useState(false)
 
   const registerName = (id: number) => registers?.find((r) => r.id === id)?.name ?? `Caja #${id}`
@@ -145,7 +149,7 @@ function CurrentCashTab() {
           registerName={registerName(selectedSession.cash_register)}
           onBack={() => setSelectedSessionId(null)}
           onAddMovement={() => setShowAddMovement(true)}
-          onClose={() => setShowClose(true)}
+          onClose={() => setClosingSession(selectedSession)}
         />
       )}
 
@@ -156,11 +160,11 @@ function CurrentCashTab() {
         />
       )}
 
-      {selectedSession && showClose && (
+      {closingSession && (
         <CloseCashSessionModalContainer
-          session={selectedSession}
+          session={closingSession}
           onClose={() => {
-            setShowClose(false)
+            setClosingSession(null)
             setSelectedSessionId(null)
           }}
         />
