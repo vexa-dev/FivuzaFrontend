@@ -11,6 +11,7 @@ import {
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { NavLink, Outlet } from 'react-router-dom'
+import { RouteErrorBoundary } from './RouteErrorBoundary'
 import { useAuth } from '../../features/auth/hooks/useAuth'
 import { useLogout } from '../../features/auth/hooks/useLogout'
 import { useLowStockVariants } from '../../features/inventory/hooks/useStock'
@@ -319,7 +320,9 @@ export function ErpLayout() {
           margin-left de .erp-layout-nav-open .erp-content (ver CSS); en
           tablet/mobile ese media query lo ignora, el menu queda de overlay. */}
       <main className="erp-content" style={{ '--erp-nav-gap': `${navGapPx}px` } as React.CSSProperties}>
-        <Outlet />
+        <RouteErrorBoundary>
+          <Outlet />
+        </RouteErrorBoundary>
       </main>
     </div>
   )

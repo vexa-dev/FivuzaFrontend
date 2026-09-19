@@ -156,9 +156,9 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.6rem 0.7rem;
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border-default);
   border-radius: var(--radius-md);
-  background: var(--surface-subtle);
+  background: var(--bg-surface-secondary);
 }
 
 .user-warehouse-option input {
@@ -174,14 +174,14 @@
 }
 
 .user-warehouse-admin {
-  color: var(--success-text);
-  background: var(--success-soft);
+  color: var(--success);
+  background: var(--success-subtle-bg);
 }
 
 .user-warehouse-warning {
   margin-top: 0.5rem;
-  color: var(--warning-text);
-  background: var(--warning-soft);
+  color: var(--warning);
+  background: var(--warning-subtle-bg);
 }
 
 @media (max-width: 640px) {

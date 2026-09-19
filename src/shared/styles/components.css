@@ -672,3 +672,10 @@ label {
   font-size: 0.75rem;
   flex-shrink: 0;
 }
+
+/* Fallback de RouteErrorBoundary: la accion va debajo del EmptyState. */
+.route-error-actions {
+  display: flex;
+  justify-content: center;
+  padding-bottom: 24px;
+}

@@ -35,9 +35,20 @@ function toSyncItem(sale: PendingSale): SaleSyncItemInput {
     client_side_uuid: sale.clientSideUuid,
     customer_id: sale.customerId,
     cash_session_id: sale.cashSessionId,
+    occurred_at: sale.createdAt,
     lines: sale.lines,
     payments: sale.payments,
   }
+}
+
+/** El backend devuelve el error por venta como {"error": {code, message}}
+ * (contrato estandar) o como detalle crudo de DRF -se guarda el mensaje
+ * humano, no el JSON, porque es lo que ve el cajero en SyncStatusModal. */
+export function describeSyncError(error: unknown): string {
+  if (typeof error === 'string') return error
+  const message = (error as { error?: { message?: unknown } } | null)?.error?.message
+  if (typeof message === 'string') return message
+  return JSON.stringify(error)
 }
 
 async function applyResult(result: SaleSyncedResult) {
@@ -46,7 +57,7 @@ async function applyResult(result: SaleSyncedResult) {
   } else {
     await offlineDB.pendingSales.update(result.client_side_uuid, {
       status: 'FAILED',
-      error: typeof result.error === 'string' ? result.error : JSON.stringify(result.error),
+      error: describeSyncError(result.error),
     })
   }
 }

@@ -127,13 +127,13 @@ export function CheckInTab() {
             flexDirection: 'column',
             alignItems: 'center',
             gap: 8,
-            borderColor: result.allowed ? 'var(--color-success, #16a34a)' : 'var(--color-danger, #dc2626)',
+            borderColor: result.allowed ? 'var(--success)' : 'var(--danger)',
           }}
         >
           {result.allowed ? (
-            <CheckCircle2 size={56} strokeWidth={1.75} color="var(--color-success, #16a34a)" />
+            <CheckCircle2 size={56} strokeWidth={1.75} color="var(--success)" />
           ) : (
-            <XCircle size={56} strokeWidth={1.75} color="var(--color-danger, #dc2626)" />
+            <XCircle size={56} strokeWidth={1.75} color="var(--danger)" />
           )}
           <h2 style={{ margin: 0 }}>{result.allowed ? 'Acceso permitido' : 'Acceso denegado'}</h2>
           <p className="core-table-strong" style={{ margin: 0 }}>

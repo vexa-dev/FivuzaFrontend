@@ -45,7 +45,7 @@
 .dashboard-cards-modal-action:hover {
   background: var(--bg-surface-hover);
   color: var(--text-primary);
-  border-color: var(--border-strong, var(--border-default));
+  border-color: var(--border-default);
 }
 
 .dashboard-cards-modal-group {

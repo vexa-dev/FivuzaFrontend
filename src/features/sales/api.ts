@@ -387,6 +387,9 @@ export interface SaleSyncItemInput {
   client_side_uuid: string
   customer_id: number
   cash_session_id: number
+  /** Hora del dispositivo al vender (ISO 8601). El backend la usa como fecha
+   * real de la venta en reportes y dashboard, no la de sincronizacion. */
+  occurred_at?: string
   lines: SaleLineInput[]
   payments: SalePaymentInput[]
 }
