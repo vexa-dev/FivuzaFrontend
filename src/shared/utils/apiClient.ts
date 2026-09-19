@@ -1,7 +1,10 @@
 import { collectAllPages, isPaginatedResponse } from './pagination'
 import { createSingleFlightRefresher } from './singleFlightRefresh'
 
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api/v1'
+// Mismo origen por defecto (nginx en produccion, proxy de Vite en dev): el
+// panel interno se abre desde un dominio registrado para el esquema public
+// (ej. admin.fivuza.com, o public.localhost:5173 en desarrollo).
+const API_URL = import.meta.env.VITE_API_URL || '/api/v1'
 
 export class ApiError extends Error {
   status: number

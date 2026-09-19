@@ -2,29 +2,32 @@ import { ApiError } from './apiClient'
 import { collectAllPages, isPaginatedResponse } from './pagination'
 import { createSingleFlightRefresher } from './singleFlightRefresh'
 
-const API_PORT = import.meta.env.VITE_API_PORT ?? '8000'
+// Opcional: solo para apuntar el frontend a un backend en otro puerto sin
+// pasar por el proxy (flujo anterior). Por defecto la API es del MISMO
+// origen: en produccion nginx reenvia /api y /ws al backend, y en desarrollo
+// lo hace el proxy de Vite (vite.config.ts).
+const API_PORT: string | undefined = import.meta.env.VITE_API_PORT || undefined
 
 /**
- * A diferencia de core/api.ts (que usa una VITE_API_URL fija, porque el
- * panel de platform_staff siempre vive en el mismo dominio raiz), el ERP de
- * un tenant se sirve desde el subdominio de CADA negocio -la API debe
- * resolverse contra ESE mismo subdominio para que TenantMainMiddleware
- * (backend) resuelva el esquema correcto por el header Host.
+ * El ERP de un tenant se sirve desde el subdominio de CADA negocio, y la API
+ * se pide a ese mismo host: el proxy conserva el header Host, que es con lo
+ * que TenantMainMiddleware (backend) resuelve el esquema del tenant.
  */
 function getTenantApiUrl(): string {
+  if (!API_PORT) return '/api/v1'
   const { protocol, hostname } = window.location
   return `${protocol}//${hostname}:${API_PORT}/api/v1`
 }
 
 /**
  * Igual que getTenantApiUrl, pero para el WebSocket del dashboard (Sprint
- * 24, TRD §2.5) -mismo host/puerto que la API REST (Daphne sirve ambos
- * protocolos en el mismo proceso), solo cambia el esquema http(s) -> ws(s).
+ * 24, TRD §2.5) -mismo host que la API REST, solo cambia el esquema
+ * http(s) -> ws(s).
  */
 export function getTenantWebSocketUrl(path: string): string {
-  const { protocol, hostname } = window.location
+  const { protocol, hostname, host } = window.location
   const wsProtocol = protocol === 'https:' ? 'wss:' : 'ws:'
-  return `${wsProtocol}//${hostname}:${API_PORT}${path}`
+  return API_PORT ? `${wsProtocol}//${hostname}:${API_PORT}${path}` : `${wsProtocol}//${host}${path}`
 }
 
 interface RequestOptions {
