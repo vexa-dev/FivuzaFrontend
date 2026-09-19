@@ -1,25 +1,6 @@
-.attribute-values-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-}
-
-/* Chip removible -mismo lenguaje visual que .badge (pill, mismo padding
-   vertical) pero con la "x" propia en vez de reusar .badge tal cual, para
-   no mezclar "esto es informativo" (badges de estado en toda la app) con
-   "esto se puede quitar con un click". */
-.attribute-value-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 4px 6px 4px 10px;
-  border-radius: 20px;
-  background: var(--bg-surface-secondary);
-  color: var(--text-secondary);
-  font-size: 0.75rem;
-  font-weight: 600;
-}
+/* .attribute-values-row y .attribute-value-chip viven en
+   shared/styles/components.css -las usa tambien la pestaña Categorías
+   (atributos permitidos), no solo esta. */
 
 .attribute-value-chip button {
   display: inline-flex;

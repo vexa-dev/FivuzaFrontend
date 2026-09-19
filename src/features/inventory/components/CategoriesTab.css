@@ -1,0 +1,45 @@
+/* Grid de tarjetas para la pestaña Categorías -antes era una tabla que se
+   veía muy vacía con solo nombre + un select por fila. Mismo lenguaje
+   visual que .pos-product-grid/.pos-product-card (POS.css): grid
+   auto-fill de cards, .card como base compartida. */
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.category-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.category-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.category-card-header .card-title {
+  margin: 0;
+}
+
+.category-card-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.category-card-label {
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.category-card-actions {
+  margin-top: auto;
+  padding-top: 4px;
+}

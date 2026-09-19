@@ -19,6 +19,7 @@ export function CategoryFormModal({ editingCategory, attributes, onClose }: Cate
   const [primaryAttributeId, setPrimaryAttributeId] = useState<number | ''>(
     editingCategory?.primary_attribute ?? '',
   )
+  const [isActive, setIsActive] = useState(editingCategory?.is_active ?? true)
   const [error, setError] = useState<string | null>(null)
 
   const createCategory = useCreateCategory()
@@ -50,6 +51,7 @@ export function CategoryFormModal({ editingCategory, attributes, onClose }: Cate
       name: name.trim(),
       primary_attribute: primaryAttributeId || null,
       allowed_attributes: allowedAttributeIds,
+      is_active: isActive,
     }
     const action = editingCategory
       ? updateCategory.mutateAsync({ id: editingCategory.id, data })
@@ -106,6 +108,18 @@ export function CategoryFormModal({ editingCategory, attributes, onClose }: Cate
             Se usa para ordenar y agrupar las variantes en la lista de productos.
           </p>
         </div>
+
+        <label className="product-form-switch">
+          <input
+            type="checkbox"
+            checked={isActive}
+            onChange={(event) => setIsActive(event.target.checked)}
+          />
+          <span>
+            <strong>Categoría activa</strong>
+            <small>Las categorías inactivas no aparecen como opción al crear productos.</small>
+          </span>
+        </label>
 
         {error && <p className="login-error" role="alert">{error}</p>}
 
