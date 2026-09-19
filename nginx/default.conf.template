@@ -1,0 +1,69 @@
+# Plantilla procesada por envsubst al arrancar nginx:alpine
+# (/etc/nginx/templates/*.template -> /etc/nginx/conf.d/*). Solo se
+# sustituyen PORT y BACKEND_URL (NGINX_ENVSUBST_FILTER en el Dockerfile),
+# asi las variables propias de nginx ($host, $uri...) quedan intactas.
+
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      close;
+}
+
+server {
+    listen ${PORT};
+    server_name _;
+    root /usr/share/nginx/html;
+
+    # Railway (y cualquier balanceador) termina TLS antes de nginx.
+    real_ip_header X-Forwarded-For;
+    set_real_ip_from 0.0.0.0/0;
+
+    client_max_body_size 20m;
+
+    include /etc/nginx/snippets/security-headers.conf;
+
+    # API REST y WebSocket del mismo origen. Se conserva el Host original:
+    # django-tenants resuelve el esquema del negocio por ese header.
+    location /api/ {
+        proxy_pass ${BACKEND_URL};
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+        proxy_read_timeout 120s;
+    }
+
+    location /ws/ {
+        proxy_pass ${BACKEND_URL};
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+        proxy_read_timeout 1h;
+    }
+
+    # Assets con hash de Vite: inmutables.
+    location /assets/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable" always;
+        include /etc/nginx/snippets/security-headers.conf;
+        try_files $uri =404;
+    }
+
+    # El service worker y el HTML siempre frescos, o un deploy nuevo no llega.
+    location = /sw.js {
+        add_header Cache-Control "no-cache" always;
+        include /etc/nginx/snippets/security-headers.conf;
+        try_files $uri =404;
+    }
+
+    # SPA: cualquier ruta del cliente (/inventario, /admin/tenants/3...)
+    # devuelve index.html en vez de 404 al recargar.
+    location / {
+        add_header Cache-Control "no-cache" always;
+        include /etc/nginx/snippets/security-headers.conf;
+        try_files $uri $uri/ /index.html;
+    }
+}

@@ -8,7 +8,7 @@ jest.mock('../../features/auth/hooks/session', () => ({
 }))
 
 import * as session from '../../features/auth/hooks/session'
-import { tenantApiFetch } from './tenantApiClient'
+import { getTenantWebSocketUrl, tenantApiFetch } from './tenantApiClient'
 
 function jsonResponse(body: unknown, ok = true, status = 200) {
   return {
@@ -121,5 +121,17 @@ describe('tenantApiClient', () => {
     await expect(tenantApiFetch('/things/1/', { token: 'viejo' })).rejects.toBeInstanceOf(ApiError)
     expect(session.clearSession).toHaveBeenCalled()
     expect(globalThis.fetch).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('URLs del mismo origen', () => {
+  it('pide la API al mismo origen por defecto (sin puerto del backend)', async () => {
+    globalThis.fetch = jest.fn().mockResolvedValue(jsonResponse({ ok: true }))
+    await tenantApiFetch('/ventas/sales/', { token: 't' })
+    expect((globalThis.fetch as jest.Mock).mock.calls[0][0]).toBe('/api/v1/ventas/sales/')
+  })
+
+  it('arma el WebSocket contra el host actual', () => {
+    expect(getTenantWebSocketUrl('/ws/dashboard/')).toBe(`ws://${window.location.host}/ws/dashboard/`)
   })
 })
