@@ -6,6 +6,11 @@ COPY package*.json ./
 RUN npm ci
 
 COPY . .
+# Variables publicas de Vite: se hornean en el build. En Railway se pasan
+# como variables del servicio (disponibles como build args).
+ARG VITE_SENTRY_DSN=""
+ARG VITE_SENTRY_ENVIRONMENT=production
+ENV VITE_SENTRY_DSN=$VITE_SENTRY_DSN     VITE_SENTRY_ENVIRONMENT=$VITE_SENTRY_ENVIRONMENT
 RUN npm run build
 
 # Stage 2: Serve (nginx con proxy de /api y /ws al backend)

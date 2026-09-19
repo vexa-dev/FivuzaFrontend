@@ -25,12 +25,15 @@ export function CloseCashSessionModal({ session, movements, onClose }: CloseCash
 
   const movementsIn = sum(movements, 'IN')
   const movementsOut = sum(movements, 'OUT')
-  // Estimado calculado en el navegador a partir de los movimientos ya
-  // visibles -no incluye ventas al contado (todavia no existe el modulo de
-  // Ventas/POS para generarlas). El expected_closing_amount real, que el
-  // backend calcula al cerrar, es la fuente de verdad -esto es solo una
-  // vista previa para orientar al cajero antes de contar el efectivo.
-  const estimatedExpected = Number(session.opening_amount) + movementsIn - movementsOut
+  // El backend informa el esperado a la fecha con la misma formula del
+  // cierre (incluye las ventas en efectivo). La estimacion local solo queda
+  // como respaldo si el campo no viene: antes era la unica fuente y omitia
+  // todas las ventas en efectivo, asi que el "esperado" salia bajo.
+  const estimatedExpected =
+    session.expected_amount_so_far != null
+      ? Number(session.expected_amount_so_far)
+      : Number(session.opening_amount) + movementsIn - movementsOut
+  const cashSales = estimatedExpected - (Number(session.opening_amount) + movementsIn - movementsOut)
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
@@ -85,6 +88,12 @@ export function CloseCashSessionModal({ session, movements, onClose }: CloseCash
         <dl className="detail-grid">
           <dt>Apertura</dt>
           <dd>{session.opening_amount}</dd>
+          {session.expected_amount_so_far != null && (
+            <>
+              <dt>Ventas en efectivo</dt>
+              <dd>{cashSales.toFixed(2)}</dd>
+            </>
+          )}
           <dt>Ingresos manuales</dt>
           <dd>{movementsIn.toFixed(2)}</dd>
           <dt>Egresos manuales</dt>
