@@ -3,3 +3,9 @@ dist
 .git
 .gitignore
 README.md
+.env
+.env.*
+!.env.example
+.claude
+.impeccable
+.github
