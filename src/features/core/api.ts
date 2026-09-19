@@ -1,4 +1,4 @@
-import { apiFetch } from '../../shared/utils/apiClient'
+import { apiFetch, refreshPlatformSession } from '../../shared/utils/apiClient'
 import { getAccessToken, type PlatformStaffInfo, type PlatformTokens } from './hooks/session'
 
 export interface Tenant {
@@ -131,7 +131,8 @@ export function loginPlatformStaff(email: string, password: string) {
 }
 
 export function restorePlatformSession() {
-  return apiFetch<PlatformTokens>('/platform/auth/refresh/', { method: 'POST' })
+  // El refresh devuelve la sesion completa (access + perfil del staff).
+  return refreshPlatformSession() as Promise<PlatformTokens>
 }
 
 export function logoutPlatformStaff() {

@@ -60,7 +60,10 @@ async function rawApiFetch<T>(path: string, options: RequestOptions = {}): Promi
   return data as T
 }
 
-const refreshPlatformSession = createSingleFlightRefresher(() =>
+/** Mismo criterio que refreshTenantSession (tenantApiClient.ts): la
+ * restauracion al cargar y el reintento ante 401 comparten un solo refresh
+ * en vuelo, porque el refresh rota y bloquea el token anterior. */
+export const refreshPlatformSession = createSingleFlightRefresher(() =>
   rawApiFetch<{ access: string }>('/platform/auth/refresh/', { method: 'POST' }),
 )
 

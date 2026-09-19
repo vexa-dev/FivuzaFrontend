@@ -1,4 +1,4 @@
-import { tenantApiFetch } from '../../shared/utils/tenantApiClient'
+import { refreshTenantSession, tenantApiFetch } from '../../shared/utils/tenantApiClient'
 import { getAccessToken, type TenantSession } from './hooks/session'
 
 export function loginTenantUser(email: string, password: string) {
@@ -9,7 +9,8 @@ export function loginTenantUser(email: string, password: string) {
 }
 
 export function restoreTenantSession() {
-  return tenantApiFetch<TenantSession>('/auth/refresh/', { method: 'POST' })
+  // El refresh devuelve la sesion completa (access + perfil).
+  return refreshTenantSession() as Promise<TenantSession>
 }
 
 export function logoutTenantUser() {

@@ -135,3 +135,24 @@ describe('URLs del mismo origen', () => {
     expect(getTenantWebSocketUrl('/ws/dashboard/')).toBe(`ws://${window.location.host}/ws/dashboard/`)
   })
 })
+
+describe('refreshTenantSession', () => {
+  it('comparte un solo refresh entre llamadas simultaneas', async () => {
+    let resolveRefresh: (value: unknown) => void = () => {}
+    globalThis.fetch = jest.fn().mockReturnValue(
+      new Promise((resolve) => {
+        resolveRefresh = resolve
+      }),
+    )
+    const { refreshTenantSession } = await import('./tenantApiClient')
+
+    // Como el doble montaje de StrictMode o la restauracion + un 401 a la vez.
+    const first = refreshTenantSession()
+    const second = refreshTenantSession()
+    resolveRefresh(jsonResponse({ access: 'nuevo' }))
+
+    await expect(first).resolves.toEqual({ access: 'nuevo' })
+    await expect(second).resolves.toEqual({ access: 'nuevo' })
+    expect(globalThis.fetch).toHaveBeenCalledTimes(1)
+  })
+})
