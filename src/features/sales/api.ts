@@ -19,6 +19,9 @@ export interface CashSession {
   opening_amount: string
   opening_at: string
   expected_closing_amount: string | null
+  /** Solo en cajas abiertas: esperado a la fecha calculado por el backend
+   * (apertura + ventas en efectivo + ingresos - egresos). */
+  expected_amount_so_far?: string | null
   counted_closing_amount: string | null
   difference: string | null
   status: 'OPEN' | 'CLOSED'
