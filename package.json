@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "lint:tokens": "node scripts/check-css-tokens.mjs",
+    "e2e": "playwright test",
     "preview": "vite preview",
     "test": "jest",
     "test:ci": "jest --runInBand --coverage --coverageReporters=text-summary --coverageReporters=text"
@@ -26,6 +27,7 @@
     "@babel/preset-env": "^8.0.2",
     "@babel/preset-react": "^8.0.1",
     "@babel/preset-typescript": "^8.0.1",
+    "@playwright/test": "^1.63.0",
     "@testing-library/jest-dom": "^7.0.0",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",

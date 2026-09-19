@@ -34,3 +34,8 @@ dist-ssr
 .github/agents/
 .github/hooks/
 .github/skills/
+
+# Playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/
