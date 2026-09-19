@@ -1,6 +1,6 @@
 import { ApiError } from '../utils/apiClient'
 import { offlineDB, type PendingSale } from './db'
-import { getLastSyncedAt, retryFailedSale, syncPendingSales } from './syncService'
+import { describeSyncError, getLastSyncedAt, retryFailedSale, syncPendingSales } from './syncService'
 
 jest.mock('../../features/sales/api', () => ({
   syncSales: jest.fn(),
@@ -79,6 +79,38 @@ describe('syncPendingSales', () => {
     expect(offlineDB.pendingSales.update).toHaveBeenCalledWith('c', {
       status: 'FAILED',
       error: 'sin cliente',
+    })
+  })
+
+  it('envia la hora original de la venta como occurred_at', async () => {
+    mockPendingQueue([pendingSale({ createdAt: '2026-08-12T23:40:00Z' })])
+    syncSales.mockResolvedValue({ synced: [], conflicts: [] })
+
+    await syncPendingSales()
+
+    expect(syncSales).toHaveBeenCalledWith([
+      expect.objectContaining({ client_side_uuid: 'uuid-1', occurred_at: '2026-08-12T23:40:00Z' }),
+    ])
+  })
+
+  it('guarda el mensaje humano cuando el backend devuelve el error estandar', async () => {
+    mockPendingQueue([pendingSale()])
+    syncSales.mockResolvedValue({
+      synced: [
+        {
+          client_side_uuid: 'uuid-1',
+          status: 'FAILED',
+          error: { error: { code: 'CUSTOMER_NOT_FOUND', message: 'El cliente de esta venta ya no existe.', details: {} } },
+        },
+      ],
+      conflicts: [],
+    })
+
+    await syncPendingSales()
+
+    expect(offlineDB.pendingSales.update).toHaveBeenCalledWith('uuid-1', {
+      status: 'FAILED',
+      error: 'El cliente de esta venta ya no existe.',
     })
   })
 
@@ -185,5 +217,12 @@ describe('retryFailedSale', () => {
       status: 'FAILED',
       error: JSON.stringify({ customer_id: ['eliminado'] }),
     })
+  })
+})
+
+describe('describeSyncError', () => {
+  it('devuelve strings tal cual y serializa formas desconocidas', () => {
+    expect(describeSyncError('sin cliente')).toBe('sin cliente')
+    expect(describeSyncError({ detail: 'x' })).toBe('{"detail":"x"}')
   })
 })

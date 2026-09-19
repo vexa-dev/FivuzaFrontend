@@ -7,6 +7,7 @@
     "dev": "vite --host",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
+    "lint:tokens": "node scripts/check-css-tokens.mjs",
     "preview": "vite preview",
     "test": "jest",
     "test:ci": "jest --runInBand"

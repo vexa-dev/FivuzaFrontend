@@ -9,6 +9,7 @@ import {
   Users,
 } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router-dom'
+import { RouteErrorBoundary } from '../../shared/components/RouteErrorBoundary'
 import { Logo } from '../../shared/components/Logo'
 import { ThemeToggle } from '../../shared/components/ThemeToggle'
 import { useAuth } from './hooks/useAuth'
@@ -79,7 +80,9 @@ export function CoreLayout() {
         </header>
 
         <main className="core-content">
-          <Outlet />
+          <RouteErrorBoundary>
+            <Outlet />
+          </RouteErrorBoundary>
         </main>
       </div>
     </div>
