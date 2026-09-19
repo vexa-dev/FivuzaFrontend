@@ -7,6 +7,8 @@ module.exports = {
     '\\.(svg|png|jpg|jpeg)$': '<rootDir>/src/test/fileMock.ts',
   },
   testPathIgnorePatterns: ['/node_modules/', '/dist/'],
+  // Cobertura solo del codigo de la app (reporte en CI, sin umbral por ahora).
+  collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/**/*.test.{ts,tsx}', '!src/test/**', '!src/main.tsx'],
   transform: {
     '^.+\\.(t|j)sx?$': 'babel-jest',
   },

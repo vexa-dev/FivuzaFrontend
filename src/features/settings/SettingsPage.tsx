@@ -13,11 +13,16 @@ const PRESETS: { hex: string; label: string }[] = [
   { hex: '#E5484D', label: 'Rojo' },
 ]
 
-const DEFAULT_COLOR = '#3B82F6'
+// Sin color elegido, el sistema usa el acento oficial del tema: se lee del
+// token en vez de repetir el hex aqui (antes mostraba un azul que no era el
+// que se estaba viendo en pantalla).
+function officialAccent(): string {
+  return getComputedStyle(document.documentElement).getPropertyValue('--color-accent-600').trim()
+}
 
 export function SettingsPage() {
   const { brandColor, setBrandColor, adaptBackground, setAdaptBackground, result, reset } = useBrandTheme()
-  const activeColor = brandColor ?? DEFAULT_COLOR
+  const activeColor = brandColor ?? officialAccent()
 
   return (
     <div className="settings-page">
