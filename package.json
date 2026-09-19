@@ -9,7 +9,7 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "test": "jest",
-    "test:ci": "jest --runInBand"
+    "test:ci": "jest --runInBand --coverage --coverageReporters=text-summary --coverageReporters=text"
   },
   "dependencies": {
     "@sentry/react": "^10.67.0",
