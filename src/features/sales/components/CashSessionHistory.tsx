@@ -9,6 +9,7 @@ import {
   type CashSessionFilters,
 } from '../api'
 import { useCashSessionDetail, useCashSessionHistory } from '../hooks/useCashSessions'
+import { PaymentTotalsGrid } from './PaymentTotalsGrid'
 
 function formatDate(value: string | null) {
   if (!value) return '—'
@@ -238,6 +239,8 @@ function CashSessionDetailModal({
               </>
             )}
           </dl>
+
+          <PaymentTotalsGrid totals={session.payment_totals} />
 
           <div>
             <span className="summary-section-title">Movimientos</span>

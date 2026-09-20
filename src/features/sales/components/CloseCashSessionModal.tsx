@@ -3,10 +3,14 @@ import { Modal } from '../../../shared/components/Modal'
 import { ApiError } from '../../../shared/utils/apiClient'
 import type { CashMovement, CashSession } from '../api'
 import { useCloseCashSession } from '../hooks/useCashSessions'
+import { PaymentTotalsGrid } from './PaymentTotalsGrid'
 
 interface CloseCashSessionModalProps {
   session: CashSession
   movements: CashMovement[]
+  /** Bloque A.4: totales por medio de pago del turno. Llegan del detalle de
+   * la sesion; si aun no cargaron, el modal simplemente no los muestra. */
+  paymentTotals?: Record<string, string>
   onClose: () => void
 }
 
@@ -16,7 +20,12 @@ function sum(movements: CashMovement[], type: 'IN' | 'OUT') {
     .reduce((total, m) => total + Number(m.amount), 0)
 }
 
-export function CloseCashSessionModal({ session, movements, onClose }: CloseCashSessionModalProps) {
+export function CloseCashSessionModal({
+  session,
+  movements,
+  paymentTotals,
+  onClose,
+}: CloseCashSessionModalProps) {
   const closeSession = useCloseCashSession()
   const [countedAmount, setCountedAmount] = useState('')
   const [notes, setNotes] = useState('')
@@ -25,15 +34,15 @@ export function CloseCashSessionModal({ session, movements, onClose }: CloseCash
 
   const movementsIn = sum(movements, 'IN')
   const movementsOut = sum(movements, 'OUT')
-  // El backend informa el esperado a la fecha con la misma formula del
-  // cierre (incluye las ventas en efectivo). La estimacion local solo queda
-  // como respaldo si el campo no viene: antes era la unica fuente y omitia
-  // todas las ventas en efectivo, asi que el "esperado" salia bajo.
-  const estimatedExpected =
-    session.expected_amount_so_far != null
-      ? Number(session.expected_amount_so_far)
-      : Number(session.opening_amount) + movementsIn - movementsOut
-  const cashSales = estimatedExpected - (Number(session.opening_amount) + movementsIn - movementsOut)
+  // Bloque A.3 (arqueo a ciegas): el backend solo manda el esperado a quien
+  // controla la caja. Si no viene, el cajero cuenta sin referencia -no se
+  // estima en el navegador: una estimacion local seria la misma pista que
+  // el control quiere quitar.
+  const expected = session.expected_amount_so_far
+  const blind = expected == null
+  const cashSales = blind
+    ? 0
+    : Number(expected) - (Number(session.opening_amount) + movementsIn - movementsOut)
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
@@ -53,27 +62,43 @@ export function CloseCashSessionModal({ session, movements, onClose }: CloseCash
   }
 
   if (result) {
-    const difference = Number(result.difference)
+    // El cierre devuelve esperado y diferencia en null cuando quien cerro no
+    // controla la caja: se le confirma lo que conto y nada mas.
+    const difference = result.difference == null ? null : Number(result.difference)
     return (
       <Modal title="Caja cerrada" onClose={onClose}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <dl className="detail-grid">
-            <dt>Esperado</dt>
-            <dd>{result.expected_closing_amount}</dd>
+            {result.expected_closing_amount != null && (
+              <>
+                <dt>Esperado</dt>
+                <dd>{result.expected_closing_amount}</dd>
+              </>
+            )}
             <dt>Contado</dt>
             <dd>{result.counted_closing_amount}</dd>
-            <dt>Diferencia</dt>
-            <dd>
-              <span
-                className={`badge ${difference === 0 ? 'badge-success' : difference > 0 ? 'badge-warning' : 'badge-danger'}`}
-                style={{ fontSize: '1rem' }}
-              >
-                <span className="dot" />
-                {difference > 0 ? '+' : ''}
-                {result.difference}
-              </span>
-            </dd>
+            {difference != null && (
+              <>
+                <dt>Diferencia</dt>
+                <dd>
+                  <span
+                    className={`badge ${difference === 0 ? 'badge-success' : difference > 0 ? 'badge-warning' : 'badge-danger'}`}
+                    style={{ fontSize: '1rem' }}
+                  >
+                    <span className="dot" />
+                    {difference > 0 ? '+' : ''}
+                    {result.difference}
+                  </span>
+                </dd>
+              </>
+            )}
           </dl>
+          {difference == null && (
+            <p className="core-state-message" style={{ margin: 0 }}>
+              Tu caja quedó cerrada con lo que contaste. El arqueo lo revisa quien administra la
+              caja.
+            </p>
+          )}
           <button type="button" className="btn btn-primary" onClick={onClose}>
             Listo
           </button>
@@ -88,7 +113,7 @@ export function CloseCashSessionModal({ session, movements, onClose }: CloseCash
         <dl className="detail-grid">
           <dt>Apertura</dt>
           <dd>{session.opening_amount}</dd>
-          {session.expected_amount_so_far != null && (
+          {!blind && (
             <>
               <dt>Ventas en efectivo</dt>
               <dd>{cashSales.toFixed(2)}</dd>
@@ -98,9 +123,22 @@ export function CloseCashSessionModal({ session, movements, onClose }: CloseCash
           <dd>{movementsIn.toFixed(2)}</dd>
           <dt>Egresos manuales</dt>
           <dd>{movementsOut.toFixed(2)}</dd>
-          <dt>Esperado (estimado)</dt>
-          <dd style={{ fontWeight: 700 }}>{estimatedExpected.toFixed(2)}</dd>
+          {!blind && (
+            <>
+              <dt>Esperado (estimado)</dt>
+              <dd style={{ fontWeight: 700 }}>{Number(expected).toFixed(2)}</dd>
+            </>
+          )}
         </dl>
+
+        {paymentTotals && <PaymentTotalsGrid totals={paymentTotals} />}
+
+        {blind && (
+          <p className="core-state-message" style={{ margin: 0 }}>
+            Cuenta el efectivo que hay en la caja y escribe el total. El monto esperado lo revisa
+            quien administra la caja.
+          </p>
+        )}
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div>
@@ -110,7 +148,7 @@ export function CloseCashSessionModal({ session, movements, onClose }: CloseCash
               inputMode="decimal"
               value={countedAmount}
               onChange={(event) => setCountedAmount(event.target.value)}
-              placeholder={estimatedExpected.toFixed(2)}
+              placeholder={blind ? '0.00' : Number(expected).toFixed(2)}
               style={{ fontSize: '1.25rem', padding: '10px 12px' }}
             />
           </div>

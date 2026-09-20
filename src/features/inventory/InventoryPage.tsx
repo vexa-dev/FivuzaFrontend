@@ -95,6 +95,8 @@ function LoadingRow() {
 export function InventoryPage() {
   const { hasPermission } = useAuth()
   const canManage = hasPermission('INVENTORY_MANAGE')
+  // Bloque A.5: ver el catalogo y ver cuanto cuesta son permisos distintos.
+  const canSeeCost = hasPermission('INVENTORY_VIEW_COST')
   const canManagePurchases = hasPermission('PURCHASES_MANAGE')
 
   const [tab, setTab] = useState<Tab>('productos')
@@ -283,6 +285,7 @@ export function InventoryPage() {
           attributes={attributes ?? []}
           allStock={allStock}
           canManage={canManage}
+          canSeeCost={canSeeCost}
           onViewProduct={setViewingProductId}
           onDeleteProduct={setDeletingProduct}
         />
@@ -604,6 +607,7 @@ export function InventoryPage() {
         <ProductDetailModal
           product={viewingProduct}
           canManage={canManage}
+          canSeeCost={canSeeCost}
           attributes={attributes ?? []}
           onClose={() => setViewingProductId(null)}
         />

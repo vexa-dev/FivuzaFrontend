@@ -315,15 +315,19 @@ export function DashboardPage() {
                     value={formatCurrency(data.today.total_sales)}
                   />
                 )}
-                <CompactStat
-                  index={1}
-                  icon={<Percent size={18} strokeWidth={2} />}
-                  label="Margen bruto (30 días)"
-                  value={
-                    data.gross_margin.margin_pct !== null ? `${data.gross_margin.margin_pct}%` : '—'
-                  }
-                  title={`Ingresos: ${formatCurrency(data.gross_margin.total_revenue)} · Costo: ${formatCurrency(data.gross_margin.total_cost)}`}
-                />
+                {data.gross_margin && (
+                  <CompactStat
+                    index={1}
+                    icon={<Percent size={18} strokeWidth={2} />}
+                    label="Margen bruto (30 días)"
+                    value={
+                      data.gross_margin.margin_pct !== null
+                        ? `${data.gross_margin.margin_pct}%`
+                        : '—'
+                    }
+                    title={`Ingresos: ${formatCurrency(data.gross_margin.total_revenue)} · Costo: ${formatCurrency(data.gross_margin.total_cost)}`}
+                  />
+                )}
                 <CompactStat
                   index={2}
                   icon={<CalendarRange size={18} strokeWidth={2} />}

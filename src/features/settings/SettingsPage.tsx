@@ -1,5 +1,7 @@
 import { Palette, RotateCcw, Settings as SettingsIcon } from 'lucide-react'
+import { useAuth } from '../auth/hooks/useAuth'
 import { useBrandTheme } from '../../theme/useBrandTheme'
+import { CashPolicySection } from './components/CashPolicySection'
 import '../core/CorePage.css'
 import './SettingsPage.css'
 
@@ -22,6 +24,7 @@ function officialAccent(): string {
 
 export function SettingsPage() {
   const { brandColor, setBrandColor, adaptBackground, setAdaptBackground, result, reset } = useBrandTheme()
+  const { hasPermission } = useAuth()
   const activeColor = brandColor ?? officialAccent()
 
   return (
@@ -133,6 +136,8 @@ export function SettingsPage() {
           Restablecer al color de Fivuza
         </button>
       </div>
+
+      {hasPermission('SETTINGS_MANAGE') && <CashPolicySection />}
     </div>
   )
 }

@@ -18,6 +18,9 @@ interface ProductInsightsProps {
   selectedWarehouse?: Warehouse
   stockAlerts: { out: number; low: number }
   inventory: InventoryInsights
+  /** Bloque A.5: sin INVENTORY_VIEW_COST no hay costo ni ganancia -solo
+   * cuánto vale el stock a precio de venta. */
+  canSeeCost: boolean
 }
 
 export function ProductInsights({
@@ -25,6 +28,7 @@ export function ProductInsights({
   selectedWarehouse,
   stockAlerts,
   inventory,
+  canSeeCost,
 }: ProductInsightsProps) {
   const catalogIssueCount =
     inventory.missingImages + inventory.missingBarcodes + inventory.inactiveVariants
@@ -51,9 +55,9 @@ export function ProductInsights({
         <header><CircleDollarSign size={15} /><strong>Valor del inventario</strong></header>
         <p className="products-insight-context">{selectedWarehouse?.name ?? 'Todos los almacenes'}</p>
         <dl className="products-commercial-list products-inventory-value-list">
-          <div><dt>Valor al costo</dt><dd>{formatCurrency(inventory.costValue)}</dd></div>
+          {canSeeCost && <div><dt>Valor al costo</dt><dd>{formatCurrency(inventory.costValue)}</dd></div>}
           <div><dt>Venta potencial</dt><dd>{formatCurrency(inventory.saleValue)}</dd></div>
-          <div className="products-value-highlight"><dt>Ganancia potencial</dt><dd>{formatCurrency(inventory.saleValue - inventory.costValue)}</dd></div>
+          {canSeeCost && <div className="products-value-highlight"><dt>Ganancia potencial</dt><dd>{formatCurrency(inventory.saleValue - inventory.costValue)}</dd></div>}
         </dl>
       </section>
 

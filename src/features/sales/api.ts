@@ -10,6 +10,9 @@ export interface CashRegister {
   warehouse: number
   name: string
   is_active: boolean
+  /** Bloque A.2: si está puesto, solo esa persona (o quien cierra caja)
+   * abre, vende y cierra en esta caja. */
+  assigned_user: number | null
 }
 
 export interface CashSession {
@@ -18,9 +21,13 @@ export interface CashSession {
   user: number
   opening_amount: string
   opening_at: string
+  /** Bloque A.3: el esperado y la diferencia solo viajan a quien tiene
+   * CASH_CLOSE por permiso propio; al cajero le llegan en null para que
+   * cuente el efectivo a ciegas. */
   expected_closing_amount: string | null
-  /** Solo en cajas abiertas: esperado a la fecha calculado por el backend
-   * (apertura + ventas en efectivo + ingresos - egresos). */
+  /** Solo en cajas abiertas y solo para quien controla la caja: esperado a
+   * la fecha calculado por el backend (apertura + ventas en efectivo +
+   * ingresos - egresos). */
   expected_amount_so_far?: string | null
   counted_closing_amount: string | null
   difference: string | null
@@ -50,6 +57,8 @@ export interface CashMovement {
 
 export interface CashSessionDetail extends CashSession {
   movements: CashMovement[]
+  /** Bloque A.4: cuánto entró por cada medio de pago durante el turno. */
+  payment_totals: Record<string, string>
 }
 
 export interface CashSessionFilters {
@@ -74,6 +83,17 @@ export function fetchCashSessions(filters: CashSessionFilters = {}) {
   if (filters.opening_from) params.set('opening_from', filters.opening_from)
   if (filters.opening_to) params.set('opening_to', filters.opening_to)
   return tenantApiFetch<CashSession[]>(`/ventas/cash-sessions/?${params.toString()}`, {
+    token: getAccessToken(),
+  })
+}
+
+export function updateCashRegister(
+  registerId: number,
+  data: Partial<{ name: string; is_active: boolean; assigned_user: number | null }>,
+) {
+  return tenantApiFetch<CashRegister>(`/ventas/cash-registers/${registerId}/`, {
+    method: 'PATCH',
+    body: data,
     token: getAccessToken(),
   })
 }

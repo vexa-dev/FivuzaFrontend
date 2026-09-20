@@ -7,6 +7,7 @@ import { useWarehouses } from '../inventory/hooks/useWarehouses'
 import { AddCashMovementModal } from './components/AddCashMovementModal'
 import { CashSessionHistory } from './components/CashSessionHistory'
 import { CloseCashSessionModal } from './components/CloseCashSessionModal'
+import { CashRegisterAssignments } from './components/CashRegisterAssignments'
 import { CollectionsTab } from './components/CollectionsTab'
 import { CustomersTab } from './components/CustomersTab'
 import { OpenCashSessionForm } from './components/OpenCashSessionForm'
@@ -17,7 +18,12 @@ import { ReservationsTab } from './components/ReservationsTab'
 import { SalesHistoryTab } from './components/SalesHistoryTab'
 import { formatCurrency } from '../../shared/utils/format'
 import type { CashSession } from './api'
-import { useCashMovements, useCashRegisters, useOpenCashSessions } from './hooks/useCashSessions'
+import {
+  useCashMovements,
+  useCashRegisters,
+  useCashSessionDetail,
+  useOpenCashSessions,
+} from './hooks/useCashSessions'
 
 type Tab =
   | 'vender'
@@ -95,6 +101,11 @@ export function SalesPage() {
 }
 
 function CurrentCashTab() {
+  const { hasPermission } = useAuth()
+  // La asignacion de cajas (Bloque A.2) se edita aqui mismo: es gestion de
+  // caja, no de personas. Se pide tambien USERS_MANAGE porque la lista de
+  // usuarios a asignar viene del endpoint de usuarios.
+  const canAssignRegisters = hasPermission('CASH_MANAGE') && hasPermission('USERS_MANAGE')
   const { data: sessions, isLoading } = useOpenCashSessions()
   const { data: registers } = useCashRegisters()
   const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null)
@@ -158,6 +169,12 @@ function CurrentCashTab() {
           sessionId={selectedSession.id}
           onClose={() => setShowAddMovement(false)}
         />
+      )}
+
+      {canAssignRegisters && (
+        <div style={{ marginTop: 16 }}>
+          <CashRegisterAssignments />
+        </div>
       )}
 
       {closingSession && (
@@ -286,7 +303,16 @@ function CloseCashSessionModalContainer({
   onClose: () => void
 }) {
   const { data: movements } = useCashMovements(session.id)
+  // El desglose por metodo (Bloque A.4) vive en el detalle de la sesion, no
+  // en el listado: se pasa como prop para que el modal siga siendo una
+  // vista tonta, facil de probar sin red.
+  const { data: detail } = useCashSessionDetail(session.id)
   return (
-    <CloseCashSessionModal session={session} movements={movements ?? []} onClose={onClose} />
+    <CloseCashSessionModal
+      session={session}
+      movements={movements ?? []}
+      paymentTotals={detail?.payment_totals}
+      onClose={onClose}
+    />
   )
 }

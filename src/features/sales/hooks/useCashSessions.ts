@@ -7,6 +7,7 @@ import {
   fetchCashSessionDetail,
   fetchCashSessions,
   openCashSession,
+  updateCashRegister,
   type CashMovementConcept,
   type CashMovementType,
   type CashSessionFilters,
@@ -104,5 +105,21 @@ export function useCreateCashMovement(sessionId: number | undefined) {
       }),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ['sales', 'cash-movements', sessionId] }),
+  })
+}
+
+
+/** Bloque A.2: asignar una caja a una persona. Al cambiarla se revalidan
+ * las sesiones abiertas, porque de la asignacion depende quien puede
+ * operarlas. */
+export function useUpdateCashRegister() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, assignedUser }: { id: number; assignedUser: number | null }) =>
+      updateCashRegister(id, { assigned_user: assignedUser }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sales', 'cash-registers'] })
+      queryClient.invalidateQueries({ queryKey: ['sales', 'cash-sessions'] })
+    },
   })
 }

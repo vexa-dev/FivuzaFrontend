@@ -56,17 +56,48 @@ describe('CloseCashSessionModal', () => {
     expect(screen.getByText('Esperado (estimado)').nextSibling).toHaveTextContent('135.00')
   })
 
-  it('sin el campo del backend cae a la estimacion local', () => {
+  it('sin el esperado del backend el arqueo va a ciegas (Bloque A.3)', () => {
+    // El backend omite el esperado cuando quien cierra no controla la caja:
+    // el modal no lo estima localmente, porque esa estimacion seria la
+    // misma pista que el control busca quitar.
     render(
       <CloseCashSessionModal
-        session={session({ expected_amount_so_far: undefined })}
+        session={session({ expected_amount_so_far: null })}
         movements={[movement('IN', '10.00'), movement('OUT', '5.00')]}
         onClose={jest.fn()}
       />,
     )
 
     expect(screen.queryByText('Ventas en efectivo')).not.toBeInTheDocument()
-    expect(screen.getByText('Esperado (estimado)').nextSibling).toHaveTextContent('55.00')
+    expect(screen.queryByText('Esperado (estimado)')).not.toBeInTheDocument()
+    expect(screen.queryByText('55.00')).not.toBeInTheDocument()
+    expect(screen.getByPlaceholderText('0.00')).toBeInTheDocument()
+  })
+
+  it('al cerrar a ciegas solo confirma lo contado', async () => {
+    mutateAsync.mockResolvedValue(
+      session({
+        status: 'CLOSED',
+        expected_closing_amount: null,
+        counted_closing_amount: '130.0000',
+        difference: null,
+      }),
+    )
+    render(
+      <CloseCashSessionModal
+        session={session({ expected_amount_so_far: null })}
+        movements={[]}
+        onClose={jest.fn()}
+      />,
+    )
+
+    await userEvent.type(screen.getByLabelText(/Monto contado/), '130')
+    await userEvent.click(screen.getByRole('button', { name: 'Cerrar caja' }))
+
+    expect(await screen.findByText('Caja cerrada')).toBeInTheDocument()
+    expect(screen.getByText('130.0000')).toBeInTheDocument()
+    expect(screen.queryByText('Diferencia')).not.toBeInTheDocument()
+    expect(screen.queryByText('Esperado')).not.toBeInTheDocument()
   })
 
   it('exige el monto contado y muestra la diferencia al cerrar', async () => {
