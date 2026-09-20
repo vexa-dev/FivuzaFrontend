@@ -61,17 +61,17 @@ export function CashPolicySection() {
 
           <div className="settings-toggle-row">
             <div>
-              <p className="settings-toggle-label">El cajero puede cerrar su caja</p>
+              <p className="settings-toggle-label">El cajero puede entregar su caja</p>
               <p className="settings-toggle-desc">
-                Cuenta el efectivo y cierra su turno. No verá el monto esperado ni la diferencia:
-                eso queda para quien controla la caja.
+                Cuenta el efectivo y entrega su turno para que lo revises. No verá el monto
+                esperado ni la diferencia, y la caja no queda cerrada hasta que tú la confirmes.
               </p>
             </div>
             <button
               type="button"
               className="theme-switch"
               aria-pressed={settings.cashier_can_close_session}
-              aria-label="El cajero puede cerrar su caja"
+              aria-label="El cajero puede entregar su caja"
               disabled={updateSettings.isPending}
               onClick={() => toggle('cashier_can_close_session')}
             >

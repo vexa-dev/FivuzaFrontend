@@ -42,7 +42,7 @@ describe('CashPolicySection', () => {
       'aria-pressed',
       'true',
     )
-    expect(screen.getByLabelText('El cajero puede cerrar su caja')).toHaveAttribute(
+    expect(screen.getByLabelText('El cajero puede entregar su caja')).toHaveAttribute(
       'aria-pressed',
       'false',
     )
@@ -52,7 +52,7 @@ describe('CashPolicySection', () => {
     mockSettings()
     render(<CashPolicySection />)
 
-    await userEvent.click(screen.getByLabelText('El cajero puede cerrar su caja'))
+    await userEvent.click(screen.getByLabelText('El cajero puede entregar su caja'))
 
     expect(mutate).toHaveBeenCalledWith({ cashier_can_close_session: true })
   })
