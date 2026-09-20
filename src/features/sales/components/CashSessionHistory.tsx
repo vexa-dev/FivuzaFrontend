@@ -118,8 +118,10 @@ export function CashSessionHistory({ registers }: { registers: CashRegister[] })
               }
             />
           </div>
-          {canExport && filters.opening_from && filters.opening_to && (
+          {filters.opening_from && filters.opening_to && canExport && (
             <>
+              {/* El reporte de sesiones lleva esperado y diferencia, o sea
+                  el arqueo: solo para quien cierra caja (Bloque A.3). */}
               <span className="core-page-subtitle" style={{ margin: 0 }}>
                 Sesiones:
               </span>
@@ -132,6 +134,10 @@ export function CashSessionHistory({ registers }: { registers: CashRegister[] })
                   )
                 }
               />
+            </>
+          )}
+          {filters.opening_from && filters.opening_to && (
+            <>
               <span className="core-page-subtitle" style={{ margin: 0 }}>
                 Movimientos:
               </span>
