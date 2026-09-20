@@ -51,7 +51,11 @@ import { PaymentMethodChart } from './components/PaymentMethodChart'
 import { SalesByDayChart } from './components/SalesByDayChart'
 import { WidgetSettingsModal } from './components/WidgetSettingsModal'
 import { useCardVisibility } from './hooks/useCardVisibility'
-import { useAttendanceToday, useOpenCashSessionsCount } from './hooks/useDashboardExtras'
+import {
+  useAttendanceToday,
+  useOpenCashSessionsCount,
+  usePendingCashSessionsCount,
+} from './hooks/useDashboardExtras'
 import { useDashboardMetrics } from './hooks/useDashboardMetrics'
 import { useWidgetVisibility } from './hooks/useWidgetVisibility'
 
@@ -81,6 +85,9 @@ export function DashboardPage() {
   const canViewInventory = hasPermission('INVENTORY_VIEW')
   const canSeeGym = hasPermission('GYM_MANAGE')
   const { count: openCashSessions } = useOpenCashSessionsCount()
+  const { count: pendingCashSessions } = usePendingCashSessionsCount(
+    hasPermission('CASH_CLOSE'),
+  )
   const { data: attendanceToday } = useAttendanceToday(canSeeAttendance)
   const { data: lowStockVariants } = useLowStockVariants({ enabled: canViewInventory })
   const showLowStockPanel = isCardVisible('lowStock') && canViewInventory
@@ -339,7 +346,11 @@ export function DashboardPage() {
                   <CompactStat
                     index={3}
                     icon={<Wallet size={18} strokeWidth={2} />}
-                    label="Cajas abiertas"
+                    label={
+                      pendingCashSessions > 0
+                        ? `Cajas abiertas · ${pendingCashSessions} por revisar`
+                        : 'Cajas abiertas'
+                    }
                     value={String(openCashSessions)}
                   />
                 )}

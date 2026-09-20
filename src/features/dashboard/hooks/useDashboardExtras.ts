@@ -15,6 +15,19 @@ export function useOpenCashSessionsCount() {
   return { ...query, count: query.data?.length ?? 0 }
 }
 
+/** Bloque A: cajas entregadas por su cajero y a la espera de revisión. El
+ * supervisor recibe un correo al entregarse, pero sin esto tendría que
+ * acordarse de entrar a Ventas para enterarse. Solo se consulta para quien
+ * puede cerrarlas. */
+export function usePendingCashSessionsCount(enabled: boolean) {
+  const query = useQuery({
+    queryKey: ['dashboard', 'extras', 'pending-cash-sessions'],
+    queryFn: () => fetchCashSessions({ status: 'PENDING_APPROVAL' }),
+    enabled,
+  })
+  return { ...query, count: query.data?.length ?? 0 }
+}
+
 export function useAttendanceToday(enabled: boolean) {
   const today = new Date().toISOString().slice(0, 10)
   return useQuery({
