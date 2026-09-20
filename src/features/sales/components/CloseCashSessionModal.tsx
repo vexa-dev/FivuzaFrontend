@@ -1,15 +1,16 @@
 import { useState, type FormEvent } from 'react'
 import { Modal } from '../../../shared/components/Modal'
 import { ApiError } from '../../../shared/utils/apiClient'
+import { formatCurrency } from '../../../shared/utils/format'
 import type { CashMovement, CashSession } from '../api'
-import { useCloseCashSession } from '../hooks/useCashSessions'
+import { useCloseCashSession, useSubmitCashSessionCount } from '../hooks/useCashSessions'
 import { PaymentTotalsGrid } from './PaymentTotalsGrid'
 
 interface CloseCashSessionModalProps {
   session: CashSession
   movements: CashMovement[]
   /** Bloque A.4: totales por medio de pago del turno. Llegan del detalle de
-   * la sesion; si aun no cargaron, el modal simplemente no los muestra. */
+   * la sesión; si aún no cargaron, el modal simplemente no los muestra. */
   paymentTotals?: Record<string, string>
   onClose: () => void
 }
@@ -27,7 +28,11 @@ export function CloseCashSessionModal({
   onClose,
 }: CloseCashSessionModalProps) {
   const closeSession = useCloseCashSession()
-  const [countedAmount, setCountedAmount] = useState('')
+  const submitCount = useSubmitCashSessionCount()
+  const pendingApproval = session.status === 'PENDING_APPROVAL'
+  const [countedAmount, setCountedAmount] = useState(
+    pendingApproval ? (session.counted_closing_amount ?? '') : '',
+  )
   const [notes, setNotes] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<CashSession | null>(null)
@@ -35,14 +40,15 @@ export function CloseCashSessionModal({
   const movementsIn = sum(movements, 'IN')
   const movementsOut = sum(movements, 'OUT')
   // Bloque A.3 (arqueo a ciegas): el backend solo manda el esperado a quien
-  // controla la caja. Si no viene, el cajero cuenta sin referencia -no se
-  // estima en el navegador: una estimacion local seria la misma pista que
-  // el control quiere quitar.
+  // controla la caja. Si no viene, quien está operando es el cajero: cuenta
+  // sin referencia y entrega la caja, no la cierra. No se estima nada en el
+  // navegador -esa estimación sería la misma pista que el control quita.
   const expected = session.expected_amount_so_far
   const blind = expected == null
   const cashSales = blind
     ? 0
     : Number(expected) - (Number(session.opening_amount) + movementsIn - movementsOut)
+  const pending = closeSession.isPending || submitCount.isPending
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
@@ -51,19 +57,47 @@ export function CloseCashSessionModal({
       setError('Ingresa el monto contado.')
       return
     }
-    closeSession
-      .mutateAsync({ sessionId: session.id, countedClosingAmount: countedAmount, notes })
-      .then(setResult)
-      .catch((err: unknown) => {
-        const body =
-          err instanceof ApiError ? (err.body as { error?: { message?: string } }) : null
-        setError(body?.error?.message ?? 'No se pudo cerrar la caja.')
-      })
+    const action = blind
+      ? submitCount.mutateAsync({
+          sessionId: session.id,
+          countedClosingAmount: countedAmount,
+          notes,
+        })
+      : closeSession.mutateAsync({
+          sessionId: session.id,
+          countedClosingAmount: countedAmount,
+          notes,
+        })
+    action.then(setResult).catch((err: unknown) => {
+      const body = err instanceof ApiError ? (err.body as { error?: { message?: string } }) : null
+      setError(
+        body?.error?.message ??
+          (blind ? 'No se pudo entregar la caja.' : 'No se pudo cerrar la caja.'),
+      )
+    })
   }
 
   if (result) {
-    // El cierre devuelve esperado y diferencia en null cuando quien cerro no
-    // controla la caja: se le confirma lo que conto y nada mas.
+    if (result.status === 'PENDING_APPROVAL') {
+      return (
+        <Modal title="Caja entregada" onClose={onClose}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <dl className="detail-grid">
+              <dt>Contado</dt>
+              <dd>{result.counted_closing_amount}</dd>
+            </dl>
+            <p className="core-state-message" style={{ margin: 0 }}>
+              Tu caja quedó entregada con lo que contaste y ya no admite ventas. Un supervisor
+              revisará el arqueo y confirmará el cierre.
+            </p>
+            <button type="button" className="btn btn-primary" onClick={onClose}>
+              Listo
+            </button>
+          </div>
+        </Modal>
+      )
+    }
+
     const difference = result.difference == null ? null : Number(result.difference)
     return (
       <Modal title="Caja cerrada" onClose={onClose}>
@@ -93,12 +127,6 @@ export function CloseCashSessionModal({
               </>
             )}
           </dl>
-          {difference == null && (
-            <p className="core-state-message" style={{ margin: 0 }}>
-              Tu caja quedó cerrada con lo que contaste. El arqueo lo revisa quien administra la
-              caja.
-            </p>
-          )}
           <button type="button" className="btn btn-primary" onClick={onClose}>
             Listo
           </button>
@@ -107,8 +135,35 @@ export function CloseCashSessionModal({
     )
   }
 
+  // El cajero ya entregó y todavía no hay aprobación: no hay nada que hacer
+  // desde su lado.
+  if (pendingApproval && blind) {
+    return (
+      <Modal title="Caja entregada" onClose={onClose}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <dl className="detail-grid">
+            <dt>Contado</dt>
+            <dd>{session.counted_closing_amount}</dd>
+          </dl>
+          <p className="core-state-message" style={{ margin: 0 }}>
+            Esta caja está esperando que un supervisor revise el arqueo.
+          </p>
+          <button type="button" className="btn btn-primary" onClick={onClose}>
+            Entendido
+          </button>
+        </div>
+      </Modal>
+    )
+  }
+
+  const title = pendingApproval
+    ? 'Revisar caja entregada'
+    : blind
+      ? 'Entregar caja'
+      : 'Cerrar caja -arqueo'
+
   return (
-    <Modal title={`Cerrar caja -arqueo`} onClose={onClose}>
+    <Modal title={title} onClose={onClose}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <dl className="detail-grid">
           <dt>Apertura</dt>
@@ -129,20 +184,32 @@ export function CloseCashSessionModal({
               <dd style={{ fontWeight: 700 }}>{Number(expected).toFixed(2)}</dd>
             </>
           )}
+          {pendingApproval && session.counted_closing_amount != null && (
+            <>
+              <dt>Contado por el cajero</dt>
+              <dd style={{ fontWeight: 700 }}>
+                {formatCurrency(session.counted_closing_amount)}
+              </dd>
+            </>
+          )}
         </dl>
 
         {paymentTotals && <PaymentTotalsGrid totals={paymentTotals} />}
 
-        {blind && (
+        {blind && !pendingApproval && (
           <p className="core-state-message" style={{ margin: 0 }}>
-            Cuenta el efectivo que hay en la caja y escribe el total. El monto esperado lo revisa
-            quien administra la caja.
+            Cuenta el efectivo que hay en la caja y escribe el total. La caja quedará entregada y
+            un supervisor confirmará el cierre.
           </p>
         )}
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div>
-            <label htmlFor="counted-amount">Monto contado (efectivo real en caja)</label>
+            <label htmlFor="counted-amount">
+              {pendingApproval
+                ? 'Monto contado (puedes corregirlo)'
+                : 'Monto contado (efectivo real en caja)'}
+            </label>
             <input
               id="counted-amount"
               inputMode="decimal"
@@ -166,8 +233,14 @@ export function CloseCashSessionModal({
               {error}
             </p>
           )}
-          <button type="submit" className="btn btn-primary" disabled={closeSession.isPending}>
-            {closeSession.isPending ? 'Cerrando...' : 'Cerrar caja'}
+          <button type="submit" className="btn btn-primary" disabled={pending}>
+            {pending
+              ? 'Guardando...'
+              : blind
+                ? 'Entregar caja'
+                : pendingApproval
+                  ? 'Confirmar cierre'
+                  : 'Cerrar caja'}
           </button>
         </form>
       </div>

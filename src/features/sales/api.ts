@@ -30,8 +30,13 @@ export interface CashSession {
    * ingresos - egresos). */
   expected_amount_so_far?: string | null
   counted_closing_amount: string | null
+  /** Bloque A: cuándo el cajero entregó su conteo y quién aprobó el cierre. */
+  counted_at: string | null
+  approved_by: number | null
   difference: string | null
-  status: 'OPEN' | 'CLOSED'
+  /** PENDING_APPROVAL: el cajero ya entregó la caja y un supervisor tiene
+   * que revisarla. No admite más ventas ni movimientos. */
+  status: 'OPEN' | 'PENDING_APPROVAL' | 'CLOSED'
   closing_at: string | null
   notes: string | null
 }
@@ -62,7 +67,7 @@ export interface CashSessionDetail extends CashSession {
 }
 
 export interface CashSessionFilters {
-  status?: 'OPEN' | 'CLOSED'
+  status?: 'OPEN' | 'PENDING_APPROVAL' | 'CLOSED'
   cash_register?: number
   user?: number
   opening_from?: string
@@ -112,14 +117,33 @@ export function openCashSession(cashRegisterId: number, openingAmount: string) {
   })
 }
 
-export function closeCashSession(
+/** Primer paso del cierre (Bloque A): el cajero entrega lo que contó y la
+ * caja queda esperando la revisión de un supervisor. */
+export function submitCashSessionCount(
   sessionId: number,
   countedClosingAmount: string,
   notes?: string,
 ) {
-  return tenantApiFetch<CashSession>(`/ventas/cash-sessions/${sessionId}/close/`, {
+  return tenantApiFetch<CashSession>(`/ventas/cash-sessions/${sessionId}/submit-count/`, {
     method: 'POST',
     body: { counted_closing_amount: countedClosingAmount, notes },
+    token: getAccessToken(),
+  })
+}
+
+/** Cierre definitivo. Sobre una caja ya entregada el monto es opcional: el
+ * supervisor confirma el conteo del cajero sin volver a escribirlo. */
+export function closeCashSession(
+  sessionId: number,
+  countedClosingAmount?: string,
+  notes?: string,
+) {
+  return tenantApiFetch<CashSession>(`/ventas/cash-sessions/${sessionId}/close/`, {
+    method: 'POST',
+    body:
+      countedClosingAmount === undefined
+        ? { notes }
+        : { counted_closing_amount: countedClosingAmount, notes },
     token: getAccessToken(),
   })
 }

@@ -23,6 +23,7 @@ import {
   useCashRegisters,
   useCashSessionDetail,
   useOpenCashSessions,
+  usePendingApprovalCashSessions,
 } from './hooks/useCashSessions'
 
 type Tab =
@@ -107,6 +108,7 @@ function CurrentCashTab() {
   // usuarios a asignar viene del endpoint de usuarios.
   const canAssignRegisters = hasPermission('CASH_MANAGE') && hasPermission('USERS_MANAGE')
   const { data: sessions, isLoading } = useOpenCashSessions()
+  const { data: pendingSessions } = usePendingApprovalCashSessions()
   const { data: registers } = useCashRegisters()
   const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null)
   // La sesion que se esta cerrando se guarda aparte de la seleccion: al
@@ -128,11 +130,39 @@ function CurrentCashTab() {
   }
 
   const openSessions = sessions ?? []
-  const selectedSession = openSessions.find((s) => s.id === selectedSessionId) ?? null
+  const pending = pendingSessions ?? []
+  const selectedSession =
+    [...openSessions, ...pending].find((s) => s.id === selectedSessionId) ?? null
 
   return (
     <div>
-      {openSessions.length === 0 && <OpenCashSessionForm />}
+      {openSessions.length === 0 && pending.length === 0 && <OpenCashSessionForm />}
+
+      {pending.length > 0 && !selectedSession && (
+        <div className="summary-cards" style={{ marginBottom: 16 }}>
+          {pending.map((session) => (
+            <button
+              key={session.id}
+              type="button"
+              className="card summary-card"
+              onClick={() => setSelectedSessionId(session.id)}
+            >
+              <div>
+                <span className="summary-card-value">
+                  {registerName(session.cash_register)}
+                </span>
+                <span className="summary-card-label">
+                  Entregada · contado {formatCurrency(session.counted_closing_amount ?? 0)}
+                </span>
+                <span className="badge badge-warning" style={{ marginTop: 6 }}>
+                  <span className="dot" />
+                  Esperando aprobación
+                </span>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
 
       {openSessions.length > 0 && !selectedSession && (
         <div className="summary-cards">
@@ -230,13 +260,15 @@ function CashSessionDetail({
             <button type="button" className="btn btn-ghost btn-sm" onClick={onBack}>
               Otra caja
             </button>
-            <button type="button" className="btn btn-ghost btn-sm" onClick={onAddMovement}>
-              <Plus size={14} strokeWidth={2} />
-              Movimiento
-            </button>
+            {session.status === 'OPEN' && (
+              <button type="button" className="btn btn-ghost btn-sm" onClick={onAddMovement}>
+                <Plus size={14} strokeWidth={2} />
+                Movimiento
+              </button>
+            )}
             <button type="button" className="btn btn-primary btn-sm" onClick={onClose}>
               <Lock size={14} strokeWidth={2} />
-              Cerrar caja
+              {session.status === 'PENDING_APPROVAL' ? 'Revisar caja' : 'Cerrar caja'}
             </button>
           </div>
         </div>
