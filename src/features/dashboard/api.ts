@@ -16,7 +16,9 @@ export interface DashboardMetrics {
     change_pct: string | null
   }
   top_products: { product_name: string; quantity_sold: string; revenue: string }[]
-  gross_margin: {
+  /** Bloque A.5: el backend no manda el margen a quien no tiene
+   * INVENTORY_VIEW_COST. */
+  gross_margin?: {
     total_revenue: string
     total_cost: string
     gross_margin: string

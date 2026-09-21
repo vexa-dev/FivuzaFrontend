@@ -1,18 +1,33 @@
 import { useState } from 'react'
 import { ExportButtons } from '../../../shared/components/ExportButtons'
 import { Modal } from '../../../shared/components/Modal'
+import { useAuth } from '../../auth/hooks/useAuth'
 import { formatCurrency } from '../../../shared/utils/format'
 import {
   downloadCashMovementReport,
   downloadCashSessionReport,
   type CashRegister,
+  type CashSession,
   type CashSessionFilters,
 } from '../api'
 import { useCashSessionDetail, useCashSessionHistory } from '../hooks/useCashSessions'
+import { PaymentTotalsGrid } from './PaymentTotalsGrid'
 
 function formatDate(value: string | null) {
   if (!value) return '—'
   return new Date(value).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' })
+}
+
+const STATUS_LABEL: Record<CashSession['status'], string> = {
+  OPEN: 'Abierta',
+  PENDING_APPROVAL: 'Esperando aprobación',
+  CLOSED: 'Cerrada',
+}
+
+const STATUS_BADGE: Record<CashSession['status'], string> = {
+  OPEN: 'badge-success',
+  PENDING_APPROVAL: 'badge-warning',
+  CLOSED: 'badge-ghost',
 }
 
 function differenceBadge(difference: string | null) {
@@ -31,6 +46,10 @@ function differenceBadge(difference: string | null) {
 export function CashSessionHistory({ registers }: { registers: CashRegister[] }) {
   const [filters, setFilters] = useState<CashSessionFilters>({})
   const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null)
+  // El reporte lleva esperado y diferencia: es el resultado del control, no
+  // un listado (Bloque A.3).
+  const { hasPermission } = useAuth()
+  const canExport = hasPermission('CASH_CLOSE')
   const { data: sessions, isLoading } = useCashSessionHistory(filters)
 
   const registerName = (id: number) => registers.find((r) => r.id === id)?.name ?? `Caja #${id}`
@@ -73,6 +92,7 @@ export function CashSessionHistory({ registers }: { registers: CashRegister[] })
             >
               <option value="">Todos</option>
               <option value="OPEN">Abierta</option>
+              <option value="PENDING_APPROVAL">Esperando aprobación</option>
               <option value="CLOSED">Cerrada</option>
             </select>
           </div>
@@ -98,8 +118,10 @@ export function CashSessionHistory({ registers }: { registers: CashRegister[] })
               }
             />
           </div>
-          {filters.opening_from && filters.opening_to && (
+          {filters.opening_from && filters.opening_to && canExport && (
             <>
+              {/* El reporte de sesiones lleva esperado y diferencia, o sea
+                  el arqueo: solo para quien cierra caja (Bloque A.3). */}
               <span className="core-page-subtitle" style={{ margin: 0 }}>
                 Sesiones:
               </span>
@@ -112,6 +134,10 @@ export function CashSessionHistory({ registers }: { registers: CashRegister[] })
                   )
                 }
               />
+            </>
+          )}
+          {filters.opening_from && filters.opening_to && (
+            <>
               <span className="core-page-subtitle" style={{ margin: 0 }}>
                 Movimientos:
               </span>
@@ -161,11 +187,9 @@ export function CashSessionHistory({ registers }: { registers: CashRegister[] })
                   <td>{formatDate(session.opening_at)}</td>
                   <td>{formatDate(session.closing_at)}</td>
                   <td>
-                    <span
-                      className={`badge ${session.status === 'OPEN' ? 'badge-success' : 'badge-ghost'}`}
-                    >
+                    <span className={`badge ${STATUS_BADGE[session.status]}`}>
                       <span className="dot" />
-                      {session.status === 'OPEN' ? 'Abierta' : 'Cerrada'}
+                      {STATUS_LABEL[session.status]}
                     </span>
                   </td>
                   <td>{differenceBadge(session.difference) ?? '—'}</td>
@@ -238,6 +262,8 @@ function CashSessionDetailModal({
               </>
             )}
           </dl>
+
+          <PaymentTotalsGrid totals={session.payment_totals} />
 
           <div>
             <span className="summary-section-title">Movimientos</span>

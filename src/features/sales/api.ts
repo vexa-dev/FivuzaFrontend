@@ -10,6 +10,9 @@ export interface CashRegister {
   warehouse: number
   name: string
   is_active: boolean
+  /** Bloque A.2: si está puesto, solo esa persona (o quien cierra caja)
+   * abre, vende y cierra en esta caja. */
+  assigned_user: number | null
 }
 
 export interface CashSession {
@@ -18,13 +21,22 @@ export interface CashSession {
   user: number
   opening_amount: string
   opening_at: string
+  /** Bloque A.3: el esperado y la diferencia solo viajan a quien tiene
+   * CASH_CLOSE por permiso propio; al cajero le llegan en null para que
+   * cuente el efectivo a ciegas. */
   expected_closing_amount: string | null
-  /** Solo en cajas abiertas: esperado a la fecha calculado por el backend
-   * (apertura + ventas en efectivo + ingresos - egresos). */
+  /** Solo en cajas abiertas y solo para quien controla la caja: esperado a
+   * la fecha calculado por el backend (apertura + ventas en efectivo +
+   * ingresos - egresos). */
   expected_amount_so_far?: string | null
   counted_closing_amount: string | null
+  /** Bloque A: cuándo el cajero entregó su conteo y quién aprobó el cierre. */
+  counted_at: string | null
+  approved_by: number | null
   difference: string | null
-  status: 'OPEN' | 'CLOSED'
+  /** PENDING_APPROVAL: el cajero ya entregó la caja y un supervisor tiene
+   * que revisarla. No admite más ventas ni movimientos. */
+  status: 'OPEN' | 'PENDING_APPROVAL' | 'CLOSED'
   closing_at: string | null
   notes: string | null
 }
@@ -50,10 +62,12 @@ export interface CashMovement {
 
 export interface CashSessionDetail extends CashSession {
   movements: CashMovement[]
+  /** Bloque A.4: cuánto entró por cada medio de pago durante el turno. */
+  payment_totals: Record<string, string>
 }
 
 export interface CashSessionFilters {
-  status?: 'OPEN' | 'CLOSED'
+  status?: 'OPEN' | 'PENDING_APPROVAL' | 'CLOSED'
   cash_register?: number
   user?: number
   opening_from?: string
@@ -78,6 +92,17 @@ export function fetchCashSessions(filters: CashSessionFilters = {}) {
   })
 }
 
+export function updateCashRegister(
+  registerId: number,
+  data: Partial<{ name: string; is_active: boolean; assigned_user: number | null }>,
+) {
+  return tenantApiFetch<CashRegister>(`/ventas/cash-registers/${registerId}/`, {
+    method: 'PATCH',
+    body: data,
+    token: getAccessToken(),
+  })
+}
+
 export function fetchCashSessionDetail(sessionId: number) {
   return tenantApiFetch<CashSessionDetail>(`/ventas/cash-sessions/${sessionId}/`, {
     token: getAccessToken(),
@@ -92,14 +117,33 @@ export function openCashSession(cashRegisterId: number, openingAmount: string) {
   })
 }
 
-export function closeCashSession(
+/** Primer paso del cierre (Bloque A): el cajero entrega lo que contó y la
+ * caja queda esperando la revisión de un supervisor. */
+export function submitCashSessionCount(
   sessionId: number,
   countedClosingAmount: string,
   notes?: string,
 ) {
-  return tenantApiFetch<CashSession>(`/ventas/cash-sessions/${sessionId}/close/`, {
+  return tenantApiFetch<CashSession>(`/ventas/cash-sessions/${sessionId}/submit-count/`, {
     method: 'POST',
     body: { counted_closing_amount: countedClosingAmount, notes },
+    token: getAccessToken(),
+  })
+}
+
+/** Cierre definitivo. Sobre una caja ya entregada el monto es opcional: el
+ * supervisor confirma el conteo del cajero sin volver a escribirlo. */
+export function closeCashSession(
+  sessionId: number,
+  countedClosingAmount?: string,
+  notes?: string,
+) {
+  return tenantApiFetch<CashSession>(`/ventas/cash-sessions/${sessionId}/close/`, {
+    method: 'POST',
+    body:
+      countedClosingAmount === undefined
+        ? { notes }
+        : { counted_closing_amount: countedClosingAmount, notes },
     token: getAccessToken(),
   })
 }

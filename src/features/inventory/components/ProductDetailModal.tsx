@@ -11,15 +11,25 @@ import { VariantEditModal } from './VariantEditModal'
 interface ProductDetailModalProps {
   product: Product
   canManage: boolean
+  /** Bloque A.5: sin INVENTORY_VIEW_COST el backend no manda el costo, así
+   * que tampoco se reserva la columna. */
+  canSeeCost: boolean
   attributes: Attribute[]
   onClose: () => void
 }
 
-export function ProductDetailModal({ product, canManage, attributes, onClose }: ProductDetailModalProps) {
+export function ProductDetailModal({
+  product,
+  canManage,
+  canSeeCost,
+  attributes,
+  onClose,
+}: ProductDetailModalProps) {
   const [editingVariant, setEditingVariant] = useState<ProductVariant | null>(null)
   const [deletingVariant, setDeletingVariant] = useState<ProductVariant | null>(null)
   const deleteVariant = useDeleteVariant()
   const attributeLabels = useMemo(() => attributeValueLabels(attributes), [attributes])
+
 
   return (
     <Modal title={product.name} onClose={onClose} size="lg">
@@ -34,7 +44,7 @@ export function ProductDetailModal({ product, canManage, attributes, onClose }: 
               <th>SKU</th>
               <th>Atributos</th>
               <th>Código de barras</th>
-              <th>Costo</th>
+              {canSeeCost && <th>Costo</th>}
               <th>Precio</th>
               <th>Predet.</th>
               {canManage && <th></th>}
@@ -51,7 +61,7 @@ export function ProductDetailModal({ product, canManage, attributes, onClose }: 
                     .join(', ') || '—'}
                 </td>
                 <td>{variant.barcode ?? '—'}</td>
-                <td>{formatCurrency(variant.cost)}</td>
+                {canSeeCost && <td>{formatCurrency(variant.cost ?? 0)}</td>}
                 <td>{formatCurrency(variant.price)}</td>
                 <td>{variant.is_default ? '✓' : ''}</td>
                 {canManage && (

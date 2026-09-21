@@ -82,6 +82,10 @@ interface ProductsTabProps {
   attributes: Attribute[]
   allStock: StockRecord[] | undefined
   canManage: boolean
+  /** Bloque A.5: el costo desaparece de la lista, del detalle y del resumen
+   * de valorización para quien no tiene INVENTORY_VIEW_COST -el backend ni
+   * siquiera lo manda. */
+  canSeeCost: boolean
   onViewProduct: (id: number) => void
   onDeleteProduct: (product: Product) => void
 }
@@ -98,6 +102,7 @@ export function ProductsTab({
   attributes,
   allStock,
   canManage,
+  canSeeCost,
   onViewProduct,
   onDeleteProduct,
 }: ProductsTabProps) {
@@ -225,7 +230,9 @@ export function ProductsTab({
   const effectiveSelectedProductId = selectedProduct?.id ?? null
   const activeOptionalColumns = new Set(visibleOptionalColumns)
   const visibleColumns = LIST_COLUMNS.filter(
-    (column) => !column.optional || activeOptionalColumns.has(column.id as OptionalColumnId),
+    (column) =>
+      (canSeeCost || column.id !== 'cost') &&
+      (!column.optional || activeOptionalColumns.has(column.id as OptionalColumnId)),
   )
   const tableMinimumWidth = visibleColumns.reduce((total, column) => total + column.width, 0)
   const availableSurplus = Math.max(0, tableContainerWidth - tableMinimumWidth)
@@ -261,7 +268,7 @@ export function ProductsTab({
           const stock = variantStockTotal(variant.id)
           const positiveStock = Math.max(0, stock)
           const shortage = Math.max(0, Number(variant.min_stock) - stock)
-          summary.costValue += positiveStock * Number(variant.cost)
+          summary.costValue += positiveStock * Number(variant.cost ?? 0)
           summary.saleValue += positiveStock * Number(variant.price)
           summary.reorderUnits += shortage
           summary.missingImages += variant.image_url ? 0 : 1
@@ -474,7 +481,7 @@ export function ProductsTab({
       case 'supplier': return supplierName(product.supplier) ?? 'Sin proveedor'
       case 'unit': return UNIT_LABELS[product.unit_of_measure]
       case 'sku': return <strong>{variant.sku}</strong>
-      case 'cost': return formatCurrency(variant.cost)
+      case 'cost': return formatCurrency(variant.cost ?? 0)
       case 'price': return <strong>{formatCurrency(variant.price)}</strong>
       case 'barcode': return variant.barcode ?? '—'
       case 'stock':
@@ -582,7 +589,7 @@ export function ProductsTab({
               <summary><Columns3 size={14} />Columnas</summary>
               <div className="products-popover-panel products-columns-panel">
                 <strong>Columnas visibles</strong>
-                {OPTIONAL_COLUMNS.map((column) => (
+                {OPTIONAL_COLUMNS.filter((column) => canSeeCost || column.id !== 'cost').map((column) => (
                   <label key={column.id}><input type="checkbox" checked={activeOptionalColumns.has(column.id)} onChange={() => toggleColumn(column.id)} />{column.label}</label>
                 ))}
                 <button type="button" className="btn btn-ghost btn-sm" onClick={resetColumns}><RotateCcw size={13} />Restablecer columnas</button>
@@ -709,7 +716,7 @@ export function ProductsTab({
                     ) : (
                       <div className="products-detail-variants">
                         <table className="core-table">
-                          <thead><tr><th>Atributos</th><th>SKU</th><th>Costo</th><th>Precio</th><th>Stock</th><th>Stock mínimo</th><th>Estado</th></tr></thead>
+                          <thead><tr><th>Atributos</th><th>SKU</th>{canSeeCost && <th>Costo</th>}<th>Precio</th><th>Stock</th><th>Stock mínimo</th><th>Estado</th></tr></thead>
                           <tbody>
                             {sortVariantsByPrimary(selectedProduct.variants, primaryAttributeForCategory(selectedProduct.category, categories, attributes)).map((variant) => {
                               const stock = variantStockTotal(variant.id)
@@ -720,7 +727,7 @@ export function ProductsTab({
                                 <tr key={variant.id}>
                                   <td>{chips.length ? <span className="products-attribute-chips">{chips.map((chip) => <span className="badge badge-neutral" key={chip.id} title={chip.title}>{chip.label}</span>)}</span> : '—'}</td>
                                   <td className="core-table-strong">{variant.sku}</td>
-                                  <td className="products-cost-cell">{formatCurrency(variant.cost)}</td>
+                                  {canSeeCost && <td className="products-cost-cell">{formatCurrency(variant.cost ?? 0)}</td>}
                                   <td className="products-price-cell">{formatCurrency(variant.price)}</td>
                                   <td><strong className={stockAlert ? 'products-stock-low' : ''}>{formatQuantity(stock)}</strong></td>
                                   <td><span className="products-min-stock-badge" aria-label={`Stock mínimo ${formatQuantity(variant.min_stock)}`}>Mín. {formatQuantity(variant.min_stock)}</span></td>
@@ -756,6 +763,7 @@ export function ProductsTab({
                     selectedWarehouse={selectedWarehouse}
                     stockAlerts={selectedStockAlerts}
                     inventory={selectedInventoryInsights}
+                    canSeeCost={canSeeCost}
                   />
                 </div>
               </section>

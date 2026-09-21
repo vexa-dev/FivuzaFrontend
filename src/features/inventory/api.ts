@@ -67,7 +67,9 @@ export interface ProductVariant {
   product: number
   sku: string
   barcode: string | null
-  cost: string
+  /** Bloque A.5: el backend no envía el costo a quien no tiene
+   * INVENTORY_VIEW_COST -por eso es opcional, no vacío. */
+  cost?: string
   price: string
   min_stock: string
   image_url: string | null

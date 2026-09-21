@@ -12,7 +12,7 @@ test.describe.serial('Turno de caja', () => {
 
   test('abre la caja con monto inicial', async ({ page }) => {
     await openSalesTab(page, 'Caja actual')
-    await page.getByLabel('Caja').selectOption({ label: E2E.cashRegister })
+    await page.getByLabel('Caja', { exact: true }).selectOption({ label: E2E.cashRegister })
     await page.getByLabel('Monto inicial').fill('50')
     await page.getByRole('button', { name: 'Abrir caja' }).click()
 

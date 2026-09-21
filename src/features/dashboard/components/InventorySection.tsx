@@ -2,6 +2,7 @@ import { AlertTriangle, Boxes, PackageSearch, ShoppingBag, Truck } from 'lucide-
 import { useMemo } from 'react'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { formatCurrency } from '../../../shared/utils/format'
+import { useAuth } from '../../auth/hooks/useAuth'
 import { useProducts } from '../../inventory/hooks/useProducts'
 import { usePurchaseOrders } from '../../inventory/hooks/usePurchaseOrders'
 import { useSuppliers } from '../../inventory/hooks/useSuppliers'
@@ -17,6 +18,10 @@ const THIRTY_DAYS_AGO = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOStr
  * llevan del presupuesto de compras -antes habia que entrar a 4 pantallas
  * distintas del modulo para juntar esto a mano. */
 export function InventorySection() {
+  // Bloque A.5: el valor al costo es informacion del negocio, no del
+  // mostrador -sin INVENTORY_VIEW_COST solo se muestra a precio de venta.
+  const { hasPermission } = useAuth()
+  const canSeeCost = hasPermission('INVENTORY_VIEW_COST')
   const { data: stock } = useAllStock()
   const { data: products } = useProducts()
   const { data: movements } = useInventoryMovements({ date_from: THIRTY_DAYS_AGO })
@@ -31,7 +36,7 @@ export function InventorySection() {
     const map = new Map<number, { cost: number; price: number }>()
     products?.forEach((product) =>
       product.variants.forEach((variant) =>
-        map.set(variant.id, { cost: Number(variant.cost), price: Number(variant.price) }),
+        map.set(variant.id, { cost: Number(variant.cost ?? 0), price: Number(variant.price) }),
       ),
     )
     return map
@@ -91,12 +96,20 @@ export function InventorySection() {
       <SectionHeader icon={<Boxes size={15} strokeWidth={2} />} title="Inventario" />
 
       <div className="dashboard-mini-stats-grid">
-        <MiniStat
-          icon={<Boxes size={13} strokeWidth={2} />}
-          label="Valor de inventario (costo)"
-          value={formatCurrency(costValue)}
-          caption={`Valor a precio de venta: ${formatCurrency(retailValue)}`}
-        />
+        {canSeeCost ? (
+          <MiniStat
+            icon={<Boxes size={13} strokeWidth={2} />}
+            label="Valor de inventario (costo)"
+            value={formatCurrency(costValue)}
+            caption={`Valor a precio de venta: ${formatCurrency(retailValue)}`}
+          />
+        ) : (
+          <MiniStat
+            icon={<Boxes size={13} strokeWidth={2} />}
+            label="Valor de inventario (precio de venta)"
+            value={formatCurrency(retailValue)}
+          />
+        )}
         <MiniStat
           icon={<PackageSearch size={13} strokeWidth={2} />}
           label="Compras recibidas (30 días)"

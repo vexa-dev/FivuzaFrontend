@@ -7,6 +7,7 @@ import { useWarehouses } from '../inventory/hooks/useWarehouses'
 import { AddCashMovementModal } from './components/AddCashMovementModal'
 import { CashSessionHistory } from './components/CashSessionHistory'
 import { CloseCashSessionModal } from './components/CloseCashSessionModal'
+import { CashRegisterAssignments } from './components/CashRegisterAssignments'
 import { CollectionsTab } from './components/CollectionsTab'
 import { CustomersTab } from './components/CustomersTab'
 import { OpenCashSessionForm } from './components/OpenCashSessionForm'
@@ -17,7 +18,13 @@ import { ReservationsTab } from './components/ReservationsTab'
 import { SalesHistoryTab } from './components/SalesHistoryTab'
 import { formatCurrency } from '../../shared/utils/format'
 import type { CashSession } from './api'
-import { useCashMovements, useCashRegisters, useOpenCashSessions } from './hooks/useCashSessions'
+import {
+  useCashMovements,
+  useCashRegisters,
+  useCashSessionDetail,
+  useOpenCashSessions,
+  usePendingApprovalCashSessions,
+} from './hooks/useCashSessions'
 
 type Tab =
   | 'vender'
@@ -95,7 +102,13 @@ export function SalesPage() {
 }
 
 function CurrentCashTab() {
+  const { hasPermission } = useAuth()
+  // La asignacion de cajas (Bloque A.2) se edita aqui mismo: es gestion de
+  // caja, no de personas. Se pide tambien USERS_MANAGE porque la lista de
+  // usuarios a asignar viene del endpoint de usuarios.
+  const canAssignRegisters = hasPermission('CASH_MANAGE') && hasPermission('USERS_MANAGE')
   const { data: sessions, isLoading } = useOpenCashSessions()
+  const { data: pendingSessions } = usePendingApprovalCashSessions()
   const { data: registers } = useCashRegisters()
   const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null)
   // La sesion que se esta cerrando se guarda aparte de la seleccion: al
@@ -117,11 +130,39 @@ function CurrentCashTab() {
   }
 
   const openSessions = sessions ?? []
-  const selectedSession = openSessions.find((s) => s.id === selectedSessionId) ?? null
+  const pending = pendingSessions ?? []
+  const selectedSession =
+    [...openSessions, ...pending].find((s) => s.id === selectedSessionId) ?? null
 
   return (
     <div>
-      {openSessions.length === 0 && <OpenCashSessionForm />}
+      {openSessions.length === 0 && pending.length === 0 && <OpenCashSessionForm />}
+
+      {pending.length > 0 && !selectedSession && (
+        <div className="summary-cards" style={{ marginBottom: 16 }}>
+          {pending.map((session) => (
+            <button
+              key={session.id}
+              type="button"
+              className="card summary-card"
+              onClick={() => setSelectedSessionId(session.id)}
+            >
+              <div>
+                <span className="summary-card-value">
+                  {registerName(session.cash_register)}
+                </span>
+                <span className="summary-card-label">
+                  Entregada · contado {formatCurrency(session.counted_closing_amount ?? 0)}
+                </span>
+                <span className="badge badge-warning" style={{ marginTop: 6 }}>
+                  <span className="dot" />
+                  Esperando aprobación
+                </span>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
 
       {openSessions.length > 0 && !selectedSession && (
         <div className="summary-cards">
@@ -158,6 +199,12 @@ function CurrentCashTab() {
           sessionId={selectedSession.id}
           onClose={() => setShowAddMovement(false)}
         />
+      )}
+
+      {canAssignRegisters && (
+        <div style={{ marginTop: 16 }}>
+          <CashRegisterAssignments />
+        </div>
       )}
 
       {closingSession && (
@@ -213,13 +260,15 @@ function CashSessionDetail({
             <button type="button" className="btn btn-ghost btn-sm" onClick={onBack}>
               Otra caja
             </button>
-            <button type="button" className="btn btn-ghost btn-sm" onClick={onAddMovement}>
-              <Plus size={14} strokeWidth={2} />
-              Movimiento
-            </button>
+            {session.status === 'OPEN' && (
+              <button type="button" className="btn btn-ghost btn-sm" onClick={onAddMovement}>
+                <Plus size={14} strokeWidth={2} />
+                Movimiento
+              </button>
+            )}
             <button type="button" className="btn btn-primary btn-sm" onClick={onClose}>
               <Lock size={14} strokeWidth={2} />
-              Cerrar caja
+              {session.status === 'PENDING_APPROVAL' ? 'Revisar caja' : 'Cerrar caja'}
             </button>
           </div>
         </div>
@@ -286,7 +335,16 @@ function CloseCashSessionModalContainer({
   onClose: () => void
 }) {
   const { data: movements } = useCashMovements(session.id)
+  // El desglose por metodo (Bloque A.4) vive en el detalle de la sesion, no
+  // en el listado: se pasa como prop para que el modal siga siendo una
+  // vista tonta, facil de probar sin red.
+  const { data: detail } = useCashSessionDetail(session.id)
   return (
-    <CloseCashSessionModal session={session} movements={movements ?? []} onClose={onClose} />
+    <CloseCashSessionModal
+      session={session}
+      movements={movements ?? []}
+      paymentTotals={detail?.payment_totals}
+      onClose={onClose}
+    />
   )
 }

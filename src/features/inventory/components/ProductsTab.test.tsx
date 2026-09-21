@@ -53,6 +53,7 @@ const defaultProps: ComponentProps<typeof ProductsTab> = {
     { id: 2, variant: 11, warehouse: 2, quantity: '4', updated_at: '2026-08-19T12:00:00Z' },
   ],
   canManage: true,
+  canSeeCost: true,
   onViewProduct: jest.fn(),
   onDeleteProduct: jest.fn(),
 }
@@ -244,4 +245,15 @@ test('limpiar filtros conserva el orden seleccionado', async () => {
 
   expect(sort).toHaveValue('price')
   expect(screen.getByLabelText('Filtrar por nivel de stock')).toHaveValue('all')
+})
+
+test('sin INVENTORY_VIEW_COST no hay columna de costo (Bloque A.5)', async () => {
+  renderProductsTab({ canSeeCost: false })
+
+  await screen.findByRole('table')
+  const user = userEvent.setup()
+  await user.click(screen.getByText('Columnas'))
+
+  expect(screen.queryByLabelText('Costo')).not.toBeInTheDocument()
+  expect(screen.queryByRole('columnheader', { name: 'Costo' })).not.toBeInTheDocument()
 })

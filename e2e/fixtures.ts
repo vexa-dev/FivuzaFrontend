@@ -9,12 +9,24 @@ export const E2E = {
   customerName: 'Cliente E2E',
   customerDocument: '70000001',
   cashRegister: 'Caja Principal',
+  // Bloque A: dos cajeros, cada uno con su caja asignada.
+  cashierOne: 'cajero1@e2e.fivuza.test',
+  cashierTwo: 'cajero2@e2e.fivuza.test',
+  cashierPassword: 'Clave-E2E-2026',
+  cashierOneRegister: 'Caja Cajero 1',
+  cashierTwoRegister: 'Caja Cajero 2',
 }
 
 export async function login(page: Page) {
+  await loginAs(page, E2E.email, E2E.password)
+}
+
+/** Inicia sesion con cualquiera de los usuarios sembrados; la contraseña es
+ * la misma para todos en el tenant de pruebas. */
+export async function loginAs(page: Page, email: string, password = E2E.cashierPassword) {
   await page.goto('/login')
-  await page.getByLabel('Correo').fill(E2E.email)
-  await page.getByRole('textbox', { name: 'Contraseña' }).fill(E2E.password)
+  await page.getByLabel('Correo').fill(email)
+  await page.getByRole('textbox', { name: 'Contraseña' }).fill(password)
   await page.getByRole('button', { name: 'Ingresar' }).click()
   await expect(page).toHaveURL(/\/dashboard/)
 }
