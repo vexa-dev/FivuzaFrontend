@@ -84,6 +84,11 @@ jobs:
       working-directory: FivuzaBackend
       run: |
         cp .env.example .env
+        # La suite hace mas de 5 logins por minuto desde la misma IP: con el
+        # throttle de login encendido (el default fuera de las pruebas de
+        # Django) el sexto recibe 429 y el E2E falla por el entorno, no por
+        # el codigo.
+        echo "THROTTLE_ENABLED=False" >> .env
         docker compose up -d --build --wait db redis web
         docker compose exec -T web python manage.py migrate_schemas --shared
     - uses: actions/setup-node@v7
