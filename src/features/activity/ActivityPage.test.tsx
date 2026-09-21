@@ -91,3 +91,24 @@ test('un detalle en texto libre se muestra tal cual', () => {
   render(<AuditDetails details="[accion de soporte Fivuza] algo" />)
   expect(screen.getByText('[accion de soporte Fivuza] algo')).toBeInTheDocument()
 })
+
+test('exportar exige un rango de fechas de como maximo un año', async () => {
+  mockPermissions(['USERS_VIEW_AUDIT'])
+  renderWithClient(<ActivityPage />)
+  const user = userEvent.setup()
+  await screen.findByText('Producto #42')
+
+  expect(screen.getByRole('button', { name: /CSV/ })).toBeDisabled()
+  expect(screen.getByText('Elige Desde y Hasta para exportar')).toBeInTheDocument()
+
+  await user.type(screen.getByLabelText('Desde'), '2025-01-01')
+  await user.type(screen.getByLabelText('Hasta'), '2026-06-01')
+  expect(screen.getByText('Exporta como máximo 366 días')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: /CSV/ })).toBeDisabled()
+
+  await user.clear(screen.getByLabelText('Desde'))
+  await user.type(screen.getByLabelText('Desde'), '2026-01-01')
+  await screen.findByText('Producto #42')
+  expect(screen.queryByText(/Exporta como máximo/)).not.toBeInTheDocument()
+  expect(screen.getByRole('button', { name: /CSV/ })).toBeEnabled()
+})

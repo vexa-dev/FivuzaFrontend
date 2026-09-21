@@ -21,6 +21,20 @@ function formatDate(value: string) {
   return new Date(value).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' })
 }
 
+// Mismo tope que el backend (usuarios.views._AUDIT_EXPORT_MAX_DAYS): la
+// exportación se arma en memoria en el mismo request, así que se pide un
+// rango acotado en vez de toda la historia.
+const EXPORT_MAX_DAYS = 366
+const DAY_MS = 24 * 60 * 60 * 1000
+
+function exportRangeProblem(dateFrom?: string, dateTo?: string): string | null {
+  if (!dateFrom || !dateTo) return 'Elige Desde y Hasta para exportar'
+  const days = (Date.parse(dateTo) - Date.parse(dateFrom)) / DAY_MS
+  if (days < 0) return '"Desde" debe ser anterior a "Hasta"'
+  if (days >= EXPORT_MAX_DAYS) return `Exporta como máximo ${EXPORT_MAX_DAYS} días`
+  return null
+}
+
 /** Bitácora del negocio (Bloque B.3): quién hizo qué y cuándo, con filtros
  * y exportación sobre el mismo filtro. Mismo patrón visual que la Actividad
  * del panel de Fivuza (features/core/ActivityPage). */
@@ -39,6 +53,8 @@ export function ActivityPage() {
     enabled: canListUsers,
   })
   const { data, isLoading, isError } = useTenantAuditLog(filters, page)
+
+  const exportBlockedReason = exportRangeProblem(filters.date_from, filters.date_to)
 
   const updateFilter = <K extends keyof TenantAuditLogFilters>(
     key: K,
@@ -115,9 +131,12 @@ export function ActivityPage() {
             onChange={(event) => updateFilter('date_to', event.target.value || undefined)}
           />
           <div className="activity-export">
+            {exportBlockedReason && (
+              <span className="activity-export-hint">{exportBlockedReason}</span>
+            )}
             <ExportButtons
-              disabled={!data || data.count === 0}
-              filename="bitacora"
+              disabled={Boolean(exportBlockedReason) || !data || data.count === 0}
+              filename={`bitacora_${filters.date_from}_a_${filters.date_to}`}
               onDownload={(format) => downloadTenantAuditLogs(filters, format)}
             />
           </div>

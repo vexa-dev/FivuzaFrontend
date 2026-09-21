@@ -5,8 +5,14 @@
 
 .activity-export {
   display: flex;
+  align-items: center;
   gap: 6px;
   margin-left: auto;
+}
+
+.activity-export-hint {
+  color: var(--text-muted);
+  font-size: 0.75rem;
 }
 
 .activity-table-scroll {
