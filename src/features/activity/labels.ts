@@ -47,6 +47,9 @@ export const ACTION_LABELS: Record<string, string> = {
   TENANT_SETTINGS_UPDATED: 'Cambió la configuración',
   DATA_EXPORTED: 'Generó un respaldo completo',
   AUDIT_LOG_EXPORTED: 'Exportó la bitácora',
+  SUPERVISOR_AUTHORIZATION_GRANTED: 'Autorizó una operación',
+  SUPERVISOR_AUTHORIZATION_FAILED: 'Pidió una autorización que fue rechazada',
+  SALE_DISCOUNT_OVER_LIMIT: 'Vendió sin conexión con un descuento sobre su tope',
   SUPPORT_IMPERSONATION_STARTED: 'Soporte Fivuza entró al negocio',
   SUPPORT_IMPERSONATION_ENDED: 'Soporte Fivuza salió del negocio',
 }
@@ -91,6 +94,34 @@ export const ENTITY_LABELS: Record<string, string> = {
   TenantSettings: 'Configuración',
   TenantImpersonationSession: 'Sesión de soporte',
   AuditLog: 'Bitácora',
+  SupervisorAuthorization: 'Autorización de supervisor',
+}
+
+/** Campos del detalle que conviene leer en español. El resto se muestra con
+ * su nombre técnico. */
+export const DETAIL_FIELD_LABELS: Record<string, string> = {
+  invoice_number: 'Comprobante',
+  reason: 'Motivo',
+  total: 'Total',
+  permission: 'Operación',
+  target_id: 'Venta',
+  discount_percent: 'Descuento autorizado (%)',
+  manual_discount_percent: 'Descuento manual (%)',
+  max_discount_percent: 'Tope del rol (%)',
+  authorized_by_email: 'Autorizado por',
+  requested_by_email: 'Pedido por',
+  authorization_id: 'N.° de autorización',
+}
+
+/** Operaciones que un supervisor autoriza (valor del campo `permission`). */
+export const AUTHORIZED_OPERATION_LABELS: Record<string, string> = {
+  SALES_VOID: 'Anular venta',
+  SALES_RETURN: 'Devolución',
+  SALES_DISCOUNT: 'Descuento manual',
+}
+
+export function detailFieldLabel(field: string) {
+  return DETAIL_FIELD_LABELS[field] ?? field
 }
 
 export function actionLabel(code: string) {

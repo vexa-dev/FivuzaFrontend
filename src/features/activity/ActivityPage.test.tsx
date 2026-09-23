@@ -5,7 +5,7 @@ import type { ReactNode } from 'react'
 import { useAuth } from '../auth/hooks/useAuth'
 import { fetchUsers } from '../users/api'
 import { ActivityPage } from './ActivityPage'
-import { fetchTenantAuditLogs, type TenantAuditLog } from './api'
+import { fetchLoginAttempts, fetchTenantAuditLogs, type TenantAuditLog } from './api'
 import { AuditDetails } from './components/AuditDetails'
 
 jest.mock('../auth/hooks/useAuth', () => ({ useAuth: jest.fn() }))
@@ -13,6 +13,7 @@ jest.mock('../users/api', () => ({ fetchUsers: jest.fn() }))
 jest.mock('./api', () => ({
   fetchTenantAuditLogs: jest.fn(),
   downloadTenantAuditLogs: jest.fn(),
+  fetchLoginAttempts: jest.fn(),
 }))
 
 const productUpdate: TenantAuditLog = {
@@ -111,4 +112,51 @@ test('exportar exige un rango de fechas de como maximo un año', async () => {
   await screen.findByText('Producto #42')
   expect(screen.queryByText(/Exporta como máximo/)).not.toBeInTheDocument()
   expect(screen.getByRole('button', { name: /CSV/ })).toBeEnabled()
+})
+
+test('el detalle de una operacion autorizada dice quien la autorizo', () => {
+  render(
+    <AuditDetails
+      details={JSON.stringify({
+        invoice_number: 'V-000012',
+        reason: 'cobro duplicado',
+        authorized_by: 3,
+        authorized_by_email: 'jefe@negocio.com',
+      })}
+    />,
+  )
+  expect(screen.getByText('Autorizado por')).toBeInTheDocument()
+  expect(screen.getByText('jefe@negocio.com')).toBeInTheDocument()
+  // El id sobra cuando ya viene el correo.
+  expect(screen.queryByText('authorized_by')).not.toBeInTheDocument()
+})
+
+test('la pestaña de intentos de acceso lista los correos desconocidos', async () => {
+  mockPermissions(['USERS_VIEW_AUDIT'])
+  ;(fetchLoginAttempts as jest.Mock).mockResolvedValue({
+    count: 1,
+    next: null,
+    previous: null,
+    results: [
+      {
+        id: 1,
+        email: 'bot@ataque.com',
+        ip: '203.0.113.9',
+        user_agent: 'curl/8.0',
+        source: 'LOGIN',
+        created_at: '2026-09-22T03:10:00-05:00',
+      },
+    ],
+  })
+  renderWithClient(<ActivityPage />)
+  const user = userEvent.setup()
+
+  await user.click(screen.getByRole('button', { name: 'Intentos de acceso' }))
+
+  const row = (await screen.findByText('bot@ataque.com')).closest('tr')!
+  expect(within(row).getByText('Inicio de sesión')).toBeInTheDocument()
+  expect(within(row).getByText('203.0.113.9')).toBeInTheDocument()
+
+  await user.selectOptions(screen.getByLabelText('Origen'), 'SUPERVISOR_AUTHORIZATION')
+  expect(fetchLoginAttempts).toHaveBeenLastCalledWith({ source: 'SUPERVISOR_AUTHORIZATION' }, 1)
 })
