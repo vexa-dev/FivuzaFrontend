@@ -40,7 +40,7 @@
     "babel-plugin-transform-vite-meta-env": "^1.0.3",
     "identity-obj-proxy": "^3.0.0",
     "jest": "^30.4.2",
-    "jest-environment-jsdom": "^30.4.1",
+    "jest-environment-jsdom": "^30.5.2",
     "oxlint": "^1.76.0",
     "rollup-plugin-visualizer": "^7.0.1",
     "typescript": "~7.0.2",
