@@ -6,6 +6,9 @@ export const E2E = {
   password: 'Clave-E2E-2026',
   productName: 'Camiseta E2E',
   productSku: 'E2E-001',
+  // Producto con promoción vigente de -20% sobre S/ 25.00.
+  promoProductName: 'Gorra Promo E2E',
+  promoProductSku: 'E2E-PROMO',
   customerName: 'Cliente E2E',
   customerDocument: '70000001',
   cashRegister: 'Caja Principal',

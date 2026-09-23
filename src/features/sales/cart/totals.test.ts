@@ -9,6 +9,7 @@ function line(overrides: Partial<CartLine> = {}): CartLine {
     basePrice: '20.00',
     pricingTiers: [],
     unitOfMeasure: 'UND',
+    promotion: null,
     unitPrice: '20.00',
     quantity: '1',
     discountAmount: null,
@@ -42,9 +43,39 @@ describe('computeCartTotals', () => {
     expect(totals.subtotal).toBeCloseTo(56.5)
   })
 
-  it('discountAmount null se trata como 0 (el backend resuelve la promocion real)', () => {
-    const totals = computeCartTotals([line({ discountAmount: null })], [])
+  it('sin descuento manual ni promocion, no hay descuento', () => {
+    const totals = computeCartTotals([line({ discountAmount: null, promotion: null })], [])
     expect(totals.discountTotal).toBe(0)
+  })
+
+  it('sin descuento manual, descuenta la promocion vigente de la linea', () => {
+    const lines = [
+      line({
+        unitPrice: '25.00',
+        quantity: '2',
+        promotion: { id: 1, name: 'Promo', type: 'PERCENTAGE', value: '20.0000' },
+      }),
+    ]
+    const totals = computeCartTotals(lines, [payment({ amount: '40.00' })])
+    expect(totals.discountTotal).toBeCloseTo(10)
+    expect(totals.total).toBeCloseTo(40)
+    // Es el mismo total que calcula el backend: el pago por ese monto cuadra.
+    expect(totals.paymentsMatchTotal).toBe(true)
+  })
+
+  it('el descuento manual gana sobre la promocion (no se suman)', () => {
+    const lines = [
+      line({
+        unitPrice: '25.00',
+        quantity: '1',
+        promotion: { id: 1, name: 'Promo', type: 'PERCENTAGE', value: '20.0000' },
+        discountAmount: '2.50',
+        discountPercent: '10',
+      }),
+    ]
+    const totals = computeCartTotals(lines, [])
+    expect(totals.discountTotal).toBe(2.5)
+    expect(totals.total).toBe(22.5)
   })
 
   it('descuenta discountAmount cuando es un override explicito', () => {
