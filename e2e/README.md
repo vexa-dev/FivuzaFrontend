@@ -7,6 +7,8 @@ Recorren la app real (frontend + backend + PostgreSQL + Redis) como lo haría un
 3. Cobrar sin conexión, ver la venta en cola y sincronizarla al volver.
 4. Cerrar la caja: el arqueo muestra las ventas en efectivo y cuadra en 0.
 
+`dos-cajeros.spec.ts` cubre dos cajeros en el mismo turno y el cierre en dos pasos (Bloque A), y `supervisor-autoriza.spec.ts` la autorización de supervisor (Bloque C): un descuento sobre el tope del cajero y una anulación, ambos con la clave del admin sembrado, y la bitácora con quién autorizó.
+
 ## Correr en local
 
 Con el backend como carpeta hermana (`../FivuzaBackend`) y su Docker Compose levantado:
