@@ -19,6 +19,10 @@ export interface CartLine {
   // override manual que el cajero ingresó a mano y que gana sobre la
   // promoción automática (mismo contrato que SaleService.create_sale).
   discountAmount: string | null
+  // Bloque C.2: el cajero da el descuento manual en %, que es como se mide
+  // el tope de su rol. discountAmount se deriva de aquí (cartReducer) y se
+  // recalcula si cambia la cantidad o el precio del tramo.
+  discountPercent: string | null
 }
 
 export interface CartPayment {

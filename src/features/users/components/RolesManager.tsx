@@ -105,6 +105,19 @@ export function RolesManager({ roles }: { roles: Role[] }) {
 
   const groups = permissions ? groupByModule(permissions) : []
 
+  // Bloque C.2: con SALES_DISCOUNT el tope no aplica (y ese rol autoriza).
+  const discountSummary = (role: Role) => {
+    const salesDiscount = permissions?.find((permission) => permission.code === 'SALES_DISCOUNT')
+    const unlimited = rolePermissions?.some(
+      (item) => item.role === role.id && item.permission === salesDiscount?.id,
+    )
+    if (unlimited) return 'Descuento manual: sin tope (puede autorizar descuentos)'
+    const max = Number(role.max_discount_percent)
+    if (max >= 100) return 'Descuento manual: sin tope'
+    if (max === 0) return 'Descuento manual: siempre con autorización de un supervisor'
+    return `Descuento manual: hasta ${max}% por producto sin autorización`
+  }
+
   return (
     <div className="roles-manager">
       <div className="card roles-list-panel">
@@ -168,6 +181,9 @@ export function RolesManager({ roles }: { roles: Role[] }) {
                 </h2>
                 <p className="core-state-message" style={{ margin: '2px 0 0', padding: 0 }}>
                   {selectedRole.description || 'Sin descripción'}
+                </p>
+                <p className="core-state-message" style={{ margin: '2px 0 0', padding: 0 }}>
+                  {discountSummary(selectedRole)}
                 </p>
               </div>
               <div className="row-actions">

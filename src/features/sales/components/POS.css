@@ -149,6 +149,60 @@
   flex-shrink: 0;
 }
 
+/* Descuento manual por linea (Bloque C.2). */
+.pos-line-discount-toggle {
+  margin-top: 4px;
+  padding: 2px 6px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.pos-line-discount {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.pos-line-discount-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+}
+
+.pos-line-discount-field input {
+  width: 56px;
+  padding: 4px 6px;
+  text-align: right;
+}
+
+.pos-line-discount-amount {
+  color: var(--success);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.pos-line-discount-badge {
+  white-space: nowrap;
+}
+
+.pos-line-subtotal {
+  white-space: nowrap;
+}
+
+.pos-line-gross {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 400;
+  text-decoration: line-through;
+}
+
 .pos-checkout-btn {
   font-size: 1.05rem;
   padding: 14px;

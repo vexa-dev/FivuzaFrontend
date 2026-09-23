@@ -16,7 +16,13 @@ export function useCreateRole() {
 export function useUpdateRole() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<Pick<Role, 'name' | 'description'>> }) =>
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: number
+      data: Partial<Pick<Role, 'name' | 'description' | 'max_discount_percent'>>
+    }) =>
       updateRole(id, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['roles'] }),
   })

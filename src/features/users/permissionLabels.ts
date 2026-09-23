@@ -9,10 +9,20 @@ export const PERMISSION_LABELS: Record<string, string> = {
   USERS_VIEW_AUDIT: 'Ver el historial de actividad del negocio',
   HR_MANAGE: 'Gestionar personal: asistencia, horarios y planilla',
   INVENTORY_VIEW: 'Ver el catálogo y el stock disponible',
+  INVENTORY_VIEW_COST: 'Ver costos, márgenes y valorización',
   INVENTORY_MANAGE: 'Editar el catálogo y ajustar el stock',
   PURCHASES_MANAGE: 'Registrar compras a proveedores',
   CASH_MANAGE: 'Abrir y cerrar caja, registrar ingresos y egresos',
+  CASH_OPEN: 'Abrir caja',
+  CASH_CLOSE: 'Cerrar cajas y revisar el arqueo',
+  CASH_SUBMIT_COUNT: 'Entregar su caja contada',
   SALES_MANAGE: 'Vender y gestionar clientes y promociones',
+  SALES_VOID: 'Anular ventas y autorizar anulaciones',
+  SALES_RETURN: 'Registrar devoluciones y autorizarlas',
+  SALES_DISCOUNT: 'Dar descuentos sin tope y autorizarlos',
+  GYM_MANAGE: 'Gestionar el gimnasio: membresías y clases',
+  DATA_EXPORT: 'Descargar el respaldo completo del negocio',
+  SETTINGS_MANAGE: 'Cambiar la configuración del negocio',
 }
 
 export function permissionLabel(code: string): string {

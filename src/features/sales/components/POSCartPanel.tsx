@@ -1,11 +1,17 @@
 import { Minus, Plus, Scale, ShoppingCart, Tag, Trash2 } from 'lucide-react'
 import { useState, type Dispatch } from 'react'
+import {
+  isAuthorizationCancelled,
+  useSupervisorAuthorization,
+} from '../../../shared/authorization/useSupervisorAuthorization'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { offlineDB } from '../../../shared/offline/db'
 import { ApiError } from '../../../shared/utils/apiClient'
 import { formatCurrency, formatQuantity } from '../../../shared/utils/format'
+import { useAuth } from '../../auth/hooks/useAuth'
 import type { Sale } from '../api'
 import type { CartAction } from '../cart/cartReducer'
+import { exceedsDiscountLimit } from '../cart/discount'
 import { resolveTierUnitPrice } from '../cart/pricing'
 import type { CartTotals } from '../cart/totals'
 import { toSaleCreateInput } from '../cart/useCart'
@@ -15,6 +21,7 @@ import { useSerialScale } from '../hooks/useSerialScale'
 import { useCreateSale } from '../hooks/useSales'
 import { CheckoutModal } from './CheckoutModal'
 import { OfflineSaleQueuedModal } from './OfflineSaleQueuedModal'
+import { POSLineDiscount } from './POSLineDiscount'
 import { PostSaleModal } from './PostSaleModal'
 
 interface POSCartPanelProps {
@@ -29,6 +36,13 @@ export function POSCartPanel({ cart, totals, dispatch, cashSessionId }: POSCartP
   const { data: customers } = useCustomers(customerSearch)
   const selectedCustomer = customers?.find((c) => c.id === cart.customerId)
   const createSale = useCreateSale()
+  const authorization = useSupervisorAuthorization()
+  const { user, hasPermission } = useAuth()
+  // Bloque C.2: tope de descuento manual por linea del rol de quien vende.
+  const discountLimit = {
+    maxPercent: Number(user?.max_discount_percent ?? 0),
+    unlimited: hasPermission('SALES_DISCOUNT'),
+  }
   const scale = useSerialScale()
   const hasWeighableLines = cart.lines.some((line) => line.unitOfMeasure === 'KG')
   const [error, setError] = useState<string | null>(null)
@@ -94,13 +108,27 @@ export function POSCartPanel({ cart, totals, dispatch, cashSessionId }: POSCartP
       setCustomerSearch('')
     }
 
-    createSale
-      .mutateAsync(payloadWithUuid)
+    // El modal ya muestra el % pedido y el tope que devuelve el backend.
+    authorization
+      .run((authorizationToken) =>
+        createSale.mutateAsync({ data: payloadWithUuid, authorizationToken }),
+      )
       .then(finishWithSale)
       .catch((err: unknown) => {
+        if (isAuthorizationCancelled(err)) return
         if (err instanceof ApiError) {
           const body = err.body as { error?: { message?: string } }
           setError(body?.error?.message ?? 'No se pudo registrar la venta.')
+          return
+        }
+        // Bloque C.2: sin conexion no hay a quien pedir autorizacion, asi
+        // que un descuento sobre el tope no se encola -el cajero lo quita o
+        // espera a tener conexion.
+        if (exceedsDiscountLimit(cart.lines, discountLimit)) {
+          setError(
+            `Sin conexión solo puedes dar hasta ${discountLimit.maxPercent}% de descuento por producto. ` +
+              'Quita o baja el descuento, o espera a tener conexión para pedir autorización.',
+          )
           return
         }
         // No es un error de la API (ej. TypeError: Failed to fetch) -no hay
@@ -193,6 +221,8 @@ export function POSCartPanel({ cart, totals, dispatch, cashSessionId }: POSCartP
                   line.pricingTiers,
                   line.quantity,
                 )
+                const gross = Number(line.unitPrice) * Number(line.quantity)
+                const net = gross - Number(line.discountAmount ?? 0)
                 return (
                 <tr key={line.variantId}>
                   <td>
@@ -206,6 +236,17 @@ export function POSCartPanel({ cart, totals, dispatch, cashSessionId }: POSCartP
                         Precio mayorista aplicado
                       </span>
                     )}
+                    <POSLineDiscount
+                      line={line}
+                      overLimit={exceedsDiscountLimit([line], discountLimit)}
+                      onChange={(discountPercent) =>
+                        dispatch({
+                          type: 'SET_LINE_DISCOUNT',
+                          variantId: line.variantId,
+                          discountPercent,
+                        })
+                      }
+                    />
                   </td>
                   <td>
                     {line.unitOfMeasure === 'KG' ? (
@@ -276,8 +317,11 @@ export function POSCartPanel({ cart, totals, dispatch, cashSessionId }: POSCartP
                       </div>
                     )}
                   </td>
-                  <td className="core-table-strong">
-                    S/ {(Number(line.unitPrice) * Number(line.quantity)).toFixed(2)}
+                  <td className="core-table-strong pos-line-subtotal">
+                    {line.discountAmount !== null && (
+                      <span className="pos-line-gross">S/ {gross.toFixed(2)}</span>
+                    )}
+                    S/ {net.toFixed(2)}
                   </td>
                   <td>
                     <button
@@ -327,7 +371,7 @@ export function POSCartPanel({ cart, totals, dispatch, cashSessionId }: POSCartP
           totals={totals}
           customer={selectedCustomer}
           error={error}
-          isSubmitting={createSale.isPending}
+          isSubmitting={createSale.isPending || authorization.isAsking}
           onAddPayment={(payment) => dispatch({ type: 'ADD_PAYMENT', payment })}
           onUpdatePaymentAmount={(index, amount) =>
             dispatch({ type: 'UPDATE_PAYMENT_AMOUNT', index, amount })
@@ -340,6 +384,8 @@ export function POSCartPanel({ cart, totals, dispatch, cashSessionId }: POSCartP
           onClose={() => setShowCheckout(false)}
         />
       )}
+
+      {authorization.modal}
 
       {completedSale && (
         <PostSaleModal sale={completedSale} onClose={() => setCompletedSale(null)} />

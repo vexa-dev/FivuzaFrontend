@@ -6,7 +6,12 @@ export interface Role {
   name: string
   is_system_default: boolean
   description: string
+  /** Bloque C.2: descuento manual por producto que da sin autorización, en %.
+   * Quien tiene SALES_DISCOUNT no tiene tope. */
+  max_discount_percent: string
 }
+
+type RoleInput = Partial<Pick<Role, 'name' | 'description' | 'max_discount_percent'>>
 
 export interface Permission {
   id: number
@@ -83,10 +88,10 @@ export const deleteUser = (id: number) =>
 
 export const fetchRoles = () => authed<Role[]>('/usuarios/roles/')
 
-export const createRole = (data: { name: string; description?: string }) =>
+export const createRole = (data: RoleInput & { name: string }) =>
   authed<Role>('/usuarios/roles/', { method: 'POST', body: data })
 
-export const updateRole = (id: number, data: Partial<{ name: string; description: string }>) =>
+export const updateRole = (id: number, data: RoleInput) =>
   authed<Role>(`/usuarios/roles/${id}/`, { method: 'PATCH', body: data })
 
 export const deleteRole = (id: number) =>

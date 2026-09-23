@@ -6,20 +6,40 @@ export type CartAction =
   | { type: 'SET_CASH_SESSION'; cashSessionId: number | null }
   | {
       type: 'ADD_LINE'
-      line: Omit<CartLine, 'quantity' | 'discountAmount' | 'unitPrice'> & { quantity?: string }
+      line: Omit<CartLine, 'quantity' | 'discountAmount' | 'discountPercent' | 'unitPrice'> & {
+        quantity?: string
+      }
     }
   | { type: 'REMOVE_LINE'; variantId: number }
   | { type: 'SET_LINE_QUANTITY'; variantId: number; quantity: string }
-  | { type: 'SET_LINE_DISCOUNT'; variantId: number; discountAmount: string | null }
+  | { type: 'SET_LINE_DISCOUNT'; variantId: number; discountPercent: string | null }
   | { type: 'ADD_PAYMENT'; payment: CartPayment }
   | { type: 'UPDATE_PAYMENT_AMOUNT'; index: number; amount: string }
   | { type: 'UPDATE_PAYMENT_METHOD'; index: number; method: CartPayment['method'] }
   | { type: 'REMOVE_PAYMENT'; index: number }
   | { type: 'CLEAR' }
 
+/** Monto del descuento manual, truncado a céntimos: redondear hacia arriba
+ * podría pasar el porcentaje pedido (y el tope del rol) por un céntimo. */
+export function manualDiscountAmount(
+  unitPrice: string,
+  quantity: string,
+  percent: string | null,
+): string | null {
+  const value = Number(percent)
+  if (percent === null || !Number.isFinite(value) || value <= 0) return null
+  const gross = Number(unitPrice) * Number(quantity)
+  const cents = Math.floor((gross * Math.min(value, 100)) / 100 * 100 + 1e-9)
+  return (cents / 100).toFixed(2)
+}
+
 function withResolvedPrice(line: CartLine): CartLine {
   const { unitPrice } = resolveTierUnitPrice(line.basePrice, line.pricingTiers, line.quantity)
-  return { ...line, unitPrice }
+  return {
+    ...line,
+    unitPrice,
+    discountAmount: manualDiscountAmount(unitPrice, line.quantity, line.discountPercent),
+  }
 }
 
 function upsertLine(lines: CartLine[], newLine: CartLine): CartLine[] {
@@ -55,6 +75,7 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
           ...action.line,
           quantity: action.line.quantity ?? '1',
           discountAmount: null,
+          discountPercent: null,
           unitPrice: action.line.basePrice,
         }),
       }
@@ -77,7 +98,7 @@ export function cartReducer(state: CartState, action: CartAction): CartState {
         ...state,
         lines: state.lines.map((line) =>
           line.variantId === action.variantId
-            ? { ...line, discountAmount: action.discountAmount }
+            ? withResolvedPrice({ ...line, discountPercent: action.discountPercent })
             : line,
         ),
       }

@@ -13,8 +13,8 @@ jest.mock('../hooks/useUsers', () => ({
 const createAsync = jest.fn()
 const updateAsync = jest.fn()
 
-const adminRole: Role = { id: 1, name: 'admin', is_system_default: true, description: '' }
-const sellerRole: Role = { id: 2, name: 'seller', is_system_default: true, description: '' }
+const adminRole: Role = { id: 1, name: 'admin', is_system_default: true, description: '', max_discount_percent: '0.00' }
+const sellerRole: Role = { id: 2, name: 'seller', is_system_default: true, description: '', max_discount_percent: '0.00' }
 const roles = [adminRole, sellerRole]
 const warehouses: Warehouse[] = [
   { id: 10, name: 'Principal', address: '', is_active: true, created_at: '' },
