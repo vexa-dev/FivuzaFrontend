@@ -12,6 +12,7 @@ import { useAuth } from '../../auth/hooks/useAuth'
 import type { Sale } from '../api'
 import type { CartAction } from '../cart/cartReducer'
 import { exceedsDiscountLimit } from '../cart/discount'
+import { lineGross } from '../cart/money'
 import { resolveTierUnitPrice } from '../cart/pricing'
 import { promotionLabel } from '../cart/promotion'
 import { lineDiscount, type CartTotals } from '../cart/totals'
@@ -222,7 +223,7 @@ export function POSCartPanel({ cart, totals, dispatch, cashSessionId }: POSCartP
                   line.pricingTiers,
                   line.quantity,
                 )
-                const gross = Number(line.unitPrice) * Number(line.quantity)
+                const gross = lineGross(line.unitPrice, line.quantity)
                 const discount = lineDiscount(line)
                 const net = gross - discount
                 // El descuento manual gana sobre la promoción (igual que el

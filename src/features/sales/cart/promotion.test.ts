@@ -20,9 +20,20 @@ describe('promotionDiscount (espejo de SaleService._resolve_promotion_discount)'
     expect(promotionDiscount('8.00', '1.500', promo('PERCENTAGE', '25.0000'))).toBeCloseTo(3)
   })
 
-  it('PERCENTAGE no redondea a céntimos, igual que el backend', () => {
-    // 15% de 10.50 = 1.575: el backend lo guarda así, sin redondear.
-    expect(promotionDiscount('10.50', '1', promo('PERCENTAGE', '15.0000'))).toBeCloseTo(1.575, 10)
+  it('PERCENTAGE redondea a céntimos con HALF_UP, igual que el backend', () => {
+    // 15% de 10.50 = 1.575 -> 1.58.
+    expect(promotionDiscount('10.50', '1', promo('PERCENTAGE', '15.0000'))).toBe(1.58)
+  })
+
+  it('PERCENTAGE aplica sobre el subtotal ya redondeado', () => {
+    // 1.005 kg x 1.00 = 1.005 -> 1.01; 50% de 1.01 = 0.505 -> 0.51
+    // (sobre el subtotal sin redondear daría 0.5025 -> 0.50).
+    expect(promotionDiscount('1.00', '1.005', promo('PERCENTAGE', '50.0000'))).toBe(0.51)
+  })
+
+  it('FIXED_AMOUNT por cantidad fraccionaria redondea a céntimos', () => {
+    // S/ 1.00 por kg x 0.755 kg = 0.755 -> 0.76
+    expect(promotionDiscount('4.00', '0.755', promo('FIXED_AMOUNT', '1.0000'))).toBe(0.76)
   })
 
   it('FIXED_AMOUNT es un monto por unidad', () => {

@@ -63,6 +63,62 @@ describe('computeCartTotals', () => {
     expect(totals.paymentsMatchTotal).toBe(true)
   })
 
+  // CheckoutModal precarga el pago con remaining.toFixed(2): ese monto en
+  // centimos tiene que cuadrar con el total, o "Cobrar" queda deshabilitado.
+  it('con promocion de % que deja fracciones de centimo, el pago precargado cuadra', () => {
+    const lines = [
+      line({
+        unitPrice: '10.99',
+        quantity: '1',
+        promotion: { id: 1, name: 'Promo', type: 'PERCENTAGE', value: '12.5000' },
+      }),
+    ]
+    const preloaded = computeCartTotals(lines, []).total.toFixed(2)
+    const totals = computeCartTotals(lines, [payment({ amount: preloaded })])
+    expect(preloaded).toBe('9.62')
+    expect(totals.paymentsMatchTotal).toBe(true)
+  })
+
+  it('redondea el descuento de cada linea (15% de 10.50 = 1.575 -> 1.58), igual que el backend', () => {
+    const lines = [
+      line({
+        unitPrice: '10.50',
+        quantity: '1',
+        promotion: { id: 1, name: 'Promo', type: 'PERCENTAGE', value: '15.0000' },
+      }),
+    ]
+    const totals = computeCartTotals(lines, [payment({ amount: '8.92' })])
+    expect(totals.discountTotal).toBe(1.58)
+    expect(totals.total).toBe(8.92)
+    expect(totals.paymentsMatchTotal).toBe(true)
+    // 8.93 (redondear solo el total) es el monto que el backend rechazaria.
+    expect(computeCartTotals(lines, [payment({ amount: '8.93' })]).paymentsMatchTotal).toBe(false)
+  })
+
+  it('suma lineas ya redondeadas: el total es la suma de las lineas en centimos', () => {
+    const lines = [
+      line({ unitPrice: '10.50', quantity: '1.234', unitOfMeasure: 'KG' }),
+      line({
+        variantId: 2,
+        unitPrice: '10.50',
+        quantity: '1',
+        promotion: { id: 1, name: 'Promo', type: 'PERCENTAGE', value: '15.0000' },
+      }),
+    ]
+    const totals = computeCartTotals(lines, [])
+    expect(totals.subtotal).toBe(23.46)
+    expect(totals.discountTotal).toBe(1.58)
+    expect(totals.total).toBe(21.88)
+  })
+
+  it('con producto por KG que deja fracciones de centimo, el pago precargado cuadra', () => {
+    const lines = [line({ unitPrice: '10.50', quantity: '1.234', unitOfMeasure: 'KG' })]
+    const preloaded = computeCartTotals(lines, []).total.toFixed(2)
+    const totals = computeCartTotals(lines, [payment({ amount: preloaded })])
+    expect(preloaded).toBe('12.96')
+    expect(totals.paymentsMatchTotal).toBe(true)
+  })
+
   it('el descuento manual gana sobre la promocion (no se suman)', () => {
     const lines = [
       line({
