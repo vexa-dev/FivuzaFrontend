@@ -52,6 +52,9 @@ const HRPage = lazy(() => import('./features/hr/HRPage').then((m) => ({ default:
 const GimnasioPage = lazy(() =>
   import('./features/gimnasio/GimnasioPage').then((m) => ({ default: m.GimnasioPage })),
 )
+const TenantActivityPage = lazy(() =>
+  import('./features/activity/ActivityPage').then((m) => ({ default: m.ActivityPage })),
+)
 const SettingsPage = lazy(() =>
   import('./features/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })),
 )
@@ -106,6 +109,9 @@ function App() {
                 </Route>
                 <Route element={<TenantProtectedRoute requirePermission="GYM_MANAGE" />}>
                   <Route path="/gimnasio" element={<GimnasioPage />} />
+                </Route>
+                <Route element={<TenantProtectedRoute requirePermission="USERS_VIEW_AUDIT" />}>
+                  <Route path="/actividad" element={<TenantActivityPage />} />
                 </Route>
                 <Route path="/configuracion" element={<SettingsPage />} />
               </Route>

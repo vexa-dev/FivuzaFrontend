@@ -1,6 +1,7 @@
 import {
   Contact,
   Dumbbell,
+  History,
   LayoutDashboard,
   LogOut,
   Package,
@@ -28,6 +29,7 @@ const NAV_ITEMS = [
   { to: '/usuarios', label: 'Usuarios', icon: UsersIcon, requirePermission: 'USERS_MANAGE' },
   { to: '/rrhh', label: 'RRHH', icon: Contact, requirePermission: 'HR_MANAGE' },
   { to: '/gimnasio', label: 'Gimnasio', icon: Dumbbell, requirePermission: 'GYM_MANAGE' },
+  { to: '/actividad', label: 'Actividad', icon: History, requirePermission: 'USERS_VIEW_AUDIT' },
 ]
 
 // Layout en 2 partes claras: .erp-topbar (arriba, fija, logo+avatar
