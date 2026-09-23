@@ -12,9 +12,15 @@ export function useSaleReturns(saleId: number | undefined) {
 export function useCreateSaleReturn() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (data: SaleReturnCreateInput) => createSaleReturn(data),
+    mutationFn: ({
+      data,
+      authorizationToken,
+    }: {
+      data: SaleReturnCreateInput
+      authorizationToken?: string
+    }) => createSaleReturn(data, authorizationToken),
     onSuccess: (_result, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['sales', 'sale-returns', variables.sale_id] })
+      queryClient.invalidateQueries({ queryKey: ['sales', 'sale-returns', variables.data.sale_id] })
       queryClient.invalidateQueries({ queryKey: ['sales', 'sales'] })
       queryClient.invalidateQueries({ queryKey: ['sales', 'cash-sessions'] })
       queryClient.invalidateQueries({ queryKey: ['sales', 'cash-movements'] })

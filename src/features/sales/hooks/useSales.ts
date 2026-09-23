@@ -37,7 +37,8 @@ export function useSaleReceipt(id: number | undefined, widthMm: 58 | 80 = 58) {
 export function useCreateSale() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (data: SaleCreateInput) => createSale(data),
+    mutationFn: ({ data, authorizationToken }: { data: SaleCreateInput; authorizationToken?: string }) =>
+      createSale(data, authorizationToken),
     // Sprint 20: con el networkMode por defecto ('online'), React Query
     // PAUSA la mutacion cuando navigator.onLine es false -mutateAsync ni
     // siquiera intenta el fetch, se queda "pending" para siempre en vez de
@@ -61,7 +62,15 @@ export function useCreateSale() {
 export function useVoidSale() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, reason }: { id: number; reason: string }) => voidSale(id, reason),
+    mutationFn: ({
+      id,
+      reason,
+      authorizationToken,
+    }: {
+      id: number
+      reason: string
+      authorizationToken?: string
+    }) => voidSale(id, reason, authorizationToken),
     onSuccess: () => {
       // Igual que useCreateSale: reingresa stock y puede tocar el arqueo de
       // caja via un CashMovement -mismos caches a invalidar.

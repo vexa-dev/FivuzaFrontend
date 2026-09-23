@@ -1,4 +1,8 @@
 import { useState } from 'react'
+import {
+  isAuthorizationCancelled,
+  useSupervisorAuthorization,
+} from '../../../shared/authorization/useSupervisorAuthorization'
 import { Modal } from '../../../shared/components/Modal'
 import { ApiError } from '../../../shared/utils/apiClient'
 import { formatQuantity } from '../../../shared/utils/format'
@@ -20,6 +24,7 @@ export function ReturnSaleModal({ sale, onClose, onReturned }: ReturnSaleModalPr
   const { data: existingReturns } = useSaleReturns(sale.id)
   const { data: openSessions } = useOpenCashSessions()
   const createReturn = useCreateSaleReturn()
+  const authorization = useSupervisorAuthorization()
 
   const [quantities, setQuantities] = useState<Record<number, string>>({})
   const [reason, setReason] = useState('')
@@ -54,22 +59,24 @@ export function ReturnSaleModal({ sale, onClose, onReturned }: ReturnSaleModalPr
       return
     }
 
-    createReturn.mutate(
-      {
-        sale_id: sale.id,
-        reason,
-        refund_type: refundType,
-        cash_session_id: refundType === 'CASH' ? cashSessionId : undefined,
-        items,
-      },
-      {
-        onSuccess: onReturned,
-        onError: (err: unknown) => {
-          const body = err instanceof ApiError ? (err.body as { error?: { message?: string } }) : null
-          setError(body?.error?.message ?? 'No se pudo registrar la devolución.')
-        },
-      },
-    )
+    const data = {
+      sale_id: sale.id,
+      reason,
+      refund_type: refundType,
+      cash_session_id: refundType === 'CASH' ? cashSessionId : undefined,
+      items,
+    }
+    authorization
+      .run((authorizationToken) => createReturn.mutateAsync({ data, authorizationToken }), {
+        targetId: sale.id,
+        description: `Devolución sobre ${sale.invoice_number}`,
+      })
+      .then(onReturned)
+      .catch((err: unknown) => {
+        if (isAuthorizationCancelled(err)) return
+        const body = err instanceof ApiError ? (err.body as { error?: { message?: string } }) : null
+        setError(body?.error?.message ?? 'No se pudo registrar la devolución.')
+      })
   }
 
   return (
@@ -169,12 +176,13 @@ export function ReturnSaleModal({ sale, onClose, onReturned }: ReturnSaleModalPr
         <button
           type="button"
           className="btn btn-primary"
-          disabled={createReturn.isPending}
+          disabled={createReturn.isPending || authorization.isAsking}
           onClick={handleConfirm}
         >
           {createReturn.isPending ? 'Registrando...' : 'Registrar devolución'}
         </button>
       </div>
+      {authorization.modal}
     </Modal>
   )
 }

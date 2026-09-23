@@ -4,6 +4,8 @@ export interface TenantUser {
   role: string
   permissions: string[]
   warehouse_ids?: number[]
+  /** Tope de descuento manual por linea de su rol (Bloque C.2), en %. */
+  max_discount_percent?: string
 }
 
 export interface ImpersonationInfo {
