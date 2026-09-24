@@ -390,11 +390,13 @@ export interface PurchaseOrder {
   created_at: string
 }
 
-export interface NewPurchaseOrderLine {
-  variant_id: number
-  quantity: string
-  unit_cost: string
-}
+/** Una línea lleva el costo unitario o el subtotal, uno de los dos. Con
+ * subtotal manda el total de la factura (1000 unidades por S/ 33.33): el
+ * backend lo guarda tal cual y deriva el costo unitario a 2 decimales. */
+export type NewPurchaseOrderLine = { variant_id: number; quantity: string } & (
+  | { unit_cost: string; subtotal?: never }
+  | { subtotal: string; unit_cost?: never }
+)
 
 export const fetchPurchaseOrders = (params?: { status?: string; supplier?: number }) => {
   const query = new URLSearchParams()
