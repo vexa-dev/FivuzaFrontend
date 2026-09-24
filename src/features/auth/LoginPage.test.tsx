@@ -60,6 +60,26 @@ describe('LoginPage (ERP de tenant)', () => {
     )
   })
 
+  it('ante un 429 (throttle de login) dice cuánto esperar, no que falla la red', async () => {
+    jest.mocked(loginTenantUser).mockRejectedValueOnce(
+      new ApiError(
+        429,
+        { error: { code: 'THROTTLED', message: 'Request was throttled. Expected available in 45 seconds.' } },
+        45,
+      ),
+    )
+    renderLoginPage()
+    const user = userEvent.setup()
+
+    await user.type(screen.getByLabelText(/correo/i), 'admin@negocio.com')
+    await user.type(screen.getByLabelText(/^contraseña$/i), 'ClaveSegura123')
+    await user.click(screen.getByRole('button', { name: /ingresar/i }))
+
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent('Demasiados intentos. Espera 45 segundos e intenta de nuevo.')
+    expect(alert).not.toHaveTextContent(/conectar con el servidor/)
+  })
+
   it('llama a loginTenantUser con las credenciales ingresadas', async () => {
     jest.mocked(loginTenantUser).mockResolvedValueOnce({
       access: 'access-token',
