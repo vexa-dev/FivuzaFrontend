@@ -1,3 +1,5 @@
+import { lineGross, roundMoney } from './money'
+import { promotionDiscount } from './promotion'
 import type { CartLine, CartPayment } from './types'
 
 export interface CartTotals {
@@ -13,22 +15,29 @@ export interface CartTotals {
 
 // Math en punto flotante -igual que CloseCashSessionModal (Sprint 12), es
 // una vista previa para la UI, nunca el valor que se envía o persiste; el
-// backend recalcula todo con Decimal antes de aceptar la venta.
+// backend recalcula todo con Decimal antes de aceptar la venta. Cada línea
+// se redondea a céntimos con la misma regla que el backend (round_money).
 function lineSubtotal(line: CartLine): number {
-  return Number(line.unitPrice) * Number(line.quantity)
+  return lineGross(line.unitPrice, line.quantity)
 }
 
-function lineDiscount(line: CartLine): number {
-  // Cuando discountAmount es null, el descuento real lo resuelve el
-  // backend (promoción vigente) -no hay forma de anticiparlo sin duplicar
-  // PromotionService en el cliente, así que la vista previa lo trata como 0.
-  return line.discountAmount === null ? 0 : Number(line.discountAmount)
+/** Descuento de la línea con la misma prioridad que SaleService.create_sale:
+ * el manual gana; sin manual, el de la promoción vigente del producto. Si la
+ * vista previa ignorara la promoción, el total y el pago precargado no
+ * cuadrarían con el backend y la venta rebotaría con PAYMENT_MISMATCH. */
+export function lineDiscount(line: CartLine): number {
+  if (line.discountAmount !== null) {
+    return Math.min(roundMoney(Number(line.discountAmount)), lineSubtotal(line))
+  }
+  return promotionDiscount(line.unitPrice, line.quantity, line.promotion)
 }
 
 export function computeCartTotals(lines: CartLine[], payments: CartPayment[]): CartTotals {
-  const subtotal = lines.reduce((sum, line) => sum + lineSubtotal(line), 0)
-  const discountTotal = lines.reduce((sum, line) => sum + lineDiscount(line), 0)
-  const total = subtotal - discountTotal
+  // Sumas de montos ya en céntimos: se vuelven a redondear solo para
+  // limpiar el ruido del punto flotante (0.1 + 0.2), no cambian el valor.
+  const subtotal = roundMoney(lines.reduce((sum, line) => sum + lineSubtotal(line), 0))
+  const discountTotal = roundMoney(lines.reduce((sum, line) => sum + lineDiscount(line), 0))
+  const total = roundMoney(subtotal - discountTotal)
   const paymentsTotal = payments.reduce((sum, payment) => sum + Number(payment.amount), 0)
 
   return {

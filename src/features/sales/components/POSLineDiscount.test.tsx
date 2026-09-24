@@ -10,6 +10,7 @@ const baseLine: CartLine = {
   basePrice: '50.00',
   pricingTiers: [],
   unitOfMeasure: 'UND',
+  promotion: null,
   unitPrice: '50.00',
   quantity: '1',
   discountAmount: null,
