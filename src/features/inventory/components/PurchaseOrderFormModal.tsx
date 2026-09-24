@@ -1,6 +1,7 @@
 import { useMemo, useState, type FormEvent } from 'react'
 import { Modal } from '../../../shared/components/Modal'
 import { ApiError } from '../../../shared/utils/apiClient'
+import { round2, toTwoDecimals } from '../../../shared/utils/decimals'
 import type { NewPurchaseOrderLine, Product, Supplier, Warehouse } from '../api'
 import { useCreatePurchaseOrder } from '../hooks/usePurchaseOrders'
 
@@ -15,9 +16,33 @@ interface LineRow {
   variant_id: number | ''
   quantity: string
   unit_cost: string
+  subtotal: string
+  // Qué escribió el usuario: el costo unitario o el subtotal de la factura.
+  // El otro se deriva y se muestra solo como referencia.
+  entered: 'unit_cost' | 'subtotal'
 }
 
-const emptyLine = (): LineRow => ({ variant_id: '', quantity: '', unit_cost: '' })
+const emptyLine = (): LineRow => ({
+  variant_id: '',
+  quantity: '',
+  unit_cost: '',
+  subtotal: '',
+  entered: 'unit_cost',
+})
+
+/** Subtotal de la línea: el de la factura si se escribió, si no cantidad ×
+ * costo unitario a 2 decimales (misma regla que el backend). */
+function lineSubtotal(line: LineRow): number {
+  if (line.entered === 'subtotal') return Number(line.subtotal) || 0
+  return round2((Number(line.quantity) || 0) * (Number(line.unit_cost) || 0))
+}
+
+/** Costo unitario de referencia cuando se escribió el subtotal. */
+function derivedUnitCost(line: LineRow): string {
+  const quantity = Number(line.quantity)
+  if (!quantity || !line.subtotal) return ''
+  return round2(Number(line.subtotal) / quantity).toFixed(2)
+}
 
 export function PurchaseOrderFormModal({
   suppliers,
@@ -44,13 +69,19 @@ export function PurchaseOrderFormModal({
 
   const createPurchaseOrder = useCreatePurchaseOrder()
 
-  const updateLine = (index: number, field: keyof LineRow, value: string) => {
+  const updateLine = (
+    index: number,
+    field: 'variant_id' | 'quantity' | 'unit_cost' | 'subtotal',
+    value: string,
+  ) => {
     setLines((rows) =>
-      rows.map((row, rowIndex) =>
-        rowIndex === index
-          ? { ...row, [field]: field === 'variant_id' ? Number(value) || '' : value }
-          : row,
-      ),
+      rows.map((row, rowIndex) => {
+        if (rowIndex !== index) return row
+        if (field === 'variant_id') return { ...row, variant_id: Number(value) || '' }
+        if (field === 'unit_cost') return { ...row, unit_cost: value, subtotal: '', entered: 'unit_cost' }
+        if (field === 'subtotal') return { ...row, subtotal: value, unit_cost: '', entered: 'subtotal' }
+        return { ...row, quantity: value }
+      }),
     )
   }
 
@@ -58,11 +89,7 @@ export function PurchaseOrderFormModal({
   const removeLine = (index: number) =>
     setLines((rows) => rows.filter((_, rowIndex) => rowIndex !== index))
 
-  const total = lines.reduce((sum, line) => {
-    const quantity = Number(line.quantity) || 0
-    const unitCost = Number(line.unit_cost) || 0
-    return sum + quantity * unitCost
-  }, 0)
+  const total = round2(lines.reduce((sum, line) => sum + lineSubtotal(line), 0))
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
@@ -72,17 +99,19 @@ export function PurchaseOrderFormModal({
       setError('Proveedor y almacén son requeridos.')
       return
     }
-    const validLines = lines.filter((line) => line.variant_id && line.quantity && line.unit_cost)
+    const validLines = lines.filter(
+      (line) => line.variant_id && line.quantity && (line.unit_cost || line.subtotal),
+    )
     if (validLines.length === 0) {
-      setError('Agrega al menos una línea con variante, cantidad y costo.')
+      setError('Agrega al menos una línea con variante, cantidad y costo o subtotal.')
       return
     }
 
-    const details_input: NewPurchaseOrderLine[] = validLines.map((line) => ({
-      variant_id: line.variant_id as number,
-      quantity: line.quantity,
-      unit_cost: line.unit_cost,
-    }))
+    const details_input: NewPurchaseOrderLine[] = validLines.map((line) =>
+      line.entered === 'subtotal'
+        ? { variant_id: line.variant_id as number, quantity: line.quantity, subtotal: line.subtotal }
+        : { variant_id: line.variant_id as number, quantity: line.quantity, unit_cost: line.unit_cost },
+    )
 
     createPurchaseOrder
       .mutateAsync({
@@ -175,7 +204,7 @@ export function PurchaseOrderFormModal({
                 <input
                   id={`po-qty-${index}`}
                   value={line.quantity}
-                  onChange={(event) => updateLine(index, 'quantity', event.target.value)}
+                  onChange={(event) => updateLine(index, 'quantity', toTwoDecimals(event.target.value))}
                   placeholder="0"
                   inputMode="decimal"
                 />
@@ -185,9 +214,20 @@ export function PurchaseOrderFormModal({
                 <input
                   id={`po-cost-${index}`}
                   value={line.unit_cost}
-                  onChange={(event) => updateLine(index, 'unit_cost', event.target.value)}
-                  placeholder="0.00"
+                  onChange={(event) => updateLine(index, 'unit_cost', toTwoDecimals(event.target.value))}
+                  placeholder={line.entered === 'subtotal' ? derivedUnitCost(line) || '0.00' : '0.00'}
                   inputMode="decimal"
+                />
+              </div>
+              <div style={{ flex: 1 }}>
+                {index === 0 && <label htmlFor={`po-subtotal-${index}`}>Subtotal</label>}
+                <input
+                  id={`po-subtotal-${index}`}
+                  value={line.subtotal}
+                  onChange={(event) => updateLine(index, 'subtotal', toTwoDecimals(event.target.value))}
+                  placeholder={lineSubtotal(line) ? lineSubtotal(line).toFixed(2) : '0.00'}
+                  inputMode="decimal"
+                  title="Escribe el total de la línea tal como viene en la factura: el costo unitario se calcula."
                 />
               </div>
               {lines.length > 1 && (

@@ -12,8 +12,10 @@ import { useAuth } from '../../auth/hooks/useAuth'
 import type { Sale } from '../api'
 import type { CartAction } from '../cart/cartReducer'
 import { exceedsDiscountLimit } from '../cart/discount'
+import { lineGross } from '../cart/money'
 import { resolveTierUnitPrice } from '../cart/pricing'
-import type { CartTotals } from '../cart/totals'
+import { promotionLabel } from '../cart/promotion'
+import { lineDiscount, type CartTotals } from '../cart/totals'
 import { toSaleCreateInput } from '../cart/useCart'
 import type { CartState } from '../cart/types'
 import { useCustomers } from '../hooks/useCustomers'
@@ -23,6 +25,7 @@ import { CheckoutModal } from './CheckoutModal'
 import { OfflineSaleQueuedModal } from './OfflineSaleQueuedModal'
 import { POSLineDiscount } from './POSLineDiscount'
 import { PostSaleModal } from './PostSaleModal'
+import { toTwoDecimals } from '../../../shared/utils/decimals'
 
 interface POSCartPanelProps {
   cart: CartState
@@ -221,8 +224,12 @@ export function POSCartPanel({ cart, totals, dispatch, cashSessionId }: POSCartP
                   line.pricingTiers,
                   line.quantity,
                 )
-                const gross = Number(line.unitPrice) * Number(line.quantity)
-                const net = gross - Number(line.discountAmount ?? 0)
+                const gross = lineGross(line.unitPrice, line.quantity)
+                const discount = lineDiscount(line)
+                const net = gross - discount
+                // El descuento manual gana sobre la promoción (igual que el
+                // backend): con uno puesto, la promoción no aplica.
+                const promotionApplied = line.promotion !== null && line.discountAmount === null
                 return (
                 <tr key={line.variantId}>
                   <td>
@@ -234,6 +241,12 @@ export function POSCartPanel({ cart, totals, dispatch, cashSessionId }: POSCartP
                       <span className="badge badge-success pos-promo-badge" style={{ marginTop: 4 }}>
                         <Tag size={11} strokeWidth={2} />
                         Precio mayorista aplicado
+                      </span>
+                    )}
+                    {promotionApplied && line.promotion && (
+                      <span className="badge badge-success pos-promo-badge" style={{ marginTop: 4 }}>
+                        <Tag size={11} strokeWidth={2} />
+                        Promoción {promotionLabel(line.promotion)}
                       </span>
                     )}
                     <POSLineDiscount
@@ -257,7 +270,7 @@ export function POSCartPanel({ cart, totals, dispatch, cashSessionId }: POSCartP
                             dispatch({
                               type: 'SET_LINE_QUANTITY',
                               variantId: line.variantId,
-                              quantity: event.target.value,
+                              quantity: toTwoDecimals(event.target.value),
                             })
                           }
                           inputMode="decimal"
@@ -318,7 +331,7 @@ export function POSCartPanel({ cart, totals, dispatch, cashSessionId }: POSCartP
                     )}
                   </td>
                   <td className="core-table-strong pos-line-subtotal">
-                    {line.discountAmount !== null && (
+                    {discount > 0 && (
                       <span className="pos-line-gross">S/ {gross.toFixed(2)}</span>
                     )}
                     S/ {net.toFixed(2)}

@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Modal } from '../../../shared/components/Modal'
 import type { Customer, CustomerDocumentType } from '../api'
 import { useCreateCustomer, useUpdateCustomer } from '../hooks/useCustomers'
+import { toTwoDecimals } from '../../../shared/utils/decimals'
 
 interface CustomerFormModalProps {
   editingCustomer: Customer | null
@@ -110,7 +111,7 @@ export function CustomerFormModal({ editingCustomer, onClose }: CustomerFormModa
             id="customer-credit-limit"
             inputMode="decimal"
             value={creditLimit ?? ''}
-            onChange={(event) => setCreditLimit(event.target.value)}
+            onChange={(event) => setCreditLimit(toTwoDecimals(event.target.value))}
             placeholder="Sin límite"
           />
         </div>

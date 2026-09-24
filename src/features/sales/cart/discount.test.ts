@@ -9,6 +9,7 @@ function line(overrides: Partial<CartLine> = {}): CartLine {
     basePrice: '100.00',
     pricingTiers: [],
     unitOfMeasure: 'UND',
+    promotion: null,
     unitPrice: '100.00',
     quantity: '1',
     discountAmount: null,

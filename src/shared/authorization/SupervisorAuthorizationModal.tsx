@@ -3,6 +3,7 @@ import { useState, type FormEvent } from 'react'
 import { Modal } from '../components/Modal'
 import { PasswordInput } from '../components/PasswordInput'
 import { ApiError } from '../utils/apiClient'
+import { getThrottleMessage } from '../utils/errorMessage'
 import {
   requestSupervisorAuthorization,
   type AuthorizationRequirement,
@@ -53,8 +54,9 @@ export function SupervisorAuthorizationModal({
       .then(onAuthorized)
       .catch((err: unknown) => {
         setPassword('')
-        if (err instanceof ApiError && err.status === 429) {
-          setError('Demasiados intentos. Espera un minuto y vuelve a probar.')
+        const throttleMessage = getThrottleMessage(err)
+        if (throttleMessage) {
+          setError(throttleMessage)
           return
         }
         const body = err instanceof ApiError ? (err.body as { error?: { message?: string } }) : null

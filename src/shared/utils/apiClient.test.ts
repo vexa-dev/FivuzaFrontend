@@ -5,7 +5,7 @@ jest.mock('../../features/core/hooks/session', () => ({
 }))
 
 import * as session from '../../features/core/hooks/session'
-import { ApiError, apiFetch } from './apiClient'
+import { ApiError, apiFetch, parseRetryAfter } from './apiClient'
 
 function jsonResponse(body: unknown, ok = true, status = 200) {
   return {
@@ -83,5 +83,40 @@ describe('apiClient', () => {
 
     await expect(apiFetch('/things/1/', { token: 'viejo' })).rejects.toBeInstanceOf(ApiError)
     expect(session.setAccessToken).not.toHaveBeenCalled()
+  })
+})
+
+describe('Retry-After en un 429', () => {
+  beforeEach(() => {
+    globalThis.fetch = jest.fn()
+  })
+
+  it('el ApiError trae los segundos de la cabecera Retry-After', async () => {
+    const headers: Record<string, string> = {
+      'content-type': 'application/json',
+      'retry-after': '37',
+    }
+    ;(globalThis.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: false,
+      status: 429,
+      headers: { get: (name: string) => headers[name.toLowerCase()] ?? null },
+      json: async () => ({ error: { code: 'THROTTLED', message: 'Request was throttled.' } }),
+    } as unknown as Response)
+
+    const error = (await apiFetch('/platform/auth/login/', { method: 'POST' }).catch(
+      (e: unknown) => e,
+    )) as ApiError
+    expect(error).toBeInstanceOf(ApiError)
+    expect(error.status).toBe(429)
+    expect(error.retryAfterSeconds).toBe(37)
+  })
+
+  it('parseRetryAfter acepta segundos o fecha HTTP y descarta lo demás', () => {
+    expect(parseRetryAfter('12')).toBe(12)
+    expect(parseRetryAfter(null)).toBeNull()
+    expect(parseRetryAfter('application/json')).toBeNull()
+    const inTwentySeconds = new Date(Date.now() + 20_000).toUTCString()
+    expect(parseRetryAfter(inTwentySeconds)).toBeGreaterThanOrEqual(19)
+    expect(parseRetryAfter(inTwentySeconds)).toBeLessThanOrEqual(20)
   })
 })

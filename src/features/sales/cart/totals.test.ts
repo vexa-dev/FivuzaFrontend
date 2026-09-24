@@ -9,6 +9,7 @@ function line(overrides: Partial<CartLine> = {}): CartLine {
     basePrice: '20.00',
     pricingTiers: [],
     unitOfMeasure: 'UND',
+    promotion: null,
     unitPrice: '20.00',
     quantity: '1',
     discountAmount: null,
@@ -42,9 +43,96 @@ describe('computeCartTotals', () => {
     expect(totals.subtotal).toBeCloseTo(56.5)
   })
 
-  it('discountAmount null se trata como 0 (el backend resuelve la promocion real)', () => {
-    const totals = computeCartTotals([line({ discountAmount: null })], [])
+  it('sin descuento manual ni promocion, no hay descuento', () => {
+    const totals = computeCartTotals([line({ discountAmount: null, promotion: null })], [])
     expect(totals.discountTotal).toBe(0)
+  })
+
+  it('sin descuento manual, descuenta la promocion vigente de la linea', () => {
+    const lines = [
+      line({
+        unitPrice: '25.00',
+        quantity: '2',
+        promotion: { id: 1, name: 'Promo', type: 'PERCENTAGE', value: '20.00' },
+      }),
+    ]
+    const totals = computeCartTotals(lines, [payment({ amount: '40.00' })])
+    expect(totals.discountTotal).toBeCloseTo(10)
+    expect(totals.total).toBeCloseTo(40)
+    // Es el mismo total que calcula el backend: el pago por ese monto cuadra.
+    expect(totals.paymentsMatchTotal).toBe(true)
+  })
+
+  // CheckoutModal precarga el pago con remaining.toFixed(2): ese monto en
+  // centimos tiene que cuadrar con el total, o "Cobrar" queda deshabilitado.
+  it('con promocion de % que deja fracciones de centimo, el pago precargado cuadra', () => {
+    const lines = [
+      line({
+        unitPrice: '10.99',
+        quantity: '1',
+        promotion: { id: 1, name: 'Promo', type: 'PERCENTAGE', value: '12.50' },
+      }),
+    ]
+    const preloaded = computeCartTotals(lines, []).total.toFixed(2)
+    const totals = computeCartTotals(lines, [payment({ amount: preloaded })])
+    expect(preloaded).toBe('9.62')
+    expect(totals.paymentsMatchTotal).toBe(true)
+  })
+
+  it('redondea el descuento de cada linea (15% de 10.50 = 1.575 -> 1.58), igual que el backend', () => {
+    const lines = [
+      line({
+        unitPrice: '10.50',
+        quantity: '1',
+        promotion: { id: 1, name: 'Promo', type: 'PERCENTAGE', value: '15.00' },
+      }),
+    ]
+    const totals = computeCartTotals(lines, [payment({ amount: '8.92' })])
+    expect(totals.discountTotal).toBe(1.58)
+    expect(totals.total).toBe(8.92)
+    expect(totals.paymentsMatchTotal).toBe(true)
+    // 8.93 (redondear solo el total) es el monto que el backend rechazaria.
+    expect(computeCartTotals(lines, [payment({ amount: '8.93' })]).paymentsMatchTotal).toBe(false)
+  })
+
+  it('suma lineas ya redondeadas: el total es la suma de las lineas en centimos', () => {
+    const lines = [
+      line({ unitPrice: '10.50', quantity: '1.25', unitOfMeasure: 'KG' }),
+      line({
+        variantId: 2,
+        unitPrice: '10.50',
+        quantity: '1',
+        promotion: { id: 1, name: 'Promo', type: 'PERCENTAGE', value: '15.00' },
+      }),
+    ]
+    const totals = computeCartTotals(lines, [])
+    expect(totals.subtotal).toBe(23.63)
+    expect(totals.discountTotal).toBe(1.58)
+    expect(totals.total).toBe(22.05)
+  })
+
+  it('con producto por KG que deja fracciones de centimo, el pago precargado cuadra', () => {
+    // 1.25 kg x 10.50 = 13.125 -> 13.13
+    const lines = [line({ unitPrice: '10.50', quantity: '1.25', unitOfMeasure: 'KG' })]
+    const preloaded = computeCartTotals(lines, []).total.toFixed(2)
+    const totals = computeCartTotals(lines, [payment({ amount: preloaded })])
+    expect(preloaded).toBe('13.13')
+    expect(totals.paymentsMatchTotal).toBe(true)
+  })
+
+  it('el descuento manual gana sobre la promocion (no se suman)', () => {
+    const lines = [
+      line({
+        unitPrice: '25.00',
+        quantity: '1',
+        promotion: { id: 1, name: 'Promo', type: 'PERCENTAGE', value: '20.00' },
+        discountAmount: '2.50',
+        discountPercent: '10',
+      }),
+    ]
+    const totals = computeCartTotals(lines, [])
+    expect(totals.discountTotal).toBe(2.5)
+    expect(totals.total).toBe(22.5)
   })
 
   it('descuenta discountAmount cuando es un override explicito', () => {

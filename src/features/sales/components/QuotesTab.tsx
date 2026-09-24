@@ -16,6 +16,7 @@ import {
 } from '../hooks/useQuotes'
 import { ConvertToSaleModal } from './ConvertToSaleModal'
 import { QuoteDocumentModal } from './QuoteDocumentModal'
+import { toTwoDecimals } from '../../../shared/utils/decimals'
 
 const STATUS_LABELS: Record<Quote['status'], string> = {
   DRAFT: 'Borrador',
@@ -368,7 +369,7 @@ function QuoteFormCard({ products }: { products: Product[] }) {
                       setLines((prev) =>
                         prev.map((l) =>
                           l.variant_id === line.variant_id
-                            ? { ...l, quantity: event.target.value }
+                            ? { ...l, quantity: toTwoDecimals(event.target.value) }
                             : l,
                         ),
                       )

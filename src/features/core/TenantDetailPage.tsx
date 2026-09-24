@@ -27,6 +27,7 @@ import {
   useTenantNotes,
 } from './hooks/useTenantExtras'
 import { PLAN_FEATURE_CODES, type Tenant, type TenantSettingsRecord } from './api'
+import { toTwoDecimals } from '../../shared/utils/decimals'
 
 type Tab =
   | 'general'
@@ -461,7 +462,7 @@ function ModulesTab({ tenantId }: { tenantId: number }) {
             defaultValue={settings.cash_difference_alert_threshold}
             style={{ maxWidth: 160 }}
             onBlur={(event) => {
-              const value = event.target.value.trim()
+              const value = toTwoDecimals(event.target.value).trim()
               if (!value || value === settings.cash_difference_alert_threshold) return
               updateSettings.mutate({
                 id: settings.id,
