@@ -6,6 +6,7 @@ import type { Attribute, Brand, Category, NewVariantInput, Supplier } from '../a
 import { resolveAllowedAttributeIds } from '../hooks/useAttributes'
 import { useCreateProduct } from '../hooks/useProducts'
 import './ProductFormModal.css'
+import { toTwoDecimals } from '../../../shared/utils/decimals'
 
 interface ProductFormModalProps {
   categories: Category[]
@@ -365,7 +366,7 @@ export function ProductFormModal({
                       <input
                         id={`variant-cost-${index}`}
                         value={variant.cost}
-                        onChange={(event) => updateVariant(index, 'cost', event.target.value)}
+                        onChange={(event) => updateVariant(index, 'cost', toTwoDecimals(event.target.value))}
                         inputMode="decimal"
                       />
                     </div>
@@ -374,7 +375,7 @@ export function ProductFormModal({
                       <input
                         id={`variant-price-${index}`}
                         value={variant.price}
-                        onChange={(event) => updateVariant(index, 'price', event.target.value)}
+                        onChange={(event) => updateVariant(index, 'price', toTwoDecimals(event.target.value))}
                         inputMode="decimal"
                       />
                     </div>
@@ -383,7 +384,7 @@ export function ProductFormModal({
                       <input
                         id={`variant-min-stock-${index}`}
                         value={variant.min_stock}
-                        onChange={(event) => updateVariant(index, 'min_stock', event.target.value)}
+                        onChange={(event) => updateVariant(index, 'min_stock', toTwoDecimals(event.target.value))}
                         inputMode="decimal"
                       />
                     </div>

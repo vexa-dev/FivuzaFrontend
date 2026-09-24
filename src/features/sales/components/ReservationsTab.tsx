@@ -13,6 +13,7 @@ import {
   useReservations,
 } from '../hooks/useReservations'
 import { ConvertToSaleModal } from './ConvertToSaleModal'
+import { toTwoDecimals } from '../../../shared/utils/decimals'
 
 const STATUS_LABELS: Record<ProductReservation['status'], string> = {
   ACTIVE: 'Activa',
@@ -348,7 +349,7 @@ function ReservationFormCard({
           <input
             id="reservation-quantity"
             value={quantity}
-            onChange={(event) => setQuantity(event.target.value)}
+            onChange={(event) => setQuantity(toTwoDecimals(event.target.value))}
             inputMode="decimal"
             placeholder="0"
           />

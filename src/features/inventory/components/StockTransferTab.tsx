@@ -3,6 +3,7 @@ import { useMemo, useState, type FormEvent } from 'react'
 import { ApiError } from '../../../shared/utils/apiClient'
 import type { Product, Warehouse } from '../api'
 import { useStock, useTransferStock } from '../hooks/useStock'
+import { toTwoDecimals } from '../../../shared/utils/decimals'
 
 interface StockTransferTabProps {
   products: Product[]
@@ -143,7 +144,7 @@ export function StockTransferTab({ products, warehouses }: StockTransferTabProps
           <input
             id="transfer-quantity"
             value={quantity}
-            onChange={(event) => setQuantity(event.target.value)}
+            onChange={(event) => setQuantity(toTwoDecimals(event.target.value))}
             inputMode="decimal"
             placeholder="0"
           />

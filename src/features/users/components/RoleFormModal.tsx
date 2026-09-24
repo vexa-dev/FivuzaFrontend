@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Modal } from '../../../shared/components/Modal'
 import type { Role } from '../api'
 import { useCreateRole, useUpdateRole } from '../hooks/useRoles'
+import { toTwoDecimals } from '../../../shared/utils/decimals'
 
 interface RoleFormModalProps {
   editingRole: Role | null
@@ -80,7 +81,7 @@ export function RoleFormModal({ editingRole, onClose, onCreated }: RoleFormModal
           <input
             id="role-max-discount"
             value={maxDiscount}
-            onChange={(event) => setMaxDiscount(event.target.value)}
+            onChange={(event) => setMaxDiscount(toTwoDecimals(event.target.value))}
             inputMode="decimal"
             style={{ maxWidth: 120 }}
           />

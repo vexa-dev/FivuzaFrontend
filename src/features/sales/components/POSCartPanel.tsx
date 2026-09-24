@@ -25,6 +25,7 @@ import { CheckoutModal } from './CheckoutModal'
 import { OfflineSaleQueuedModal } from './OfflineSaleQueuedModal'
 import { POSLineDiscount } from './POSLineDiscount'
 import { PostSaleModal } from './PostSaleModal'
+import { toTwoDecimals } from '../../../shared/utils/decimals'
 
 interface POSCartPanelProps {
   cart: CartState
@@ -269,7 +270,7 @@ export function POSCartPanel({ cart, totals, dispatch, cashSessionId }: POSCartP
                             dispatch({
                               type: 'SET_LINE_QUANTITY',
                               variantId: line.variantId,
-                              quantity: event.target.value,
+                              quantity: toTwoDecimals(event.target.value),
                             })
                           }
                           inputMode="decimal"

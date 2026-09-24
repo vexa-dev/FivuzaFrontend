@@ -17,10 +17,10 @@ function session(overrides: Partial<CashSession> = {}): CashSession {
     id: 7,
     cash_register: 1,
     user: 1,
-    opening_amount: '50.0000',
+    opening_amount: '50.00',
     opening_at: '2026-09-18T13:00:00Z',
     expected_closing_amount: null,
-    expected_amount_so_far: '135.0000',
+    expected_amount_so_far: '135.00',
     counted_closing_amount: null,
     counted_at: null,
     approved_by: null,
@@ -87,7 +87,7 @@ describe('CloseCashSessionModal', () => {
     submitAsync.mockResolvedValue(
       session({
         status: 'PENDING_APPROVAL',
-        counted_closing_amount: '130.0000',
+        counted_closing_amount: '130.00',
         expected_amount_so_far: null,
       }),
     )
@@ -117,14 +117,14 @@ describe('CloseCashSessionModal', () => {
     mutateAsync.mockResolvedValue(
       session({
         status: 'CLOSED',
-        expected_closing_amount: '135.0000',
-        counted_closing_amount: '130.0000',
-        difference: '-5.0000',
+        expected_closing_amount: '135.00',
+        counted_closing_amount: '130.00',
+        difference: '-5.00',
       }),
     )
     render(
       <CloseCashSessionModal
-        session={session({ status: 'PENDING_APPROVAL', counted_closing_amount: '130.0000' })}
+        session={session({ status: 'PENDING_APPROVAL', counted_closing_amount: '130.00' })}
         movements={[]}
         onClose={jest.fn()}
       />,
@@ -135,20 +135,20 @@ describe('CloseCashSessionModal', () => {
 
     expect(mutateAsync).toHaveBeenCalledWith({
       sessionId: 7,
-      countedClosingAmount: '130.0000',
+      countedClosingAmount: '130.00',
       notes: '',
     })
     expect(await screen.findByText('Caja cerrada')).toBeInTheDocument()
-    expect(screen.getByText('-5.0000')).toBeInTheDocument()
+    expect(screen.getByText('-5.00')).toBeInTheDocument()
   })
 
   it('exige el monto contado y muestra la diferencia al cerrar', async () => {
     mutateAsync.mockResolvedValue(
       session({
         status: 'CLOSED',
-        expected_closing_amount: '135.0000',
-        counted_closing_amount: '130.0000',
-        difference: '-5.0000',
+        expected_closing_amount: '135.00',
+        counted_closing_amount: '130.00',
+        difference: '-5.00',
       }),
     )
     render(<CloseCashSessionModal session={session()} movements={[]} onClose={jest.fn()} />)
@@ -166,6 +166,6 @@ describe('CloseCashSessionModal', () => {
       notes: '',
     })
     expect(await screen.findByText('Caja cerrada')).toBeInTheDocument()
-    expect(screen.getByText('-5.0000')).toBeInTheDocument()
+    expect(screen.getByText('-5.00')).toBeInTheDocument()
   })
 })

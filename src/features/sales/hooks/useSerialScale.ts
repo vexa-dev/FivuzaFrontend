@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { round2 } from '../../../shared/utils/decimals'
 
 interface SerialScaleState {
   isSupported: boolean
@@ -52,7 +53,10 @@ export function useSerialScale() {
         for (const line of lines) {
           const match = line.match(WEIGHT_PATTERN)
           if (match) {
-            setState((prev) => ({ ...prev, weight: match[1] }))
+            // Las balanzas mandan gramos (0.150); el sistema pesa a 2
+            // decimales (core.decimals): 0.155 kg -> 0.16 kg.
+            const weight = round2(Number(match[1])).toFixed(2)
+            setState((prev) => ({ ...prev, weight }))
           }
         }
       }

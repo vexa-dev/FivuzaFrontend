@@ -1,4 +1,5 @@
-import { lineGross, roundMoney } from './money'
+import { round2 } from '../../../shared/utils/decimals'
+import { lineGross } from './money'
 import { promotionDiscount } from './promotion'
 import type { CartLine, CartPayment } from './types'
 
@@ -16,7 +17,7 @@ export interface CartTotals {
 // Math en punto flotante -igual que CloseCashSessionModal (Sprint 12), es
 // una vista previa para la UI, nunca el valor que se envía o persiste; el
 // backend recalcula todo con Decimal antes de aceptar la venta. Cada línea
-// se redondea a céntimos con la misma regla que el backend (round_money).
+// se redondea a céntimos con la misma regla que el backend (core.decimals.round2).
 function lineSubtotal(line: CartLine): number {
   return lineGross(line.unitPrice, line.quantity)
 }
@@ -27,7 +28,7 @@ function lineSubtotal(line: CartLine): number {
  * cuadrarían con el backend y la venta rebotaría con PAYMENT_MISMATCH. */
 export function lineDiscount(line: CartLine): number {
   if (line.discountAmount !== null) {
-    return Math.min(roundMoney(Number(line.discountAmount)), lineSubtotal(line))
+    return Math.min(round2(Number(line.discountAmount)), lineSubtotal(line))
   }
   return promotionDiscount(line.unitPrice, line.quantity, line.promotion)
 }
@@ -35,9 +36,9 @@ export function lineDiscount(line: CartLine): number {
 export function computeCartTotals(lines: CartLine[], payments: CartPayment[]): CartTotals {
   // Sumas de montos ya en céntimos: se vuelven a redondear solo para
   // limpiar el ruido del punto flotante (0.1 + 0.2), no cambian el valor.
-  const subtotal = roundMoney(lines.reduce((sum, line) => sum + lineSubtotal(line), 0))
-  const discountTotal = roundMoney(lines.reduce((sum, line) => sum + lineDiscount(line), 0))
-  const total = roundMoney(subtotal - discountTotal)
+  const subtotal = round2(lines.reduce((sum, line) => sum + lineSubtotal(line), 0))
+  const discountTotal = round2(lines.reduce((sum, line) => sum + lineDiscount(line), 0))
+  const total = round2(subtotal - discountTotal)
   const paymentsTotal = payments.reduce((sum, payment) => sum + Number(payment.amount), 0)
 
   return {

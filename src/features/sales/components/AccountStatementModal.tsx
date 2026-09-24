@@ -4,6 +4,7 @@ import { ApiError } from '../../../shared/utils/apiClient'
 import { formatCurrency } from '../../../shared/utils/format'
 import type { Customer } from '../api'
 import { useCustomerBalanceLedger, useCustomerDebtLedger, useRegisterDebtPayment } from '../hooks/useCreditLedger'
+import { toTwoDecimals } from '../../../shared/utils/decimals'
 
 function formatDate(value: string) {
   return new Date(value).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' })
@@ -76,7 +77,7 @@ export function AccountStatementModal({ customer, onClose }: AccountStatementMod
               <input
                 inputMode="decimal"
                 value={amount}
-                onChange={(event) => setAmount(event.target.value)}
+                onChange={(event) => setAmount(toTwoDecimals(event.target.value))}
                 placeholder="Monto"
                 style={{ width: 100 }}
               />

@@ -53,7 +53,7 @@ describe('computeCartTotals', () => {
       line({
         unitPrice: '25.00',
         quantity: '2',
-        promotion: { id: 1, name: 'Promo', type: 'PERCENTAGE', value: '20.0000' },
+        promotion: { id: 1, name: 'Promo', type: 'PERCENTAGE', value: '20.00' },
       }),
     ]
     const totals = computeCartTotals(lines, [payment({ amount: '40.00' })])
@@ -70,7 +70,7 @@ describe('computeCartTotals', () => {
       line({
         unitPrice: '10.99',
         quantity: '1',
-        promotion: { id: 1, name: 'Promo', type: 'PERCENTAGE', value: '12.5000' },
+        promotion: { id: 1, name: 'Promo', type: 'PERCENTAGE', value: '12.50' },
       }),
     ]
     const preloaded = computeCartTotals(lines, []).total.toFixed(2)
@@ -84,7 +84,7 @@ describe('computeCartTotals', () => {
       line({
         unitPrice: '10.50',
         quantity: '1',
-        promotion: { id: 1, name: 'Promo', type: 'PERCENTAGE', value: '15.0000' },
+        promotion: { id: 1, name: 'Promo', type: 'PERCENTAGE', value: '15.00' },
       }),
     ]
     const totals = computeCartTotals(lines, [payment({ amount: '8.92' })])
@@ -97,25 +97,26 @@ describe('computeCartTotals', () => {
 
   it('suma lineas ya redondeadas: el total es la suma de las lineas en centimos', () => {
     const lines = [
-      line({ unitPrice: '10.50', quantity: '1.234', unitOfMeasure: 'KG' }),
+      line({ unitPrice: '10.50', quantity: '1.25', unitOfMeasure: 'KG' }),
       line({
         variantId: 2,
         unitPrice: '10.50',
         quantity: '1',
-        promotion: { id: 1, name: 'Promo', type: 'PERCENTAGE', value: '15.0000' },
+        promotion: { id: 1, name: 'Promo', type: 'PERCENTAGE', value: '15.00' },
       }),
     ]
     const totals = computeCartTotals(lines, [])
-    expect(totals.subtotal).toBe(23.46)
+    expect(totals.subtotal).toBe(23.63)
     expect(totals.discountTotal).toBe(1.58)
-    expect(totals.total).toBe(21.88)
+    expect(totals.total).toBe(22.05)
   })
 
   it('con producto por KG que deja fracciones de centimo, el pago precargado cuadra', () => {
-    const lines = [line({ unitPrice: '10.50', quantity: '1.234', unitOfMeasure: 'KG' })]
+    // 1.25 kg x 10.50 = 13.125 -> 13.13
+    const lines = [line({ unitPrice: '10.50', quantity: '1.25', unitOfMeasure: 'KG' })]
     const preloaded = computeCartTotals(lines, []).total.toFixed(2)
     const totals = computeCartTotals(lines, [payment({ amount: preloaded })])
-    expect(preloaded).toBe('12.96')
+    expect(preloaded).toBe('13.13')
     expect(totals.paymentsMatchTotal).toBe(true)
   })
 
@@ -124,7 +125,7 @@ describe('computeCartTotals', () => {
       line({
         unitPrice: '25.00',
         quantity: '1',
-        promotion: { id: 1, name: 'Promo', type: 'PERCENTAGE', value: '20.0000' },
+        promotion: { id: 1, name: 'Promo', type: 'PERCENTAGE', value: '20.00' },
         discountAmount: '2.50',
         discountPercent: '10',
       }),

@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Modal } from '../../../shared/components/Modal'
 import type { Promotion, PromotionType } from '../api'
 import { useCreatePromotion, useUpdatePromotion } from '../hooks/usePromotions'
+import { toTwoDecimals } from '../../../shared/utils/decimals'
 
 interface PromotionFormModalProps {
   editingPromotion: Promotion | null
@@ -84,7 +85,7 @@ export function PromotionFormModal({ editingPromotion, onClose }: PromotionFormM
               id="promotion-value"
               inputMode="decimal"
               value={value}
-              onChange={(event) => setValue(event.target.value)}
+              onChange={(event) => setValue(toTwoDecimals(event.target.value))}
             />
           </div>
         </div>

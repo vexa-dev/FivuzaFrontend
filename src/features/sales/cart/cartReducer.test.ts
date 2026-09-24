@@ -324,7 +324,7 @@ describe('descuento manual por porcentaje (Bloque C.2)', () => {
 })
 
 describe('promoción vigente en el carrito', () => {
-  const promo20: POSPromotion = { id: 9, name: 'Promo', type: 'PERCENTAGE', value: '20.0000' }
+  const promo20: POSPromotion = { id: 9, name: 'Promo', type: 'PERCENTAGE', value: '20.00' }
 
   const addCap = (promotion: POSPromotion | null, quantity = '1') =>
     cartReducer(emptyCart, {

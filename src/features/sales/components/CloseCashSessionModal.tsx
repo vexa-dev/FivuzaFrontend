@@ -5,6 +5,7 @@ import { formatCurrency } from '../../../shared/utils/format'
 import type { CashMovement, CashSession } from '../api'
 import { useCloseCashSession, useSubmitCashSessionCount } from '../hooks/useCashSessions'
 import { PaymentTotalsGrid } from './PaymentTotalsGrid'
+import { toTwoDecimals } from '../../../shared/utils/decimals'
 
 interface CloseCashSessionModalProps {
   session: CashSession
@@ -214,7 +215,7 @@ export function CloseCashSessionModal({
               id="counted-amount"
               inputMode="decimal"
               value={countedAmount}
-              onChange={(event) => setCountedAmount(event.target.value)}
+              onChange={(event) => setCountedAmount(toTwoDecimals(event.target.value))}
               placeholder={blind ? '0.00' : Number(expected).toFixed(2)}
               style={{ fontSize: '1.25rem', padding: '10px 12px' }}
             />

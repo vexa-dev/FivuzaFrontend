@@ -3,6 +3,7 @@ import { Modal } from '../../../shared/components/Modal'
 import { ApiError } from '../../../shared/utils/apiClient'
 import { requestCashMovementReceiptUploadUrl, type CashMovementConcept, type CashMovementType } from '../api'
 import { useCreateCashMovement } from '../hooks/useCashSessions'
+import { toTwoDecimals } from '../../../shared/utils/decimals'
 
 const CONCEPTS: [CashMovementConcept, string][] = [
   ['RETIRO', 'Retiro'],
@@ -106,7 +107,7 @@ export function AddCashMovementModal({
             id="movement-amount"
             inputMode="decimal"
             value={amount}
-            onChange={(event) => setAmount(event.target.value)}
+            onChange={(event) => setAmount(toTwoDecimals(event.target.value))}
             placeholder="10.00"
           />
         </div>

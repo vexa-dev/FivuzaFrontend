@@ -1,5 +1,6 @@
 import type { POSPromotion } from '../api'
-import { lineGross, roundMoney } from './money'
+import { round2 } from '../../../shared/utils/decimals'
+import { lineGross } from './money'
 
 /** Espejo de SaleService._resolve_promotion_discount() en el backend:
  * PERCENTAGE descuenta ese % del subtotal de la línea; FIXED_AMOUNT es un
@@ -14,8 +15,8 @@ export function promotionDiscount(
   if (promotion === null) return 0
   const lineSubtotal = lineGross(unitPrice, quantity)
   const value = Number(promotion.value)
-  if (promotion.type === 'PERCENTAGE') return roundMoney((lineSubtotal * value) / 100)
-  return Math.min(roundMoney(value * Number(quantity)), lineSubtotal)
+  if (promotion.type === 'PERCENTAGE') return round2((lineSubtotal * value) / 100)
+  return Math.min(round2(value * Number(quantity)), lineSubtotal)
 }
 
 /** Etiqueta corta de la promoción ("-20%", "-S/ 2.00"), para el catálogo y
