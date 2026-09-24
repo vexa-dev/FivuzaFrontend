@@ -25,7 +25,7 @@ export interface TenantAuditLogFilters {
   date_to?: string
 }
 
-function toQuery(filters: TenantAuditLogFilters) {
+function toQuery(filters: object) {
   const params = new URLSearchParams()
   for (const [key, value] of Object.entries(filters)) {
     if (value !== undefined && value !== '') params.set(key, String(value))
@@ -51,4 +51,31 @@ export function downloadTenantAuditLogs(
   const params = toQuery(filters)
   params.set('export', format)
   return tenantApiFetchBlob(`/usuarios/audit-logs/?${params.toString()}`, getAccessToken())
+}
+
+/** Intento de acceso con un correo que no es de nadie del negocio (Bloque
+ * C.4). Se guarda 30 días: es la señal de un ataque de fuerza bruta. */
+export interface LoginAttempt {
+  id: number
+  email: string
+  ip: string | null
+  user_agent: string
+  source: 'LOGIN' | 'SUPERVISOR_AUTHORIZATION'
+  created_at: string
+}
+
+export interface LoginAttemptFilters {
+  email?: string
+  source?: LoginAttempt['source']
+  date_from?: string
+  date_to?: string
+}
+
+export function fetchLoginAttempts(filters: LoginAttemptFilters, page: number) {
+  const params = toQuery(filters)
+  params.set('page', String(page))
+  return tenantApiFetch<PaginatedResponse<LoginAttempt>>(
+    `/usuarios/login-attempts/?${params.toString()}`,
+    { token: getAccessToken(), unwrapPagination: false },
+  )
 }

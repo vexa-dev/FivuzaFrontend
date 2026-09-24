@@ -12,6 +12,9 @@ interface RoleFormModalProps {
 export function RoleFormModal({ editingRole, onClose, onCreated }: RoleFormModalProps) {
   const [name, setName] = useState(editingRole?.name ?? '')
   const [description, setDescription] = useState(editingRole?.description ?? '')
+  const [maxDiscount, setMaxDiscount] = useState(
+    editingRole ? String(Number(editingRole.max_discount_percent)) : '0',
+  )
   const [error, setError] = useState<string | null>(null)
 
   const createRole = useCreateRole()
@@ -25,15 +28,21 @@ export function RoleFormModal({ editingRole, onClose, onCreated }: RoleFormModal
       setError('El nombre del rol es requerido.')
       return
     }
+    const discount = Number(maxDiscount.replace(',', '.'))
+    if (maxDiscount.trim() === '' || !Number.isFinite(discount) || discount < 0 || discount > 100) {
+      setError('El tope de descuento debe estar entre 0 y 100.')
+      return
+    }
+    const max_discount_percent = discount.toFixed(2)
 
     if (editingRole) {
       updateRole
-        .mutateAsync({ id: editingRole.id, data: { name, description } })
+        .mutateAsync({ id: editingRole.id, data: { name, description, max_discount_percent } })
         .then(onClose)
         .catch(() => setError('No se pudo guardar el rol.'))
     } else {
       createRole
-        .mutateAsync({ name, description })
+        .mutateAsync({ name, description, max_discount_percent })
         .then((role) => {
           onCreated?.(role)
           onClose()
@@ -64,6 +73,21 @@ export function RoleFormModal({ editingRole, onClose, onCreated }: RoleFormModal
             onChange={(event) => setDescription(event.target.value)}
             placeholder="Ej. Atiende el mostrador y cobra las ventas"
           />
+        </div>
+
+        <div>
+          <label htmlFor="role-max-discount">Descuento manual sin autorización (%)</label>
+          <input
+            id="role-max-discount"
+            value={maxDiscount}
+            onChange={(event) => setMaxDiscount(event.target.value)}
+            inputMode="decimal"
+            style={{ maxWidth: 120 }}
+          />
+          <p className="core-page-subtitle" style={{ margin: '4px 0 0' }}>
+            Por producto. Por encima de este tope, un supervisor autoriza con su clave. 0 = todo
+            descuento se autoriza; 100 = sin tope.
+          </p>
         </div>
 
         {error && (

@@ -12,6 +12,7 @@ function line(overrides: Partial<CartLine> = {}): CartLine {
     unitPrice: '20.00',
     quantity: '1',
     discountAmount: null,
+    discountPercent: null,
     ...overrides,
   }
 }

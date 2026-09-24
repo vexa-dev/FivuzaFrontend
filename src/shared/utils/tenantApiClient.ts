@@ -38,6 +38,8 @@ interface RequestOptions {
    * `true` (preserva el comportamiento historico) -pasar `false` cuando el
    * llamador quiere el sobre de paginacion crudo (solo la pagina 1). */
   unwrapPagination?: boolean
+  /** Cabeceras extra del llamador (ej. X-Supervisor-Authorization). */
+  headers?: Record<string, string>
 }
 
 async function fetchJson(url: string, headers: Record<string, string>): Promise<unknown> {
@@ -47,7 +49,7 @@ async function fetchJson(url: string, headers: Record<string, string>): Promise<
 }
 
 async function rawFetch<T>(path: string, options: RequestOptions): Promise<T> {
-  const headers: Record<string, string> = {}
+  const headers: Record<string, string> = { ...options.headers }
   if (options.token) {
     headers.Authorization = `Bearer ${options.token}`
   }

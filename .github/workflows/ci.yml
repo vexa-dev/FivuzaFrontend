@@ -73,10 +73,31 @@ jobs:
       if: steps.access.outputs.enabled == 'true'
       with:
         path: FivuzaFrontend
+    # Una feature que toca los dos repos usa el mismo nombre de rama en
+    # ambos: si el backend tiene la rama de este PR, el E2E corre contra
+    # ella (contra main fallaria por lo que aun no se mergeo alla). Si no
+    # la tiene, main. El nombre va por env, no interpolado en el script.
+    - name: Resolve backend branch
+      id: backend
+      if: steps.access.outputs.enabled == 'true'
+      env:
+        TOKEN: ${{ secrets.BACKEND_REPO_TOKEN }}
+        BRANCH: ${{ github.head_ref || github.ref_name }}
+      run: |
+        if git ls-remote --exit-code --heads \
+          "https://x-access-token:${TOKEN}@github.com/vexa-dev/FivuzaBackend.git" \
+          "refs/heads/${BRANCH}" > /dev/null; then
+          ref="$BRANCH"
+        else
+          ref="main"
+        fi
+        echo "::notice::E2E contra la rama '${ref}' del backend."
+        echo "ref=${ref}" >> "$GITHUB_OUTPUT"
     - uses: actions/checkout@v7
       if: steps.access.outputs.enabled == 'true'
       with:
         repository: vexa-dev/FivuzaBackend
+        ref: ${{ steps.backend.outputs.ref }}
         token: ${{ secrets.BACKEND_REPO_TOKEN }}
         path: FivuzaBackend
     - name: Start backend

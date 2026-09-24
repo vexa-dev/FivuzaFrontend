@@ -196,8 +196,11 @@ function SaleDetailModal({ saleId, onClose }: { saleId: number; onClose: () => v
   const [showVoid, setShowVoid] = useState(false)
   const [showReturn, setShowReturn] = useState(false)
 
-  const canVoid = hasPermission('SALES_VOID')
-  const canReturn = hasPermission('SALES_RETURN')
+  // Bloque C: quien vende (SALES_MANAGE) tambien ve los botones aunque no
+  // tenga el permiso propio: al confirmar, un supervisor lo autoriza.
+  const sells = hasPermission('SALES_MANAGE')
+  const canVoid = hasPermission('SALES_VOID') || sells
+  const canReturn = hasPermission('SALES_RETURN') || sells
 
   return (
     <Modal title={sale ? sale.invoice_number : 'Detalle de venta'} onClose={onClose}>

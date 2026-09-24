@@ -1,4 +1,10 @@
+import { AUTHORIZED_OPERATION_LABELS, detailFieldLabel } from '../labels'
+
 type Change = { before: unknown; after: unknown }
+
+// El id de quien pidió o autorizó sobra cuando el backend ya resolvió su
+// correo (Bloque C).
+const REDUNDANT_WITH_EMAIL = ['authorized_by', 'requested_by']
 
 function isChange(value: unknown): value is Change {
   return (
@@ -32,14 +38,17 @@ export function AuditDetails({ details }: { details: string }) {
     return <pre className="audit-log-details">{details}</pre>
   }
 
-  const entries = Object.entries(parsed as Record<string, unknown>)
+  const record = parsed as Record<string, unknown>
+  const entries = Object.entries(record).filter(
+    ([field]) => !(REDUNDANT_WITH_EMAIL.includes(field) && `${field}_email` in record),
+  )
   if (entries.length === 0) return <p className="core-state-message">Sin detalle.</p>
 
   return (
     <dl className="activity-details">
       {entries.map(([field, value]) => (
         <div key={field} className="activity-details-row">
-          <dt>{field}</dt>
+          <dt>{detailFieldLabel(field)}</dt>
           <dd>
             {isChange(value) ? (
               <>
@@ -47,6 +56,8 @@ export function AuditDetails({ details }: { details: string }) {
                 {' → '}
                 <span className="activity-details-after">{formatValue(value.after)}</span>
               </>
+            ) : field === 'permission' && typeof value === 'string' ? (
+              (AUTHORIZED_OPERATION_LABELS[value] ?? value)
             ) : (
               formatValue(value)
             )}

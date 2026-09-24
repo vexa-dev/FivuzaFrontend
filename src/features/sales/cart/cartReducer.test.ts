@@ -20,6 +20,7 @@ describe('cartReducer', () => {
       variantId: 1,
       quantity: '1',
       discountAmount: null,
+      discountPercent: null,
       unitPrice: '20.00',
     })
   })
@@ -190,6 +191,7 @@ describe('computeCartTotals', () => {
           unitPrice: '20.00',
           quantity: '2',
           discountAmount: null,
+          discountPercent: null,
         },
       ],
       [],
@@ -213,6 +215,7 @@ describe('computeCartTotals', () => {
           unitPrice: '100.00',
           quantity: '1',
           discountAmount: '10.00',
+          discountPercent: '10',
         },
       ],
       [],
@@ -234,6 +237,7 @@ describe('computeCartTotals', () => {
         unitPrice: '30.00',
         quantity: '1',
         discountAmount: null,
+        discountPercent: null,
       },
     ]
     const matching = computeCartTotals(lines, [
@@ -259,11 +263,68 @@ describe('computeCartTotals', () => {
           unitPrice: '50.00',
           quantity: '1',
           discountAmount: null,
+          discountPercent: null,
         },
       ],
       [],
     )
     expect(totals.discountTotal).toBe(0)
     expect(totals.total).toBe(50)
+  })
+})
+
+describe('descuento manual por porcentaje (Bloque C.2)', () => {
+  const addShirt = (quantity = '1') =>
+    cartReducer(emptyCart, {
+      type: 'ADD_LINE',
+      line: {
+        variantId: 1,
+        sku: 'SKU-1',
+        productName: 'Camiseta',
+        basePrice: '33.33',
+        pricingTiers: [],
+        unitOfMeasure: 'UND',
+        quantity,
+      },
+    })
+
+  it('deriva el monto del porcentaje, truncado a céntimos', () => {
+    const state = cartReducer(addShirt(), {
+      type: 'SET_LINE_DISCOUNT',
+      variantId: 1,
+      discountPercent: '10',
+    })
+    // 10% de 33.33 es 3.333: se trunca a 3.33 para no pasar el % pedido.
+    expect(state.lines[0].discountAmount).toBe('3.33')
+  })
+
+  it('recalcula el monto al cambiar la cantidad', () => {
+    let state = cartReducer(addShirt(), {
+      type: 'SET_LINE_DISCOUNT',
+      variantId: 1,
+      discountPercent: '10',
+    })
+    state = cartReducer(state, { type: 'SET_LINE_QUANTITY', variantId: 1, quantity: '3' })
+    expect(state.lines[0].discountAmount).toBe('9.99')
+  })
+
+  it('un porcentaje vacío o inválido no manda descuento manual', () => {
+    for (const discountPercent of [null, '', 'abc', '0']) {
+      const state = cartReducer(addShirt(), {
+        type: 'SET_LINE_DISCOUNT',
+        variantId: 1,
+        discountPercent,
+      })
+      expect(state.lines[0].discountAmount).toBeNull()
+    }
+  })
+
+  it('nunca descuenta más que la línea', () => {
+    const state = cartReducer(addShirt(), {
+      type: 'SET_LINE_DISCOUNT',
+      variantId: 1,
+      discountPercent: '250',
+    })
+    expect(state.lines[0].discountAmount).toBe('33.33')
   })
 })

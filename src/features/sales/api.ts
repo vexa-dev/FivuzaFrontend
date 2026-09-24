@@ -1,4 +1,5 @@
 import { getAccessToken } from '../auth/hooks/session'
+import { supervisorAuthorizationHeaders } from '../../shared/authorization/api'
 import {
   tenantApiFetch,
   tenantApiFetchBlob,
@@ -422,11 +423,12 @@ export interface SaleCreateInput {
   payments: SalePaymentInput[]
 }
 
-export function createSale(data: SaleCreateInput) {
+export function createSale(data: SaleCreateInput, authorizationToken?: string) {
   return tenantApiFetch<Sale>('/ventas/sales/', {
     method: 'POST',
     body: data,
     token: getAccessToken(),
+    headers: supervisorAuthorizationHeaders(authorizationToken),
   })
 }
 
@@ -491,11 +493,12 @@ export function fetchSale(id: number) {
   })
 }
 
-export function voidSale(id: number, reason: string) {
+export function voidSale(id: number, reason: string, authorizationToken?: string) {
   return tenantApiFetch<Sale>(`/ventas/sales/${id}/void/`, {
     method: 'POST',
     body: { reason },
     token: getAccessToken(),
+    headers: supervisorAuthorizationHeaders(authorizationToken),
   })
 }
 
@@ -534,11 +537,12 @@ export interface SaleReturnCreateInput {
   items: SaleReturnItemInput[]
 }
 
-export function createSaleReturn(data: SaleReturnCreateInput) {
+export function createSaleReturn(data: SaleReturnCreateInput, authorizationToken?: string) {
   return tenantApiFetch<SaleReturn>('/ventas/sale-returns/', {
     method: 'POST',
     body: data,
     token: getAccessToken(),
+    headers: supervisorAuthorizationHeaders(authorizationToken),
   })
 }
 

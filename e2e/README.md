@@ -7,6 +7,8 @@ Recorren la app real (frontend + backend + PostgreSQL + Redis) como lo haría un
 3. Cobrar sin conexión, ver la venta en cola y sincronizarla al volver.
 4. Cerrar la caja: el arqueo muestra las ventas en efectivo y cuadra en 0.
 
+`dos-cajeros.spec.ts` cubre dos cajeros en el mismo turno y el cierre en dos pasos (Bloque A), y `supervisor-autoriza.spec.ts` la autorización de supervisor (Bloque C): un descuento sobre el tope del cajero y una anulación, ambos con la clave del admin sembrado, y la bitácora con quién autorizó.
+
 ## Correr en local
 
 Con el backend como carpeta hermana (`../FivuzaBackend`) y su Docker Compose levantado:
@@ -33,6 +35,8 @@ Si una prueba falla, `test-results/` guarda captura y *trace*: `npx playwright s
 ## En CI
 
 El job `e2e` de `.github/workflows/ci.yml` clona el backend (repositorio privado), levanta su Compose, siembra y corre Playwright. Necesita el secreto `BACKEND_REPO_TOKEN`: un token de GitHub con permiso de lectura sobre `vexa-dev/FivuzaBackend`. Sin ese secreto, el job se omite con un aviso.
+
+Clona la rama del backend con el mismo nombre que la del PR (o la del push) si existe, y `main` si no: una feature que toca los dos repos tiene que usar el mismo nombre de rama en ambos para que su E2E corra contra el backend que la acompaña. El job deja un aviso con la rama que usó.
 
 ## Reglas para agregar pruebas
 
