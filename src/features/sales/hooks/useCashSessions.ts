@@ -25,6 +25,17 @@ export function useOpenCashSessions() {
   })
 }
 
+/** Cajas abiertas donde el usuario puede vender: la suya asignada o el turno
+ * que abrio. Un supervisor ve todas en "Caja actual" para cerrarlas, pero el
+ * backend le rechaza las ventas en la caja de otro, asi que el POS no se las
+ * ofrece. */
+export function useSellableCashSessions() {
+  return useQuery({
+    queryKey: ['sales', 'cash-sessions', 'open', 'sellable'],
+    queryFn: () => fetchCashSessions({ status: 'OPEN', sellable: true }),
+  })
+}
+
 /** Bloque A: cajas ya entregadas por su cajero y a la espera de que un
  * supervisor las revise. Separadas de las abiertas porque el POS solo puede
  * vender contra las abiertas. */
