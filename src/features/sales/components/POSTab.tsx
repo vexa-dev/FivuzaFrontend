@@ -4,14 +4,14 @@ import { EmptyState } from '../../../shared/components/EmptyState'
 import { formatCurrency, formatQuantity } from '../../../shared/utils/format'
 import { promotionLabel } from '../cart/promotion'
 import { useCart } from '../cart/useCart'
-import { useCashRegisters, useOpenCashSessions } from '../hooks/useCashSessions'
+import { useCashRegisters, useSellableCashSessions } from '../hooks/useCashSessions'
 import { usePOSCatalog } from '../hooks/usePOSCatalog'
 import './POS.css'
 import { OfflineSyncStatus } from './OfflineSyncStatus'
 import { POSCartPanel } from './POSCartPanel'
 
 export function POSTab() {
-  const { data: openSessions, isLoading: loadingSessions } = useOpenCashSessions()
+  const { data: openSessions, isLoading: loadingSessions } = useSellableCashSessions()
   const { data: registers } = useCashRegisters()
   const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null)
   const [search, setSearch] = useState('')
@@ -50,8 +50,8 @@ export function POSTab() {
     return (
       <EmptyState
         icon={<PackageSearch />}
-        title="No hay una caja abierta"
-        subtitle='Abre una caja en la pestaña "Caja actual" antes de vender.'
+        title="No tienes una caja abierta"
+        subtitle='Abre tu caja en la pestaña "Caja actual" antes de vender.'
       />
     )
   }

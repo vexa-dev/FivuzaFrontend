@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { Modal } from '../../../shared/components/Modal'
 import { formatCurrency } from '../../../shared/utils/format'
 import type { SalePaymentInput, SalePaymentMethod } from '../api'
-import { useCashRegisters, useOpenCashSessions } from '../hooks/useCashSessions'
+import { useCashRegisters, useSellableCashSessions } from '../hooks/useCashSessions'
 import { toTwoDecimals } from '../../../shared/utils/decimals'
 
 const PAYMENT_METHODS: [SalePaymentMethod, string][] = [
@@ -37,7 +37,7 @@ export function ConvertToSaleModal({
   onConfirm,
   onClose,
 }: ConvertToSaleModalProps) {
-  const { data: openSessions } = useOpenCashSessions()
+  const { data: openSessions } = useSellableCashSessions()
   const { data: registers } = useCashRegisters()
   const [cashSessionId, setCashSessionId] = useState<number | ''>(openSessions?.[0]?.id ?? '')
   const [payments, setPayments] = useState<SalePaymentInput[]>([{ method: 'CASH', amount: total }])
@@ -60,7 +60,7 @@ export function ConvertToSaleModal({
 
         {(!openSessions || openSessions.length === 0) && (
           <p className="login-error" role="alert">
-            No hay una sesión de caja abierta.
+            No tienes una sesión de caja abierta.
           </p>
         )}
 

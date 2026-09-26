@@ -73,6 +73,8 @@ export interface CashSessionFilters {
   user?: number
   opening_from?: string
   opening_to?: string
+  /** Solo las sesiones donde quien consulta puede vender (Bloque A.2). */
+  sellable?: boolean
 }
 
 export function fetchCashRegisters() {
@@ -88,6 +90,7 @@ export function fetchCashSessions(filters: CashSessionFilters = {}) {
   if (filters.user) params.set('user', String(filters.user))
   if (filters.opening_from) params.set('opening_from', filters.opening_from)
   if (filters.opening_to) params.set('opening_to', filters.opening_to)
+  if (filters.sellable) params.set('sellable', 'true')
   return tenantApiFetch<CashSession[]>(`/ventas/cash-sessions/?${params.toString()}`, {
     token: getAccessToken(),
   })
