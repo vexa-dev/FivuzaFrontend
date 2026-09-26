@@ -4,6 +4,7 @@ import { ApiError } from '../../../shared/utils/apiClient'
 import type { TenantUserRecord } from '../../users/api'
 import type { Employee } from '../api'
 import { useCreateEmployee, useUpdateEmployee } from '../hooks/useEmployees'
+import { toTwoDecimals } from '../../../shared/utils/decimals'
 
 interface Warehouse {
   id: number
@@ -176,7 +177,7 @@ export function EmployeeFormModal({
               step="0.01"
               min="0"
               value={salaryAmount}
-              onChange={(event) => setSalaryAmount(event.target.value)}
+              onChange={(event) => setSalaryAmount(toTwoDecimals(event.target.value))}
             />
           </div>
         </div>

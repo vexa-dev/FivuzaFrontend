@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { ApiError } from '../../../shared/utils/apiClient'
 import { useCashRegisters, useOpenCashSession } from '../hooks/useCashSessions'
+import { toTwoDecimals } from '../../../shared/utils/decimals'
 
 export function OpenCashSessionForm() {
   const { data: registers, isLoading } = useCashRegisters()
@@ -68,7 +69,7 @@ export function OpenCashSessionForm() {
               id="opening-amount"
               inputMode="decimal"
               value={amount}
-              onChange={(event) => setAmount(event.target.value)}
+              onChange={(event) => setAmount(toTwoDecimals(event.target.value))}
               placeholder="50.00"
             />
           </div>

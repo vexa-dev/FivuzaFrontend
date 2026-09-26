@@ -1,6 +1,9 @@
+import type { POSPromotion } from '../api'
 import { cartReducer } from './cartReducer'
+import { exceedsDiscountLimit } from './discount'
 import { computeCartTotals } from './totals'
-import { emptyCart } from './types'
+import { emptyCart, type CartState } from './types'
+import { toSaleCreateInput } from './useCart'
 
 describe('cartReducer', () => {
   it('agrega una línea nueva con cantidad 1 por defecto', () => {
@@ -13,6 +16,7 @@ describe('cartReducer', () => {
         basePrice: '20.00',
         pricingTiers: [],
         unitOfMeasure: 'UND',
+        promotion: null,
       },
     })
     expect(state.lines).toHaveLength(1)
@@ -35,6 +39,7 @@ describe('cartReducer', () => {
         basePrice: '20.00',
         pricingTiers: [],
         unitOfMeasure: 'UND',
+        promotion: null,
       },
     })
     state = cartReducer(state, {
@@ -46,6 +51,7 @@ describe('cartReducer', () => {
         basePrice: '20.00',
         pricingTiers: [],
         unitOfMeasure: 'UND',
+        promotion: null,
       },
     })
 
@@ -63,6 +69,7 @@ describe('cartReducer', () => {
         basePrice: '20.00',
         pricingTiers: [],
         unitOfMeasure: 'UND',
+        promotion: null,
       },
     })
     state = cartReducer(state, {
@@ -74,6 +81,7 @@ describe('cartReducer', () => {
         basePrice: '50.00',
         pricingTiers: [],
         unitOfMeasure: 'UND',
+        promotion: null,
       },
     })
     state = cartReducer(state, { type: 'SET_LINE_QUANTITY', variantId: 2, quantity: '3' })
@@ -92,6 +100,7 @@ describe('cartReducer', () => {
         basePrice: '20.00',
         pricingTiers: [],
         unitOfMeasure: 'UND',
+        promotion: null,
       },
     })
     state = cartReducer(state, { type: 'REMOVE_LINE', variantId: 1 })
@@ -129,6 +138,7 @@ describe('cartReducer', () => {
         basePrice: '20.00',
         pricingTiers: [],
         unitOfMeasure: 'UND',
+        promotion: null,
       },
     })
     state = cartReducer(state, { type: 'CLEAR' })
@@ -149,6 +159,7 @@ describe('cartReducer', () => {
         basePrice: '20.00',
         pricingTiers: [{ min_quantity: '12', unit_price: '15.00' }],
         unitOfMeasure: 'UND',
+        promotion: null,
         quantity: '12',
       },
     })
@@ -165,6 +176,7 @@ describe('cartReducer', () => {
         basePrice: '20.00',
         pricingTiers: [{ min_quantity: '12', unit_price: '15.00' }],
         unitOfMeasure: 'UND',
+        promotion: null,
       },
     })
     expect(state.lines[0].unitPrice).toBe('20.00')
@@ -188,6 +200,7 @@ describe('computeCartTotals', () => {
           basePrice: '20.00',
           pricingTiers: [],
           unitOfMeasure: 'UND',
+          promotion: null,
           unitPrice: '20.00',
           quantity: '2',
           discountAmount: null,
@@ -212,6 +225,7 @@ describe('computeCartTotals', () => {
           basePrice: '100.00',
           pricingTiers: [],
           unitOfMeasure: 'UND',
+          promotion: null,
           unitPrice: '100.00',
           quantity: '1',
           discountAmount: '10.00',
@@ -234,6 +248,7 @@ describe('computeCartTotals', () => {
         basePrice: '30.00',
         pricingTiers: [],
         unitOfMeasure: 'UND' as const,
+        promotion: null,
         unitPrice: '30.00',
         quantity: '1',
         discountAmount: null,
@@ -249,28 +264,6 @@ describe('computeCartTotals', () => {
     const mismatched = computeCartTotals(lines, [{ method: 'CASH', amount: '25.00' }])
     expect(mismatched.paymentsMatchTotal).toBe(false)
   })
-
-  it('un descuento automático (discountAmount null) no se anticipa en la vista previa', () => {
-    const totals = computeCartTotals(
-      [
-        {
-          variantId: 1,
-          sku: 'SKU-1',
-          productName: 'Camiseta',
-          basePrice: '50.00',
-          pricingTiers: [],
-          unitOfMeasure: 'UND',
-          unitPrice: '50.00',
-          quantity: '1',
-          discountAmount: null,
-          discountPercent: null,
-        },
-      ],
-      [],
-    )
-    expect(totals.discountTotal).toBe(0)
-    expect(totals.total).toBe(50)
-  })
 })
 
 describe('descuento manual por porcentaje (Bloque C.2)', () => {
@@ -284,6 +277,7 @@ describe('descuento manual por porcentaje (Bloque C.2)', () => {
         basePrice: '33.33',
         pricingTiers: [],
         unitOfMeasure: 'UND',
+        promotion: null,
         quantity,
       },
     })
@@ -326,5 +320,91 @@ describe('descuento manual por porcentaje (Bloque C.2)', () => {
       discountPercent: '250',
     })
     expect(state.lines[0].discountAmount).toBe('33.33')
+  })
+})
+
+describe('promoción vigente en el carrito', () => {
+  const promo20: POSPromotion = { id: 9, name: 'Promo', type: 'PERCENTAGE', value: '20.00' }
+
+  const addCap = (promotion: POSPromotion | null, quantity = '1') =>
+    cartReducer(emptyCart, {
+      type: 'ADD_LINE',
+      line: {
+        variantId: 1,
+        sku: 'GORRA-1',
+        productName: 'Gorra',
+        basePrice: '25.00',
+        pricingTiers: [{ min_quantity: '10', unit_price: '20.00' }],
+        unitOfMeasure: 'UND',
+        promotion,
+        quantity,
+      },
+    })
+
+  const totalOf = (state: CartState) => computeCartTotals(state.lines, state.payments).total
+
+  it('ADD_LINE guarda la promoción del ítem y el total ya la descuenta', () => {
+    const state = addCap(promo20)
+    expect(state.lines[0].promotion).toEqual(promo20)
+    // La promoción no es descuento manual: discountAmount sigue en null.
+    expect(state.lines[0].discountAmount).toBeNull()
+    expect(totalOf(state)).toBeCloseTo(20)
+  })
+
+  it('agregar el mismo producto otra vez recalcula la promoción sobre la nueva cantidad', () => {
+    let state = addCap(promo20)
+    state = cartReducer(state, {
+      type: 'ADD_LINE',
+      line: { ...state.lines[0], quantity: '1' },
+    })
+    expect(state.lines).toHaveLength(1)
+    expect(totalOf(state)).toBeCloseTo(40)
+  })
+
+  it('al cambiar la cantidad, la promoción se calcula sobre el precio del tramo', () => {
+    let state = addCap(promo20)
+    state = cartReducer(state, { type: 'SET_LINE_QUANTITY', variantId: 1, quantity: '10' })
+    // 10 x 20.00 (tramo) = 200.00; -20% = 160.00
+    expect(state.lines[0].unitPrice).toBe('20.00')
+    expect(totalOf(state)).toBeCloseTo(160)
+  })
+
+  it('un descuento manual gana sobre la promoción y al quitarlo vuelve la promoción', () => {
+    let state = cartReducer(addCap(promo20), {
+      type: 'SET_LINE_DISCOUNT',
+      variantId: 1,
+      discountPercent: '10',
+    })
+    expect(state.lines[0].discountAmount).toBe('2.50')
+    expect(totalOf(state)).toBeCloseTo(22.5)
+
+    state = cartReducer(state, { type: 'SET_LINE_DISCOUNT', variantId: 1, discountPercent: null })
+    expect(totalOf(state)).toBeCloseTo(20)
+  })
+
+  it('la promoción no cuenta contra el tope de descuento del rol', () => {
+    const state = addCap(promo20)
+    expect(exceedsDiscountLimit(state.lines, { maxPercent: 0, unlimited: false })).toBe(false)
+  })
+
+  it('el payload no manda discount_amount con solo promoción: la resuelve el backend', () => {
+    const state = addCap(promo20)
+    const payload = toSaleCreateInput({
+      ...state,
+      customerId: 1,
+      cashSessionId: 1,
+      payments: [{ method: 'CASH', amount: '20.00' }],
+    })
+    expect(payload?.lines[0]).toEqual({ variant_id: 1, quantity: '1' })
+  })
+
+  it('el payload sí manda discount_amount cuando el cajero da un descuento manual', () => {
+    const state = cartReducer(addCap(promo20), {
+      type: 'SET_LINE_DISCOUNT',
+      variantId: 1,
+      discountPercent: '10',
+    })
+    const payload = toSaleCreateInput({ ...state, customerId: 1, cashSessionId: 1 })
+    expect(payload?.lines[0]).toEqual({ variant_id: 1, quantity: '1', discount_amount: '2.50' })
   })
 })

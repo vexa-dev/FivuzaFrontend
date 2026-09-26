@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Modal } from '../../../shared/components/Modal'
 import type { TaxRate } from '../api'
 import { useCreateTaxRate, useUpdateTaxRate } from '../hooks/useTaxRates'
+import { toTwoDecimals } from '../../../shared/utils/decimals'
 
 interface TaxRateFormModalProps {
   editingTaxRate: TaxRate | null
@@ -51,7 +52,7 @@ export function TaxRateFormModal({ editingTaxRate, onClose }: TaxRateFormModalPr
           <input
             id="tax-percentage"
             value={percentage}
-            onChange={(event) => setPercentage(event.target.value)}
+            onChange={(event) => setPercentage(toTwoDecimals(event.target.value))}
             placeholder="18.00"
             inputMode="decimal"
           />

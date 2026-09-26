@@ -2,6 +2,7 @@ import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ApiError } from '../../../shared/utils/apiClient'
+import { getThrottleMessage } from '../../../shared/utils/errorMessage'
 import { loginTenantUser } from '../api'
 import { useAuth } from './useAuth'
 
@@ -18,7 +19,11 @@ export function useLogin() {
       navigate('/dashboard')
     },
     onError: (error: unknown) => {
-      if (error instanceof ApiError && error.status === 400) {
+      // Un 429 (LoginRateThrottle) no es falta de red: decirle cuánto esperar.
+      const throttleMessage = getThrottleMessage(error)
+      if (throttleMessage) {
+        setFormError(throttleMessage)
+      } else if (error instanceof ApiError && error.status === 400) {
         setFormError('Correo o contraseña incorrectos.')
       } else {
         setFormError('No se pudo conectar con el servidor. Intenta de nuevo.')

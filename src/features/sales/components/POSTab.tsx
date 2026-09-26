@@ -2,20 +2,13 @@ import { PackageSearch, Search, Tag } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { EmptyState } from '../../../shared/components/EmptyState'
 import { formatCurrency, formatQuantity } from '../../../shared/utils/format'
-import type { POSCatalogItem } from '../api'
+import { promotionLabel } from '../cart/promotion'
 import { useCart } from '../cart/useCart'
 import { useCashRegisters, useOpenCashSessions } from '../hooks/useCashSessions'
 import { usePOSCatalog } from '../hooks/usePOSCatalog'
 import './POS.css'
 import { OfflineSyncStatus } from './OfflineSyncStatus'
 import { POSCartPanel } from './POSCartPanel'
-
-function promotionBadge(item: POSCatalogItem): string | null {
-  if (!item.promotion) return null
-  return item.promotion.type === 'PERCENTAGE'
-    ? `-${Number(item.promotion.value)}%`
-    : `-S/ ${Number(item.promotion.value).toFixed(2)}`
-}
 
 export function POSTab() {
   const { data: openSessions, isLoading: loadingSessions } = useOpenCashSessions()
@@ -112,7 +105,7 @@ export function POSTab() {
 
         <div className="pos-product-grid">
           {filtered.map((item) => {
-            const badge = promotionBadge(item)
+            const badge = item.promotion ? promotionLabel(item.promotion) : null
             const outOfStock = Number(item.stock) <= 0
             return (
               <button
@@ -130,6 +123,7 @@ export function POSTab() {
                       basePrice: item.price,
                       pricingTiers: item.pricing_tiers,
                       unitOfMeasure: item.unit_of_measure,
+                      promotion: item.promotion,
                     },
                   })
                   setSearch('')

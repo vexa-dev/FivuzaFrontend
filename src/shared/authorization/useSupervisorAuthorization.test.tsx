@@ -134,6 +134,30 @@ test('una clave incorrecta se muestra en el modal y deja reintentar', async () =
   expect(operation).toHaveBeenCalledTimes(1)
 })
 
+test('un 429 (throttle) muestra cuánto esperar y deja el modal abierto', async () => {
+  const operation = jest.fn().mockRejectedValueOnce(requiredError())
+  ;(requestSupervisorAuthorization as jest.Mock).mockRejectedValue(
+    new ApiError(429, {
+      error: {
+        code: 'THROTTLED',
+        message: 'Request was throttled. Expected available in 38 seconds.',
+      },
+    }),
+  )
+  render(<Harness operation={operation} />)
+
+  await userEvent.click(screen.getByRole('button', { name: 'Operar' }))
+  await userEvent.type(await screen.findByLabelText('Correo del supervisor'), 'jefe@negocio.com')
+  await userEvent.type(screen.getByLabelText('Contraseña del supervisor'), 'clave')
+  await userEvent.click(screen.getByRole('button', { name: 'Autorizar' }))
+
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Demasiados intentos. Espera 38 segundos e intenta de nuevo.',
+  )
+  expect(screen.getByLabelText('Contraseña del supervisor')).toHaveValue('')
+  expect(operation).toHaveBeenCalledTimes(1)
+})
+
 test('cerrar el modal cancela sin mostrar un error', async () => {
   const operation = jest.fn().mockRejectedValueOnce(requiredError())
   render(<Harness operation={operation} />)

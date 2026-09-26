@@ -93,9 +93,9 @@ test.describe.serial('Dos cajeros en el mismo turno', () => {
     await expect(closed).toBeVisible()
     const valueOf = (label: string) =>
       closed.getByText(label, { exact: true }).locator('xpath=following-sibling::dd[1]')
-    await expect(valueOf('Esperado')).toHaveText('70.0000')
-    await expect(valueOf('Contado')).toHaveText('70.0000')
-    await expect(valueOf('Diferencia')).toHaveText('0.0000')
+    await expect(valueOf('Esperado')).toHaveText('70.00')
+    await expect(valueOf('Contado')).toHaveText('70.00')
+    await expect(valueOf('Diferencia')).toHaveText('0.00')
   })
 
   test('la caja del segundo cajero sigue abierta y es solo suya', async ({ page }) => {

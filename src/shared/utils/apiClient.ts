@@ -9,12 +9,32 @@ const API_URL = import.meta.env.VITE_API_URL || '/api/v1'
 export class ApiError extends Error {
   status: number
   body: unknown
+  /** Segundos de espera que pide el backend (cabecera Retry-After que DRF
+   * agrega a un 429 por throttling). null si no vino o no se pudo leer. */
+  retryAfterSeconds: number | null
 
-  constructor(status: number, body: unknown) {
+  constructor(status: number, body: unknown, retryAfterSeconds: number | null = null) {
     super(`Error de API (${status})`)
     this.status = status
     this.body = body
+    this.retryAfterSeconds = retryAfterSeconds
   }
+}
+
+/** Lee Retry-After en sus dos formas (RFC 9110): segundos enteros, que es
+ * lo que manda DRF, o una fecha HTTP. Cualquier otra cosa devuelve null. */
+export function parseRetryAfter(value: string | null | undefined): number | null {
+  if (!value) return null
+  const trimmed = value.trim()
+  if (/^\d+$/.test(trimmed)) return Number(trimmed)
+  const date = Date.parse(trimmed)
+  if (Number.isNaN(date)) return null
+  return Math.max(0, Math.ceil((date - Date.now()) / 1000))
+}
+
+/** Arma el ApiError de una respuesta fallida, con el Retry-After si vino. */
+export function apiErrorFromResponse(response: Response, body: unknown): ApiError {
+  return new ApiError(response.status, body, parseRetryAfter(response.headers?.get('retry-after')))
 }
 
 interface RequestOptions {
@@ -29,7 +49,7 @@ async function fetchJson(url: string, headers: Record<string, string>): Promise<
   const isJson = response.headers.get('content-type')?.includes('application/json')
   const data = isJson ? await response.json() : null
   if (!response.ok) {
-    throw new ApiError(response.status, data)
+    throw apiErrorFromResponse(response, data)
   }
   return data
 }
@@ -51,7 +71,7 @@ async function rawApiFetch<T>(path: string, options: RequestOptions = {}): Promi
   const data = isJson ? await response.json() : null
 
   if (!response.ok) {
-    throw new ApiError(response.status, data)
+    throw apiErrorFromResponse(response, data)
   }
 
   if (options.unwrapPagination && isPaginatedResponse<unknown>(data)) {

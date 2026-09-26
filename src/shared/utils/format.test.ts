@@ -1,9 +1,9 @@
 import { formatCurrency, formatQuantity, formatRelativeTime } from './format'
 
 describe('formatCurrency', () => {
-  it('formatea un string con 4 decimales del backend a 2 decimales con prefijo S/', () => {
-    expect(formatCurrency('11.0000')).toBe('S/ 11.00')
-    expect(formatCurrency('29.9000')).toBe('S/ 29.90')
+  it('formatea un string del backend con prefijo S/ y 2 decimales', () => {
+    expect(formatCurrency('11.00')).toBe('S/ 11.00')
+    expect(formatCurrency('29.9')).toBe('S/ 29.90')
   })
 
   it('acepta numeros directamente', () => {
@@ -13,11 +13,16 @@ describe('formatCurrency', () => {
   it('redondea a 2 decimales en vez de truncar', () => {
     expect(formatCurrency('19.995')).toBe('S/ 20.00')
   })
+
+  it('redondea medio hacia arriba aunque el punto flotante no ayude', () => {
+    // (1.005).toFixed(2) da "1.00": el sistema redondea con round2.
+    expect(formatCurrency(1.005)).toBe('S/ 1.01')
+  })
 })
 
 describe('formatQuantity', () => {
   it('muestra un entero sin decimales para cantidades por unidad', () => {
-    expect(formatQuantity('3.000')).toBe('3')
+    expect(formatQuantity('3.00')).toBe('3')
   })
 
   it('muestra hasta 2 decimales para cantidades fraccionarias (productos por peso)', () => {

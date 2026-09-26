@@ -1,4 +1,4 @@
-import type { POSPricingTier, SalePaymentMethod } from '../api'
+import type { POSPricingTier, POSPromotion, SalePaymentMethod } from '../api'
 
 export interface CartLine {
   variantId: number
@@ -14,10 +14,14 @@ export interface CartLine {
   // ver cart/pricing.ts) -es lo que totals.ts usa para la vista previa.
   unitPrice: string
   quantity: string
-  // null = se deja que el backend resuelva el descuento por la promoción
-  // vigente (SaleService._resolve_promotion_discount); un string es un
-  // override manual que el cajero ingresó a mano y que gana sobre la
-  // promoción automática (mismo contrato que SaleService.create_sale).
+  // Promoción vigente del catálogo del POS al agregar el producto. Solo
+  // sirve para la vista previa del total (cart/promotion.ts): el backend la
+  // vuelve a resolver al crear la venta y nunca viaja en el payload.
+  promotion: POSPromotion | null
+  // Descuento MANUAL de la línea. null = se deja que el backend resuelva la
+  // promoción vigente (SaleService._resolve_promotion_discount); un string
+  // es un override manual que gana sobre la promoción automática (mismo
+  // contrato que SaleService.create_sale) y cuenta contra el tope del rol.
   discountAmount: string | null
   // Bloque C.2: el cajero da el descuento manual en %, que es como se mide
   // el tope de su rol. discountAmount se deriva de aquí (cartReducer) y se

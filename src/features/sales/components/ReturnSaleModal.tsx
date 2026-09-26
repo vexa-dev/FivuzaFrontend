@@ -9,6 +9,7 @@ import { formatQuantity } from '../../../shared/utils/format'
 import type { RefundType, Sale } from '../api'
 import { useOpenCashSessions } from '../hooks/useCashSessions'
 import { useCreateSaleReturn, useSaleReturns } from '../hooks/useSaleReturns'
+import { toTwoDecimals } from '../../../shared/utils/decimals'
 
 interface ReturnSaleModalProps {
   sale: Sale
@@ -111,7 +112,7 @@ export function ReturnSaleModal({ sale, onClose, onReturned }: ReturnSaleModalPr
                       disabled={available <= 0}
                       value={quantities[detail.id] ?? ''}
                       onChange={(event) =>
-                        setQuantities((prev) => ({ ...prev, [detail.id]: event.target.value }))
+                        setQuantities((prev) => ({ ...prev, [detail.id]: toTwoDecimals(event.target.value) }))
                       }
                       placeholder="0"
                     />

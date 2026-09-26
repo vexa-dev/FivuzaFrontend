@@ -13,6 +13,7 @@ import {
   useRenewMembership,
   useUnfreezeMembership,
 } from '../hooks/useMemberships'
+import { toTwoDecimals } from '../../../shared/utils/decimals'
 
 const STATUS_LABELS: Record<Membership['status'], string> = {
   ACTIVE: 'Activa',
@@ -282,7 +283,7 @@ function MembershipRow({
           </select>
           <input
             value={paymentAmount}
-            onChange={(event) => setPaymentAmount(event.target.value)}
+            onChange={(event) => setPaymentAmount(toTwoDecimals(event.target.value))}
             placeholder="Monto pagado (opcional)"
             inputMode="decimal"
             style={{ width: 180 }}

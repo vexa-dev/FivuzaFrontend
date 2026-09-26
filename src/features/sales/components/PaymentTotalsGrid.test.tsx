@@ -6,8 +6,8 @@ describe('PaymentTotalsGrid', () => {
     render(
       <PaymentTotalsGrid
         totals={{
-          CARD: '40.0000',
-          CASH: '60.0000',
+          CARD: '40.00',
+          CASH: '60.00',
           YAPE: '0',
           CREDIT_LEDGER: '0',
           BALANCE: '0',

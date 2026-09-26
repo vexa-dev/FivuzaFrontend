@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Modal } from '../../../shared/components/Modal'
 import type { MembershipPlan } from '../api'
 import { useCreateMembershipPlan, useUpdateMembershipPlan } from '../hooks/useMembershipPlans'
+import { toTwoDecimals } from '../../../shared/utils/decimals'
 
 const PERIODICITY_LABELS: Record<MembershipPlan['periodicity'], string> = {
   MONTHLY: 'Mensual',
@@ -62,7 +63,7 @@ export function MembershipPlanFormModal({ editingPlan, onClose }: MembershipPlan
             <input
               id="plan-price"
               value={price}
-              onChange={(event) => setPrice(event.target.value)}
+              onChange={(event) => setPrice(toTwoDecimals(event.target.value))}
               placeholder="100.00"
               inputMode="decimal"
             />

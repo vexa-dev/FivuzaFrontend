@@ -9,6 +9,7 @@ import {
   useDeleteVolumePricingTier,
   useVolumePricingTiers,
 } from '../hooks/useVolumePricingTiers'
+import { toTwoDecimals } from '../../../shared/utils/decimals'
 
 interface VariantEditModalProps {
   variant: ProductVariant
@@ -133,7 +134,7 @@ export function VariantEditModal({ variant, onClose }: VariantEditModalProps) {
             <input
               id="variant-edit-cost"
               value={cost}
-              onChange={(event) => setCost(event.target.value)}
+              onChange={(event) => setCost(toTwoDecimals(event.target.value))}
               inputMode="decimal"
             />
           </div>
@@ -142,7 +143,7 @@ export function VariantEditModal({ variant, onClose }: VariantEditModalProps) {
             <input
               id="variant-edit-price"
               value={price}
-              onChange={(event) => setPrice(event.target.value)}
+              onChange={(event) => setPrice(toTwoDecimals(event.target.value))}
               inputMode="decimal"
             />
           </div>
@@ -151,7 +152,7 @@ export function VariantEditModal({ variant, onClose }: VariantEditModalProps) {
             <input
               id="variant-edit-min-stock"
               value={minStock}
-              onChange={(event) => setMinStock(event.target.value)}
+              onChange={(event) => setMinStock(toTwoDecimals(event.target.value))}
               inputMode="decimal"
             />
           </div>
@@ -229,14 +230,14 @@ export function VariantEditModal({ variant, onClose }: VariantEditModalProps) {
         <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
           <input
             value={tierMinQuantity}
-            onChange={(event) => setTierMinQuantity(event.target.value)}
+            onChange={(event) => setTierMinQuantity(toTwoDecimals(event.target.value))}
             inputMode="decimal"
             placeholder="Cantidad mínima"
             style={{ flex: 1 }}
           />
           <input
             value={tierUnitPrice}
-            onChange={(event) => setTierUnitPrice(event.target.value)}
+            onChange={(event) => setTierUnitPrice(toTwoDecimals(event.target.value))}
             inputMode="decimal"
             placeholder="Precio unitario"
             style={{ flex: 1 }}

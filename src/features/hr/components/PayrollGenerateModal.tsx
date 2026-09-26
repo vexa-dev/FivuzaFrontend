@@ -3,6 +3,7 @@ import { Modal } from '../../../shared/components/Modal'
 import { ApiError } from '../../../shared/utils/apiClient'
 import type { Employee } from '../api'
 import { useGeneratePayroll } from '../hooks/usePayroll'
+import { toTwoDecimals } from '../../../shared/utils/decimals'
 
 interface PayrollGenerateModalProps {
   employees: Employee[]
@@ -105,7 +106,7 @@ export function PayrollGenerateModal({
               step="0.01"
               min="0"
               value={bonuses}
-              onChange={(event) => setBonuses(event.target.value)}
+              onChange={(event) => setBonuses(toTwoDecimals(event.target.value))}
             />
           </div>
           <div style={{ flex: 1 }}>
@@ -116,7 +117,7 @@ export function PayrollGenerateModal({
               step="0.01"
               min="0"
               value={deductions}
-              onChange={(event) => setDeductions(event.target.value)}
+              onChange={(event) => setDeductions(toTwoDecimals(event.target.value))}
             />
           </div>
         </div>

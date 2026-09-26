@@ -4,6 +4,7 @@ import { ApiError } from '../../../shared/utils/apiClient'
 import { formatQuantity } from '../../../shared/utils/format'
 import type { Product, Warehouse } from '../api'
 import { useAdjustStock, useStock } from '../hooks/useStock'
+import { toTwoDecimals } from '../../../shared/utils/decimals'
 
 interface StockAdjustTabProps {
   products: Product[]
@@ -131,7 +132,7 @@ export function StockAdjustTab({ products, warehouses }: StockAdjustTabProps) {
           <input
             id="stock-counted"
             value={countedQuantity}
-            onChange={(event) => setCountedQuantity(event.target.value)}
+            onChange={(event) => setCountedQuantity(toTwoDecimals(event.target.value))}
             inputMode="decimal"
             placeholder="0"
           />

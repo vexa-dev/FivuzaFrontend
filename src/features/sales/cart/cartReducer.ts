@@ -1,3 +1,4 @@
+import { lineGross } from './money'
 import { resolveTierUnitPrice } from './pricing'
 import type { CartLine, CartPayment, CartState } from './types'
 
@@ -28,7 +29,9 @@ export function manualDiscountAmount(
 ): string | null {
   const value = Number(percent)
   if (percent === null || !Number.isFinite(value) || value <= 0) return null
-  const gross = Number(unitPrice) * Number(quantity)
+  // Sobre el subtotal ya en céntimos: es la base con la que el backend
+  // calcula el % del descuento contra el tope del rol.
+  const gross = lineGross(unitPrice, quantity)
   const cents = Math.floor((gross * Math.min(value, 100)) / 100 * 100 + 1e-9)
   return (cents / 100).toFixed(2)
 }

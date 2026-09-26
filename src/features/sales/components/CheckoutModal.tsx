@@ -5,6 +5,7 @@ import { formatCurrency } from '../../../shared/utils/format'
 import type { Customer, SalePaymentMethod } from '../api'
 import type { CartPayment, CartState } from '../cart/types'
 import type { CartTotals } from '../cart/totals'
+import { toTwoDecimals } from '../../../shared/utils/decimals'
 
 const PAYMENT_METHODS: [SalePaymentMethod, string][] = [
   ['CASH', 'Efectivo'],
@@ -99,7 +100,7 @@ export function CheckoutModal({
                   <input
                     inputMode="decimal"
                     value={payment.amount}
-                    onChange={(event) => onUpdatePaymentAmount(index, event.target.value)}
+                    onChange={(event) => onUpdatePaymentAmount(index, toTwoDecimals(event.target.value))}
                     placeholder="0.00"
                     style={{ width: 100 }}
                     aria-label="Monto del pago"
@@ -124,7 +125,7 @@ export function CheckoutModal({
                       inputMode="decimal"
                       value={receivedAmount}
                       onChange={(event) =>
-                        setTendered((prev) => ({ ...prev, [index]: event.target.value }))
+                        setTendered((prev) => ({ ...prev, [index]: toTwoDecimals(event.target.value) }))
                       }
                       placeholder="0.00"
                       style={{ width: 100 }}

@@ -4,6 +4,7 @@ import { Modal } from '../../../shared/components/Modal'
 import { formatCurrency } from '../../../shared/utils/format'
 import type { SalePaymentInput, SalePaymentMethod } from '../api'
 import { useCashRegisters, useOpenCashSessions } from '../hooks/useCashSessions'
+import { toTwoDecimals } from '../../../shared/utils/decimals'
 
 const PAYMENT_METHODS: [SalePaymentMethod, string][] = [
   ['CASH', 'Efectivo'],
@@ -117,7 +118,7 @@ export function ConvertToSaleModal({
                 value={payment.amount}
                 onChange={(event) =>
                   setPayments((prev) =>
-                    prev.map((p, i) => (i === index ? { ...p, amount: event.target.value } : p)),
+                    prev.map((p, i) => (i === index ? { ...p, amount: toTwoDecimals(event.target.value) } : p)),
                   )
                 }
                 placeholder="0.00"

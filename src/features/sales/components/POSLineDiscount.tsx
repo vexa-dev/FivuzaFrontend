@@ -1,6 +1,7 @@
 import { Percent, X } from 'lucide-react'
 import { useState } from 'react'
 import type { CartLine } from '../cart/types'
+import { toTwoDecimals } from '../../../shared/utils/decimals'
 
 interface POSLineDiscountProps {
   line: CartLine
@@ -36,7 +37,7 @@ export function POSLineDiscount({ line, overLimit, onChange }: POSLineDiscountPr
           aria-label={`Descuento de ${line.productName} en %`}
           value={line.discountPercent ?? ''}
           onChange={(event) => {
-            const value = event.target.value.replace(',', '.')
+            const value = toTwoDecimals(event.target.value)
             onChange(value === '' ? null : value)
           }}
           inputMode="decimal"

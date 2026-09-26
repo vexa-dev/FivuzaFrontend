@@ -1,19 +1,21 @@
+import { round2 } from './decimals'
+
 /**
- * El backend serializa los DecimalField de Django como strings con 4
- * decimales fijos (ej. "11.0000", "29.9000") -sin pasar por estas
- * funciones, cualquier {campo} interpolado directo en JSX muestra esos 4
- * decimales tal cual, incluso en cantidades enteras.
+ * El backend serializa los DecimalField de Django como strings con 2
+ * decimales fijos (ej. "11.00", "29.90"; ver shared/utils/decimals.ts) -sin
+ * pasar por estas funciones, una cantidad entera interpolada directo en JSX
+ * se muestra como "3.00" en vez de "3".
  */
 
 /** Precio/monto en soles -siempre 2 decimales, tenga o no centavos. */
 export function formatCurrency(value: string | number): string {
-  return `S/ ${Number(value).toFixed(2)}`
+  return `S/ ${round2(Number(value)).toFixed(2)}`
 }
 
 /** Cantidad/stock -entero si no tiene fraccion (unidades), hasta 2
  * decimales si la tiene (productos por peso, ej. "5.50 kg"). */
 export function formatQuantity(value: string | number): string {
-  const num = Number(value)
+  const num = round2(Number(value))
   return Number.isInteger(num) ? String(num) : num.toFixed(2)
 }
 

@@ -1,5 +1,5 @@
 import { ApiError } from './apiClient'
-import { getErrorMessage } from './errorMessage'
+import { getErrorMessage, getThrottleMessage } from './errorMessage'
 
 describe('getErrorMessage', () => {
   it('devuelve el fallback cuando el error no es un ApiError', () => {
@@ -42,5 +42,56 @@ describe('getErrorMessage', () => {
   it('devuelve el fallback si el body es null', () => {
     const error = new ApiError(500, null)
     expect(getErrorMessage(error, 'Fallback')).toBe('Fallback')
+  })
+})
+
+describe('getThrottleMessage (429)', () => {
+  const drfDetail = (seconds: number) => ({
+    error: {
+      code: 'THROTTLED',
+      message: `Request was throttled. Expected available in ${seconds} seconds.`,
+    },
+  })
+
+  it('devuelve null si el error no es un 429', () => {
+    expect(getThrottleMessage(new ApiError(400, {}))).toBeNull()
+    expect(getThrottleMessage(new Error('red'))).toBeNull()
+  })
+
+  it('usa los segundos de Retry-After', () => {
+    const error = new ApiError(429, drfDetail(59), 42)
+    expect(getThrottleMessage(error)).toBe(
+      'Demasiados intentos. Espera 42 segundos e intenta de nuevo.',
+    )
+  })
+
+  it('sin Retry-After saca los segundos del detalle de DRF', () => {
+    expect(getThrottleMessage(new ApiError(429, drfDetail(17)))).toBe(
+      'Demasiados intentos. Espera 17 segundos e intenta de nuevo.',
+    )
+    expect(getThrottleMessage(new ApiError(429, { detail: 'Expected available in 1 second.' }))).toBe(
+      'Demasiados intentos. Espera 1 segundo e intenta de nuevo.',
+    )
+  })
+
+  it('redondea a minutos una espera de 60 segundos o más', () => {
+    expect(getThrottleMessage(new ApiError(429, null, 60))).toBe(
+      'Demasiados intentos. Espera un minuto e intenta de nuevo.',
+    )
+    expect(getThrottleMessage(new ApiError(429, null, 125))).toBe(
+      'Demasiados intentos. Espera 3 minutos e intenta de nuevo.',
+    )
+  })
+
+  it('sin dato de espera pide un minuto', () => {
+    expect(getThrottleMessage(new ApiError(429, null))).toBe(
+      'Demasiados intentos. Espera un minuto e intenta de nuevo.',
+    )
+  })
+
+  it('getErrorMessage prefiere el mensaje en español al detalle en inglés de DRF', () => {
+    expect(getErrorMessage(new ApiError(429, drfDetail(30)), 'Fallback')).toBe(
+      'Demasiados intentos. Espera 30 segundos e intenta de nuevo.',
+    )
   })
 })

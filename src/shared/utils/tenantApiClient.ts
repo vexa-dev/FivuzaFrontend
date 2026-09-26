@@ -1,4 +1,4 @@
-import { ApiError } from './apiClient'
+import { ApiError, apiErrorFromResponse } from './apiClient'
 import { collectAllPages, isPaginatedResponse } from './pagination'
 import { createSingleFlightRefresher } from './singleFlightRefresh'
 
@@ -78,7 +78,7 @@ async function rawFetch<T>(path: string, options: RequestOptions): Promise<T> {
   let data = isJson ? await response.json() : null
 
   if (!response.ok) {
-    throw new ApiError(response.status, data)
+    throw apiErrorFromResponse(response, data)
   }
 
   if ((options.unwrapPagination ?? true) && isPaginatedResponse<unknown>(data)) {
@@ -141,7 +141,7 @@ export async function tenantApiFetchTextPost(
   })
   if (!response.ok) {
     const data = await response.json().catch(() => null)
-    throw new ApiError(response.status, data)
+    throw apiErrorFromResponse(response, data)
   }
   return response.text()
 }
