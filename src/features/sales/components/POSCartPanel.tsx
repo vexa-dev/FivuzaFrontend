@@ -1,5 +1,5 @@
 import { Minus, Plus, Scale, ShoppingCart, Tag, Trash2 } from 'lucide-react'
-import { useState, type Dispatch } from 'react'
+import { useEffect, useState, type Dispatch } from 'react'
 import {
   isAuthorizationCancelled,
   useSupervisorAuthorization,
@@ -9,16 +9,18 @@ import { offlineDB } from '../../../shared/offline/db'
 import { ApiError } from '../../../shared/utils/apiClient'
 import { formatCurrency, formatQuantity } from '../../../shared/utils/format'
 import { useAuth } from '../../auth/hooks/useAuth'
+import { useTenantSettings } from '../../settings/hooks/useTenantSettings'
 import type { Sale } from '../api'
 import type { CartAction } from '../cart/cartReducer'
 import { exceedsDiscountLimit } from '../cart/discount'
 import { lineGross } from '../cart/money'
+import { paymentMethodConfig } from '../cart/paymentMethods'
 import { resolveTierUnitPrice } from '../cart/pricing'
 import { promotionLabel } from '../cart/promotion'
 import { lineDiscount, type CartTotals } from '../cart/totals'
 import { toSaleCreateInput } from '../cart/useCart'
 import type { CartState } from '../cart/types'
-import { useCustomers } from '../hooks/useCustomers'
+import { useCustomers, useWalkInCustomer } from '../hooks/useCustomers'
 import { useSerialScale } from '../hooks/useSerialScale'
 import { useCreateSale } from '../hooks/useSales'
 import { CheckoutModal } from './CheckoutModal'
@@ -37,9 +39,22 @@ interface POSCartPanelProps {
 export function POSCartPanel({ cart, totals, dispatch, cashSessionId }: POSCartPanelProps) {
   const [customerSearch, setCustomerSearch] = useState('')
   const { data: customers } = useCustomers(customerSearch)
-  const selectedCustomer = customers?.find((c) => c.id === cart.customerId)
+  const { data: walkInCustomer } = useWalkInCustomer()
+  const selectedCustomer =
+    customers?.find((c) => c.id === cart.customerId) ??
+    (walkInCustomer?.id === cart.customerId ? walkInCustomer : undefined)
+  const { data: tenantSettings } = useTenantSettings()
   const createSale = useCreateSale()
   const authorization = useSupervisorAuthorization()
+
+  // Bloque D.1: sin cliente elegido, se preselecciona "Público general" -el
+  // cajero puede reemplazarlo con el buscador si sí hay a quien registrar.
+  useEffect(() => {
+    if (cart.customerId === null && walkInCustomer) {
+      dispatch({ type: 'SET_CUSTOMER', customerId: walkInCustomer.id })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [walkInCustomer])
   const { user, hasPermission } = useAuth()
   // Bloque C.2: tope de descuento manual por linea del rol de quien vende.
   const discountLimit = {
@@ -62,6 +77,16 @@ export function POSCartPanel({ cart, totals, dispatch, cashSessionId }: POSCartP
     if (cart.customerId === null) {
       setError('Selecciona un cliente antes de cobrar.')
       return
+    }
+    // Bloque D.3: al abrir, una sola línea con el total en el método por
+    // defecto del negocio (TenantSettings.default_payment_method).
+    if (cart.payments.length === 0) {
+      dispatch({
+        type: 'SET_PAYMENTS',
+        payments: [
+          { method: tenantSettings?.default_payment_method ?? 'CASH', amount: totals.total.toFixed(2) },
+        ],
+      })
     }
     setShowCheckout(true)
   }
@@ -131,6 +156,19 @@ export function POSCartPanel({ cart, totals, dispatch, cashSessionId }: POSCartP
           setError(
             `Sin conexión solo puedes dar hasta ${discountLimit.maxPercent}% de descuento por producto. ` +
               'Quita o baja el descuento, o espera a tener conexión para pedir autorización.',
+          )
+          return
+        }
+        // Bloque D.7: tarjeta no se puede confirmar sin conexion -no hay
+        // forma de saber si el banco la aprobo. Efectivo siempre encola;
+        // Yape encola si ya trae numero de operacion anotado a mano.
+        const blockedPayment = cart.payments.find(
+          (payment) => !paymentMethodConfig(payment.method).offlineAllowed,
+        )
+        if (blockedPayment) {
+          setError(
+            `Sin conexión no se puede cobrar con ${paymentMethodConfig(blockedPayment.method).label}. ` +
+              'Cambia el método de pago o espera a tener conexión.',
           )
           return
         }
@@ -386,11 +424,15 @@ export function POSCartPanel({ cart, totals, dispatch, cashSessionId }: POSCartP
           error={error}
           isSubmitting={createSale.isPending || authorization.isAsking}
           onAddPayment={(payment) => dispatch({ type: 'ADD_PAYMENT', payment })}
+          onSetPayments={(payments) => dispatch({ type: 'SET_PAYMENTS', payments })}
           onUpdatePaymentAmount={(index, amount) =>
             dispatch({ type: 'UPDATE_PAYMENT_AMOUNT', index, amount })
           }
           onUpdatePaymentMethod={(index, method) =>
             dispatch({ type: 'UPDATE_PAYMENT_METHOD', index, method })
+          }
+          onUpdatePaymentField={(index, field, value) =>
+            dispatch({ type: 'UPDATE_PAYMENT_FIELD', index, field, value })
           }
           onRemovePayment={(index) => dispatch({ type: 'REMOVE_PAYMENT', index })}
           onConfirm={handleConfirm}

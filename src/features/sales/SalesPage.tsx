@@ -16,6 +16,7 @@ import { PromotionsTab } from './components/PromotionsTab'
 import { QuotesTab } from './components/QuotesTab'
 import { ReservationsTab } from './components/ReservationsTab'
 import { SalesHistoryTab } from './components/SalesHistoryTab'
+import { SettlementReconciliationTab } from './components/SettlementReconciliationTab'
 import { formatCurrency } from '../../shared/utils/format'
 import type { CashSession } from './api'
 import {
@@ -36,6 +37,7 @@ type Tab =
   | 'promociones'
   | 'apartados'
   | 'cotizaciones'
+  | 'liquidaciones'
 
 const TABS: [Tab, string][] = [
   ['vender', 'Vender'],
@@ -47,6 +49,7 @@ const TABS: [Tab, string][] = [
   ['promociones', 'Promociones'],
   ['apartados', 'Apartados'],
   ['cotizaciones', 'Cotizaciones'],
+  ['liquidaciones', 'Liquidaciones'],
 ]
 
 function formatDate(value: string) {
@@ -56,11 +59,16 @@ function formatDate(value: string) {
 export function SalesPage() {
   const { hasPermission } = useAuth()
   const canManage = hasPermission('SALES_MANAGE')
+  const canReconcile = hasPermission('SALES_RECONCILE')
   const [tab, setTab] = useState<Tab>('vender')
   const { data: registers } = useCashRegisters()
   const { data: categories } = useCategories()
   const { data: products } = useProducts()
   const { data: warehouses } = useWarehouses()
+  // Bloque D.6: cargar la liquidación y ver la conciliación es del
+  // dueño/admin, no del cajero -mismo criterio que el resto de los tabs
+  // gateados por permiso.
+  const visibleTabs = TABS.filter(([value]) => value !== 'liquidaciones' || canReconcile)
 
   return (
     <div>
@@ -72,7 +80,7 @@ export function SalesPage() {
       </div>
 
       <div className="tabs" style={{ marginBottom: 16 }}>
-        {TABS.map(([value, label]) => (
+        {visibleTabs.map(([value, label]) => (
           <button
             key={value}
             type="button"
@@ -97,6 +105,7 @@ export function SalesPage() {
         <ReservationsTab products={products ?? []} warehouses={warehouses ?? []} />
       )}
       {tab === 'cotizaciones' && <QuotesTab products={products ?? []} />}
+      {tab === 'liquidaciones' && canReconcile && <SettlementReconciliationTab />}
     </div>
   )
 }

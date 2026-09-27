@@ -6,10 +6,21 @@ import {
 import { Modal } from '../../../shared/components/Modal'
 import { ApiError } from '../../../shared/utils/apiClient'
 import { formatQuantity } from '../../../shared/utils/format'
+import { useAuth } from '../../auth/hooks/useAuth'
 import type { RefundType, Sale } from '../api'
 import { useOpenCashSessions } from '../hooks/useCashSessions'
 import { useCreateSaleReturn, useSaleReturns } from '../hooks/useSaleReturns'
 import { toTwoDecimals } from '../../../shared/utils/decimals'
+
+/** Bloque D.5: si la venta se cobró por un medio electrónico, el reembolso
+ * por defecto es saldo a favor -devolver en efectivo lo que nunca entró
+ * como efectivo a la caja no tiene sentido, y además exige autorización. */
+function defaultRefundType(sale: Sale): RefundType {
+  const paidElectronically = sale.payments.some(
+    (payment) => payment.method === 'CARD' || payment.method === 'YAPE',
+  )
+  return paidElectronically ? 'BALANCE' : 'CASH'
+}
 
 interface ReturnSaleModalProps {
   sale: Sale
@@ -26,10 +37,11 @@ export function ReturnSaleModal({ sale, onClose, onReturned }: ReturnSaleModalPr
   const { data: openSessions } = useOpenCashSessions()
   const createReturn = useCreateSaleReturn()
   const authorization = useSupervisorAuthorization()
+  const { hasPermission } = useAuth()
 
   const [quantities, setQuantities] = useState<Record<number, string>>({})
   const [reason, setReason] = useState('')
-  const [refundType, setRefundType] = useState<RefundType>('BALANCE')
+  const [refundType, setRefundType] = useState<RefundType>(() => defaultRefundType(sale))
   const [cashSessionId, setCashSessionId] = useState<number | undefined>(undefined)
   const [error, setError] = useState<string | null>(null)
 
@@ -144,6 +156,12 @@ export function ReturnSaleModal({ sale, onClose, onReturned }: ReturnSaleModalPr
             <option value="CASH">Efectivo</option>
           </select>
         </div>
+
+        {refundType === 'CASH' && !hasPermission('SALES_CASH_REFUND') && (
+          <p className="core-page-subtitle" style={{ margin: 0 }}>
+            Reembolsar en efectivo pedirá la autorización de un supervisor.
+          </p>
+        )}
 
         {refundType === 'CASH' && (
           <div>

@@ -1,5 +1,6 @@
 import { tenantApiFetch } from '../../shared/utils/tenantApiClient'
 import { getAccessToken } from '../auth/hooks/session'
+import type { SalePaymentMethod } from '../sales/api'
 
 /** Interruptores operativos que el propio negocio edita (Bloque A.0). Los
  * de plan y facturación siguen siendo del panel interno de Fivuza y no se
@@ -7,6 +8,8 @@ import { getAccessToken } from '../auth/hooks/session'
 export interface TenantOperationalSettings {
   cashier_can_open_session: boolean
   cashier_can_close_session: boolean
+  // Bloque D.3: método preseleccionado al abrir el cobro en el POS.
+  default_payment_method: SalePaymentMethod
   updated_at: string
 }
 

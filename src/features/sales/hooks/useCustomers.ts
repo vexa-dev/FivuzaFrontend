@@ -5,6 +5,7 @@ import {
   createCustomer,
   deleteCustomer,
   fetchCustomers,
+  fetchWalkInCustomer,
   updateCustomer,
   type Customer,
 } from '../api'
@@ -14,6 +15,11 @@ export function useCustomers(search?: string) {
     queryKey: ['sales', 'customers', search ?? ''],
     queryFn: () => fetchCustomers(search),
   })
+}
+
+/** Bloque D.1: cliente "Público general" para preseleccionar en el POS. */
+export function useWalkInCustomer() {
+  return useQuery({ queryKey: ['sales', 'customers', 'walk-in'], queryFn: fetchWalkInCustomer })
 }
 
 export function useCreateCustomer() {

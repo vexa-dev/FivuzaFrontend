@@ -30,6 +30,16 @@ export function PostSaleModal({ sale, onClose }: PostSaleModalProps) {
           </div>
         </div>
 
+        {sale.warnings.length > 0 && (
+          <div className="core-state-message" style={{ margin: 0 }}>
+            {sale.warnings.map((warning) => (
+              <p key={warning} style={{ margin: 0 }}>
+                ⚠ {warning}
+              </p>
+            ))}
+          </div>
+        )}
+
         <ReceiptView html={receiptHtml} isLoading={isLoading} />
 
         <button type="button" className="btn btn-ghost" onClick={onClose}>
