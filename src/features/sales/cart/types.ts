@@ -32,6 +32,11 @@ export interface CartLine {
 export interface CartPayment {
   method: SalePaymentMethod
   amount: string
+  // Bloque D.2/D.3: numero de operacion (tarjeta/Yape) y efectivo
+  // recibido/vuelto (efectivo) -viajan en el payload de creacion de venta.
+  operation_number?: string
+  tendered_amount?: string
+  change_amount?: string
 }
 
 export interface CartState {

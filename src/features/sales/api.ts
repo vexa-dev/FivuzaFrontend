@@ -40,6 +40,10 @@ export interface CashSession {
   status: 'OPEN' | 'PENDING_APPROVAL' | 'CLOSED'
   closing_at: string | null
   notes: string | null
+  // Bloque D.7: solo viaja en la respuesta del cierre -avisos no
+  // bloqueantes (cobros con tarjeta/Yape sin número de operación o sin
+  // conciliar).
+  pending_payment_warnings?: string[]
 }
 
 export type CashMovementType = 'IN' | 'OUT'
@@ -190,6 +194,10 @@ export interface Customer {
   phone: string
   address: string
   is_active: boolean
+  // Bloque D.1: cliente "Público general" sembrado por el backend -no se
+  // borra, no se convierte en cliente normal, y no admite fiado/saldo a
+  // favor (el backend lo rechaza; el POS oculta esas opciones para él).
+  is_walk_in: boolean
   // null = sin limite configurado (Sprint 19, Ficha de Producto §5.1).
   credit_limit: string | null
   current_debt: string
@@ -213,10 +221,20 @@ export function fetchCustomers(search?: string) {
   })
 }
 
+/** Bloque D.1: cliente "Público general" para preseleccionar en el POS sin
+ * que el cajero tenga que buscarlo. */
+export function fetchWalkInCustomer() {
+  return tenantApiFetch<Customer[]>('/ventas/customers/?is_walk_in=true', {
+    token: getAccessToken(),
+  }).then((customers) => customers[0])
+}
+
 export function createCustomer(
   data: Omit<
     Customer,
-    'id' | (typeof CUSTOMER_COMPUTED_FIELDS)[number] | 'updated_at' | 'created_at'
+    // is_walk_in: read-only en el backend (Bloque D.1) -solo lo sembrado por
+    // TenantProvisioningService lo tiene en true, nunca se crea por API.
+    'id' | (typeof CUSTOMER_COMPUTED_FIELDS)[number] | 'updated_at' | 'created_at' | 'is_walk_in'
   >,
 ) {
   return tenantApiFetch<Customer>('/ventas/customers/', {
@@ -381,10 +399,28 @@ export interface SaleDetail {
   subtotal: string
 }
 
+export type SalePaymentStatus = 'APPROVED' | 'REJECTED' | 'VOIDED' | 'REFUNDED'
+
 export interface SalePayment {
   id: number
   method: SalePaymentMethod
   amount: string
+  // Bloque D.2: rastreo de cobro electronico. Nunca el numero completo de
+  // tarjeta -solo los ultimos 4 digitos.
+  provider: string
+  operation_number: string
+  voucher_number: string
+  card_last4: string
+  card_brand: string
+  installments: number | null
+  status: SalePaymentStatus
+  fee_amount: string
+  settled_at: string | null
+  is_manual: boolean
+  // Solo para CASH: lo que recibio el cajero y el vuelto (D.3). Persisten
+  // en el pago, no se recalculan -viajan tal cual al ticket.
+  tendered_amount: string | null
+  change_amount: string | null
   created_at: string
 }
 
@@ -400,10 +436,16 @@ export interface Sale {
   total: string
   currency: string
   payment_status: 'PAID' | 'PARTIAL' | 'UNPAID'
+  // Bloque D.4: parte de la venta que quedo fiada y cuanto de esa parte ya
+  // se abono (CreditLedgerService.register_payment asigna el abono FIFO).
+  credit_amount: string
+  credit_settled_amount: string
   status: 'COMPLETED' | 'VOIDED' | 'CANCELLED'
   sync_status: 'SYNCED' | 'OFFLINE_PENDING' | 'CONFLICT'
   details: SaleDetail[]
   payments: SalePayment[]
+  // Bloque D.2: avisos no bloqueantes (ej. numero de operacion repetido).
+  warnings: string[]
   created_at: string
 }
 
@@ -416,6 +458,14 @@ export interface SaleLineInput {
 export interface SalePaymentInput {
   method: SalePaymentMethod
   amount: string
+  provider?: string
+  operation_number?: string
+  voucher_number?: string
+  card_last4?: string
+  card_brand?: string
+  installments?: number
+  tendered_amount?: string
+  change_amount?: string
 }
 
 export interface SaleCreateInput {
@@ -771,4 +821,75 @@ export function convertQuote(
 
 export function fetchQuoteDocument(id: number) {
   return tenantApiFetchText(`/ventas/quotes/${id}/document/`, getAccessToken())
+}
+
+// Bloque D.6: conciliación de cobros electrónicos contra la liquidación del
+// operador -mismo patrón que inventory.api.importCatalog/CatalogImportReport.
+export interface SettlementImportRow {
+  row: number
+  operation_number: string
+  status: 'MATCHED' | 'UNMATCHED_DEPOSIT' | 'error'
+  error?: string
+}
+
+export interface SettlementImportReport {
+  settlement_id: number
+  total: number
+  matched: number
+  unmatched: number
+  errors: number
+  rows: SettlementImportRow[]
+}
+
+export function downloadSettlementImportTemplate() {
+  return tenantApiFetchBlob('/ventas/payment-settlements/template/', getAccessToken())
+}
+
+export function importSettlement(data: {
+  file: File
+  provider: string
+  period_start: string
+  period_end: string
+  total_deposited: string
+  total_fee: string
+}) {
+  const formData = new FormData()
+  formData.append('file', data.file)
+  formData.append('provider', data.provider)
+  formData.append('period_start', data.period_start)
+  formData.append('period_end', data.period_end)
+  formData.append('total_deposited', data.total_deposited)
+  formData.append('total_fee', data.total_fee)
+  return tenantApiFetch<SettlementImportReport>('/ventas/payment-settlements/import/', {
+    method: 'POST',
+    body: formData,
+    token: getAccessToken(),
+  })
+}
+
+export interface SettlementReconciliationReport {
+  reconciled: { id: number; operation_number: string; amount: string; fee_amount: string }[]
+  deposits_without_payment: {
+    id: number
+    operation_number: string
+    amount: string
+    fee_amount: string
+  }[]
+  payments_without_deposit: {
+    id: number
+    sale_id: number
+    provider: string
+    operation_number: string
+    amount: string
+    created_at: string
+  }[]
+}
+
+export function fetchSettlementReconciliation(provider?: string) {
+  const params = new URLSearchParams()
+  if (provider) params.set('provider', provider)
+  return tenantApiFetch<SettlementReconciliationReport>(
+    `/ventas/payment-settlements/reconciliation/?${params.toString()}`,
+    { token: getAccessToken() },
+  )
 }

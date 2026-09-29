@@ -128,6 +128,15 @@ export function CloseCashSessionModal({
               </>
             )}
           </dl>
+          {result.pending_payment_warnings && result.pending_payment_warnings.length > 0 && (
+            <div className="core-state-message" style={{ margin: 0 }}>
+              {result.pending_payment_warnings.map((warning) => (
+                <p key={warning} style={{ margin: 0 }}>
+                  ⚠ {warning}
+                </p>
+              ))}
+            </div>
+          )}
           <button type="button" className="btn btn-primary" onClick={onClose}>
             Listo
           </button>

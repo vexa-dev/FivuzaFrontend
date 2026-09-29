@@ -27,6 +27,7 @@ const customer: Customer = {
   phone: '',
   address: '',
   is_active: true,
+  is_walk_in: false,
   credit_limit: '100.00',
   current_debt: '80.00',
   current_balance: '5.00',
@@ -43,8 +44,10 @@ function renderCheckout(overrides: Partial<Parameters<typeof CheckoutModal>[0]> 
     error: null,
     isSubmitting: false,
     onAddPayment: jest.fn(),
+    onSetPayments: jest.fn(),
     onUpdatePaymentAmount: jest.fn(),
     onUpdatePaymentMethod: jest.fn(),
+    onUpdatePaymentField: jest.fn(),
     onRemovePayment: jest.fn(),
     onConfirm: jest.fn(),
     onClose: jest.fn(),
@@ -55,12 +58,20 @@ function renderCheckout(overrides: Partial<Parameters<typeof CheckoutModal>[0]> 
 }
 
 describe('CheckoutModal', () => {
-  it('calcula el vuelto del efectivo recibido', async () => {
-    renderCheckout()
+  it('muestra el vuelto ya calculado del efectivo recibido', () => {
+    renderCheckout({
+      cart: cart([{ method: 'CASH', amount: '40.00', tendered_amount: '50.00', change_amount: '10.00' }]),
+    })
+
+    expect(screen.getByText('Vuelto: S/ 10.00')).toBeInTheDocument()
+  })
+
+  it('escribir el efectivo recibido avisa el nuevo valor y el vuelto', async () => {
+    const props = renderCheckout()
 
     await userEvent.type(screen.getByLabelText('Efectivo recibido del cliente'), '50')
 
-    expect(screen.getByText('Vuelto: S/ 10.00')).toBeInTheDocument()
+    expect(props.onUpdatePaymentField).toHaveBeenCalledWith(0, 'tendered_amount', expect.any(String))
   })
 
   it('no deja confirmar si los pagos no cuadran con el total', () => {
@@ -83,13 +94,21 @@ describe('CheckoutModal', () => {
     expect(props.onConfirm).toHaveBeenCalledTimes(1)
   })
 
-  it('agrega un pago en efectivo por el saldo pendiente', async () => {
+  it('no deja confirmar un pago con tarjeta sin numero de operacion', () => {
+    renderCheckout({
+      cart: cart([{ method: 'CARD', amount: '40.00' }]),
+    })
+
+    expect(screen.getByRole('button', { name: /Confirmar cobro/ })).toBeDisabled()
+  })
+
+  it('dividir pago agrega una segunda linea con el resto', async () => {
     const props = renderCheckout({
-      cart: cart([{ method: 'CARD', amount: '25.00' }]),
+      cart: cart([{ method: 'CASH', amount: '25.00' }]),
       totals: totals(40, 25),
     })
 
-    await userEvent.click(screen.getByRole('button', { name: /Agregar pago/ }))
+    await userEvent.click(screen.getByRole('button', { name: /Dividir pago/ }))
 
     expect(props.onAddPayment).toHaveBeenCalledWith({ method: 'CASH', amount: '15.00' })
   })
@@ -105,6 +124,13 @@ describe('CheckoutModal', () => {
     renderCheckout({ cart: cart([{ method: 'BALANCE', amount: '40.00' }]) })
 
     expect(screen.getByText(/Insuficiente/)).toBeInTheDocument()
+  })
+
+  it('no ofrece fiado ni saldo a favor para el cliente de paso', () => {
+    renderCheckout({ customer: { ...customer, is_walk_in: true } })
+
+    expect(screen.queryByRole('button', { name: 'Crédito (fiado)' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Saldo a favor' })).not.toBeInTheDocument()
   })
 
   it('muestra el error del backend y el estado de envio', () => {

@@ -2,6 +2,7 @@ import { Palette, RotateCcw, Settings as SettingsIcon } from 'lucide-react'
 import { useAuth } from '../auth/hooks/useAuth'
 import { useBrandTheme } from '../../theme/useBrandTheme'
 import { CashPolicySection } from './components/CashPolicySection'
+import { PaymentPolicySection } from './components/PaymentPolicySection'
 import '../core/CorePage.css'
 import './SettingsPage.css'
 
@@ -137,7 +138,12 @@ export function SettingsPage() {
         </button>
       </div>
 
-      {hasPermission('SETTINGS_MANAGE') && <CashPolicySection />}
+      {hasPermission('SETTINGS_MANAGE') && (
+        <>
+          <CashPolicySection />
+          <PaymentPolicySection />
+        </>
+      )}
     </div>
   )
 }

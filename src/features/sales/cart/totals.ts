@@ -3,6 +3,26 @@ import { lineGross } from './money'
 import { promotionDiscount } from './promotion'
 import type { CartLine, CartPayment } from './types'
 
+/** Bloque D.3: "Dividir pago" -al editar el monto de una línea, la otra
+ * absorbe el resto exacto para que la suma siempre dé el total (mismo
+ * criterio de redondeo que ReturnService: la última línea se lleva lo que
+ * falte, nunca se reparte el redondeo entre varias). Solo tiene sentido con
+ * exactamente 2 líneas -con 1 no hay nada que recalcular y con 3+ no hay una
+ * única línea "restante" sin ambigüedad. */
+export function rebalancePayments(
+  payments: CartPayment[],
+  total: number,
+  editedIndex: number,
+): CartPayment[] {
+  if (payments.length !== 2) return payments
+  const otherIndex = editedIndex === 0 ? 1 : 0
+  const edited = round2(Number(payments[editedIndex].amount || 0))
+  const remaining = Math.max(0, round2(total - edited))
+  return payments.map((payment, index) =>
+    index === otherIndex ? { ...payment, amount: remaining.toFixed(2) } : payment,
+  )
+}
+
 export interface CartTotals {
   subtotal: number
   discountTotal: number

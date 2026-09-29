@@ -48,10 +48,20 @@ export async function fillCart(page: Page) {
   await page.getByRole('button', { name: `${E2E.customerName} · ${E2E.customerDocument}` }).click()
 }
 
-/** Abre el cobro, agrega un pago en efectivo por el total y confirma. */
+/** Abre el cobro -ya viene con una línea en el método por defecto del
+ * negocio (Bloque D.3, efectivo salvo que se configure otro) por el total-
+ * y confirma. */
 export async function payInCash(page: Page, total: string) {
   await page.getByRole('button', { name: `Cobrar S/ ${total}` }).click()
   const checkout = page.getByRole('dialog', { name: 'Cobrar' })
-  await checkout.getByRole('button', { name: 'Agregar pago' }).click()
+  await checkout.getByRole('button', { name: `Confirmar cobro de S/ ${total}` }).click()
+}
+
+/** Cobra con tarjeta, con número de operación (Bloque D.2/D.3). */
+export async function payWithCard(page: Page, total: string, operationNumber: string) {
+  await page.getByRole('button', { name: `Cobrar S/ ${total}` }).click()
+  const checkout = page.getByRole('dialog', { name: 'Cobrar' })
+  await checkout.getByRole('button', { name: 'Tarjeta' }).click()
+  await checkout.getByLabel('Número de operación').fill(operationNumber)
   await checkout.getByRole('button', { name: `Confirmar cobro de S/ ${total}` }).click()
 }
